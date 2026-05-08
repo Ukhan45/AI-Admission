@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { incrementStat } from '@/lib/stats';
+import Link from 'next/link';
 
 type University = {
   name: string;
@@ -71,6 +72,34 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
+function UpgradeBanner() {
+  return (
+    <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white mb-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="font-bold text-base">You've reached your free analysis limit 🚀</p>
+          <p className="text-blue-100 text-sm mt-1">
+            Upgrade to Pro for unlimited profile analyses, SOP generation, university searches, and AI chat.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {['Unlimited Profile Analyses', 'Unlimited SOP Generations', 'Unlimited AI Chat'].map(f => (
+              <li key={f} className="text-xs text-blue-100 flex items-center gap-1.5">
+                <span className="text-white">✓</span> {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <Link
+          href="/checkout"
+          className="shrink-0 bg-white text-blue-600 hover:bg-blue-50 font-bold text-sm px-5 py-3 rounded-xl transition whitespace-nowrap"
+        >
+          Upgrade to Pro →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileAnalyzer() {
   const [form, setForm] = useState({
     cgpa: '', degree: '', ielts: '', budget: '', country: '', field: '',
@@ -78,6 +107,7 @@ export default function ProfileAnalyzer() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -101,6 +131,11 @@ export default function ProfileAnalyzer() {
       });
 
       const data = await res.json();
+
+      if (res.status === 402 && data.error === 'limit_reached') {
+        setLimitReached(true);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || 'Analysis failed. Please try again.');
@@ -126,60 +161,64 @@ export default function ProfileAnalyzer() {
         </p>
       </div>
 
+      {/* Upgrade banner — shown when limit reached */}
+      {limitReached && <UpgradeBanner />}
+
       {/* Form */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { name: 'cgpa',    label: 'CGPA',             placeholder: 'e.g. 3.8',                  hint: 'Out of 4.0 scale',              required: true },
-            { name: 'degree',  label: 'Degree',           placeholder: 'e.g. BS Software Engineering', hint: 'Your completed degree',        required: true },
-            { name: 'field',   label: 'Field of Interest',placeholder: 'e.g. Cyber Security, AI',   hint: 'What you want to study for MS', required: false },
-            { name: 'ielts',   label: 'IELTS Score',      placeholder: 'e.g. 7.0 or No IELTS',      hint: 'Leave blank if not taken',      required: false },
-            { name: 'budget',  label: 'Monthly Budget ($)',placeholder: 'e.g. 1000',                 hint: 'Amount in USD per month',       required: true },
-            { name: 'country', label: 'Preferred Country',placeholder: 'e.g. Germany or Any',       hint: 'Type Any for global results',   required: true },
-          ].map(({ name, label, placeholder, hint, required }) => (
-            <div key={name} className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {label} {required && <span className="text-red-400">*</span>}
-              </label>
-              <input
-                name={name}
-                value={form[name as keyof typeof form]}
-                onChange={handleChange}
-                placeholder={placeholder}
-                className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
-              <span className="text-[11px] text-gray-400">{hint}</span>
-            </div>
-          ))}
-        </div>
-
-        {error && (
-          <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-            <span>⚠️</span> {error}
+      {!limitReached && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { name: 'cgpa',    label: 'CGPA',              placeholder: 'e.g. 3.8',                   hint: 'Out of 4.0 scale',              required: true },
+              { name: 'degree',  label: 'Degree',            placeholder: 'e.g. BS Software Engineering', hint: 'Your completed degree',        required: true },
+              { name: 'field',   label: 'Field of Interest', placeholder: 'e.g. Cyber Security, AI',    hint: 'What you want to study for MS', required: false },
+              { name: 'ielts',   label: 'IELTS Score',       placeholder: 'e.g. 7.0 or No IELTS',       hint: 'Leave blank if not taken',      required: false },
+              { name: 'budget',  label: 'Monthly Budget ($)', placeholder: 'e.g. 1000',                 hint: 'Amount in USD per month',       required: true },
+              { name: 'country', label: 'Preferred Country', placeholder: 'e.g. Germany or Any',        hint: 'Type Any for global results',   required: true },
+            ].map(({ name, label, placeholder, hint, required }) => (
+              <div key={name} className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  {label} {required && <span className="text-red-400">*</span>}
+                </label>
+                <input
+                  name={name}
+                  value={form[name as keyof typeof form]}
+                  onChange={handleChange}
+                  placeholder={placeholder}
+                  className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                />
+                <span className="text-[11px] text-gray-400">{hint}</span>
+              </div>
+            ))}
           </div>
-        )}
 
-        <button
-          onClick={analyze}
-          disabled={loading}
-          className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-              </svg>
-              Analyzing your profile…
-            </>
-          ) : '🔍 Analyze Profile'}
-        </button>
-      </div>
+          {error && (
+            <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+              <span>⚠️</span> {error}
+            </div>
+          )}
+
+          <button
+            onClick={analyze}
+            disabled={loading}
+            className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Analyzing your profile…
+              </>
+            ) : '🔍 Analyze Profile'}
+          </button>
+        </div>
+      )}
 
       {/* Results */}
       {result && (
         <div className="space-y-6">
-
           {/* Score + Verdict */}
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
             <div className="grid grid-cols-2 gap-6 items-center">
@@ -189,7 +228,6 @@ export default function ProfileAnalyzer() {
               </div>
               <div>
                 <p className="text-sm text-gray-700 leading-relaxed mb-4 italic">"{result.verdict}"</p>
-
                 <div className="mb-3">
                   <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2">Strengths</p>
                   <ul className="space-y-1">
@@ -200,7 +238,6 @@ export default function ProfileAnalyzer() {
                     ))}
                   </ul>
                 </div>
-
                 <div>
                   <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-2">Weaknesses</p>
                   <ul className="space-y-1">
@@ -235,7 +272,6 @@ export default function ProfileAnalyzer() {
                         </span>
                       </div>
                     </div>
-                    {/* Match bar */}
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
                       <div className={`h-full rounded-full ${vc.dot}`}
                         style={{ width: `${uni.match}%`, transition: 'width 1s ease' }} />
@@ -288,7 +324,6 @@ export default function ProfileAnalyzer() {
               ))}
             </div>
           </div>
-
         </div>
       )}
     </div>

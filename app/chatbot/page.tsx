@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { incrementStat } from '@/lib/stats';
+import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,10 +36,30 @@ const INITIAL_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
+function UpgradeBanner() {
+  return (
+    <div className="mx-4 mb-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-4 text-white">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold text-sm">You've reached your free limit 🚀</p>
+          <p className="text-blue-100 text-xs mt-1">Upgrade to Pro for unlimited AI chat messages and all other features.</p>
+        </div>
+        <Link
+          href="/checkout"
+          className="shrink-0 bg-white text-blue-600 hover:bg-blue-50 font-bold text-xs px-4 py-2 rounded-xl transition"
+        >
+          Upgrade →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +67,6 @@ export default function Chatbot() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -56,7 +76,7 @@ export default function Chatbot() {
 
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || loading) return;
+    if (!content || loading || limitReached) return;
 
     const userMsg: Message = { role: 'user', content, timestamp: new Date() };
     const updated = [...messages, userMsg];
@@ -73,8 +93,20 @@ export default function Chatbot() {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
+
+      if (res.status === 402 && data.error === 'limit_reached') {
+        setLimitReached(true);
+        setMessages([...updated, {
+          role: 'assistant',
+          content: "You've reached your free message limit. Upgrade to Pro to continue chatting! 🚀",
+          timestamp: new Date(),
+        }]);
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed');
+
       setMessages([...updated, {
         role: 'assistant',
         content: data.reply,
@@ -102,6 +134,7 @@ export default function Chatbot() {
   const clearChat = () => {
     setMessages([{ ...INITIAL_MESSAGE, timestamp: new Date() }]);
     setInput('');
+    setLimitReached(false);
   };
 
   const showStarters = messages.length === 1;
@@ -131,7 +164,7 @@ export default function Chatbot() {
           <button
             key={chip.label}
             onClick={() => send(chip.prompt)}
-            disabled={loading}
+            disabled={loading || limitReached}
             className="text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-40"
           >
             {chip.label}
@@ -141,7 +174,6 @@ export default function Chatbot() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
-
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
@@ -150,18 +182,14 @@ export default function Chatbot() {
               </div>
             )}
             <div className={`flex flex-col gap-1 max-w-[75%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div
-                className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-sm'
-                    : 'bg-slate-100 text-gray-800 rounded-bl-sm'
-                }`}
-              >
+              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                msg.role === 'user'
+                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  : 'bg-slate-100 text-gray-800 rounded-bl-sm'
+              }`}>
                 {msg.content}
               </div>
-              <span className="text-[10px] text-gray-400 px-1">
-                {formatTime(msg.timestamp)}
-              </span>
+              <span className="text-[10px] text-gray-400 px-1">{formatTime(msg.timestamp)}</span>
             </div>
             {msg.role === 'user' && (
               <div className="shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold">
@@ -171,7 +199,6 @@ export default function Chatbot() {
           </div>
         ))}
 
-        {/* Starter questions — shown only before first user message */}
         {showStarters && (
           <div className="pt-2">
             <p className="text-xs text-gray-400 font-medium mb-2 px-1">Common questions:</p>
@@ -190,7 +217,6 @@ export default function Chatbot() {
           </div>
         )}
 
-        {/* Typing indicator */}
         {loading && (
           <div className="flex gap-3 justify-start">
             <div className="shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
@@ -203,41 +229,45 @@ export default function Chatbot() {
             </div>
           </div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
+      {/* Upgrade banner */}
+      {limitReached && <div className="mt-3"><UpgradeBanner /></div>}
+
       {/* Input */}
-      <div className="mt-3">
-        <div className="flex gap-2 items-end">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Ask about universities, scholarships, SOPs…"
-              disabled={loading}
-              rows={1}
-              maxLength={1000}
-              className="w-full border border-gray-200 bg-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50 resize-none overflow-hidden"
-            />
+      {!limitReached && (
+        <div className="mt-3">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="Ask about universities, scholarships, SOPs…"
+                disabled={loading}
+                rows={1}
+                maxLength={1000}
+                className="w-full border border-gray-200 bg-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50 resize-none overflow-hidden"
+              />
+            </div>
+            <button
+              onClick={() => send()}
+              disabled={loading || !input.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            >
+              Send
+            </button>
           </div>
-          <button
-            onClick={() => send()}
-            disabled={loading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-          >
-            Send
-          </button>
+          <div className="flex justify-between mt-1.5 px-1">
+            <p className="text-[11px] text-gray-400">Press Enter to send • Shift+Enter for new line</p>
+            <p className={`text-[11px] ${input.length > 900 ? 'text-red-400' : 'text-gray-400'}`}>
+              {input.length}/1000
+            </p>
+          </div>
         </div>
-        <div className="flex justify-between mt-1.5 px-1">
-          <p className="text-[11px] text-gray-400">Press Enter to send • Shift+Enter for new line</p>
-          <p className={`text-[11px] ${input.length > 900 ? 'text-red-400' : 'text-gray-400'}`}>
-            {input.length}/1000
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
