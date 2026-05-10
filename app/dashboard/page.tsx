@@ -144,9 +144,11 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+    <div className="max-w-4xl mx-auto px-3 py-4 md:px-0 md:py-0">
+
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">
           Track your admissions journey · Last active:{' '}
           <span className="font-medium text-gray-700">{formatLastActive(stats.lastActive)}</span>
@@ -155,7 +157,7 @@ export default function Dashboard() {
 
       {/* Plan + Feature Limits */}
       {profile && (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 mb-6">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 md:p-5 mb-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-800">Your Plan</span>
@@ -165,33 +167,15 @@ export default function Dashboard() {
             </div>
             {!isPro && (
               <Link href="/checkout" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
-                Upgrade to Pro →
+                Upgrade →
               </Link>
             )}
           </div>
 
           <div className="space-y-4">
-            <FeatureLimitRow
-              label="SOP Generations"
-              emoji="📝"
-              used={profile.sop_used ?? 0}
-              limit={FREE_LIMITS.sop}
-              isPro={isPro}
-            />
-            <FeatureLimitRow
-              label="Profile Analyses"
-              emoji="📊"
-              used={profile.analyzer_used ?? 0}
-              limit={FREE_LIMITS.analyzer}
-              isPro={isPro}
-            />
-            <FeatureLimitRow
-              label="AI Chat Messages"
-              emoji="💬"
-              used={profile.chat_used ?? 0}
-              limit={FREE_LIMITS.chat}
-              isPro={isPro}
-            />
+            <FeatureLimitRow label="SOP Generations"  emoji="📝" used={profile.sop_used ?? 0}      limit={FREE_LIMITS.sop}      isPro={isPro} />
+            <FeatureLimitRow label="Profile Analyses" emoji="📊" used={profile.analyzer_used ?? 0} limit={FREE_LIMITS.analyzer} isPro={isPro} />
+            <FeatureLimitRow label="AI Chat Messages" emoji="💬" used={profile.chat_used ?? 0}     limit={FREE_LIMITS.chat}     isPro={isPro} />
           </div>
 
           {!isPro && (
@@ -207,50 +191,50 @@ export default function Dashboard() {
       )}
 
       {/* Profile Score Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 mb-6 text-white shadow-md">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-5 md:p-6 mb-5 text-white shadow-md">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">Profile Completion</p>
-            <p className="text-5xl font-bold mt-1">{score}<span className="text-2xl font-normal text-blue-200">%</span></p>
-            <p className="text-blue-100 text-sm mt-2">
-              {score === 0    && 'Start using the tools below to build your score'}
-              {score > 0  && score < 50  && 'Good start! Try more tools to improve your score'}
-              {score >= 50 && score < 85 && 'Great progress! Keep going 🚀'}
-              {score >= 85               && 'Excellent! Your profile is well rounded ✅'}
+          <div className="flex-1 mr-4">
+            <p className="text-blue-100 text-xs md:text-sm font-medium uppercase tracking-wide">Profile Completion</p>
+            <p className="text-4xl md:text-5xl font-bold mt-1">{score}<span className="text-xl md:text-2xl font-normal text-blue-200">%</span></p>
+            <p className="text-blue-100 text-xs md:text-sm mt-2">
+              {score === 0                        && 'Start using the tools below to build your score'}
+              {score > 0  && score < 50           && 'Good start! Try more tools to improve your score'}
+              {score >= 50 && score < 85          && 'Great progress! Keep going 🚀'}
+              {score >= 85                        && 'Excellent! Your profile is well rounded ✅'}
             </p>
           </div>
-          <div className="relative w-24 h-24">
-            <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+          <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
+            <svg viewBox="0 0 36 36" className="w-20 h-20 md:w-24 md:h-24 -rotate-90">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="white" strokeWidth="3"
                 strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">{score}%</span>
+            <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-base md:text-lg">{score}%</span>
           </div>
         </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Stat Cards — 2 col on mobile, 4 col on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {statCards.map((card) => (
           <Link href={card.href} key={card.label}>
-            <div className={`${card.bg} border ${card.border} rounded-xl p-5 hover:shadow-md transition cursor-pointer`}>
+            <div className={`${card.bg} border ${card.border} rounded-xl p-4 hover:shadow-md transition cursor-pointer h-full`}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{card.label}</p>
-                  <p className={`text-4xl font-bold mt-2 ${card.text}`}>{card.value}</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide leading-tight">{card.label}</p>
+                  <p className={`text-3xl md:text-4xl font-bold mt-2 ${card.text}`}>{card.value}</p>
                 </div>
-                <span className="text-3xl">{card.icon}</span>
+                <span className="text-2xl md:text-3xl">{card.icon}</span>
               </div>
-              <p className={`text-xs mt-3 font-medium ${card.text}`}>{card.hint}</p>
+              <p className={`text-xs mt-3 font-medium ${card.text} hidden md:block`}>{card.hint}</p>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Activity + Quick Actions */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
+      {/* Activity + Quick Actions — stack on mobile, side by side on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 md:p-5">
           <h2 className="font-semibold text-gray-800 mb-4">Activity Summary</h2>
           {totalActions === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No activity yet. Start exploring the tools!</p>
@@ -277,7 +261,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 md:p-5">
           <h2 className="font-semibold text-gray-800 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map((action) => (
@@ -294,15 +278,15 @@ export default function Dashboard() {
 
       {/* Recent Generations */}
       {recentGenerations.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 md:p-5 mb-4">
           <h2 className="font-semibold text-gray-800 mb-4">Recent Generations</h2>
           <div className="space-y-2">
             {recentGenerations.map((gen) => (
               <div key={gen.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{gen.type === 'sop' ? '📝' : gen.type === 'cv' ? '📄' : '✉️'}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-lg flex-shrink-0">{gen.type === 'sop' ? '📝' : gen.type === 'cv' ? '📄' : '✉️'}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
                       {gen.type.toUpperCase()} — {gen.university || 'N/A'}
                     </p>
                     <p className="text-xs text-gray-400">
@@ -310,7 +294,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium flex-shrink-0 ml-2">
                   {gen.type.toUpperCase()}
                 </span>
               </div>

@@ -26,10 +26,11 @@ export async function middleware(req: NextRequest) {
 
   const isAuthPage =
     req.nextUrl.pathname.startsWith('/login') ||
-    req.nextUrl.pathname.startsWith('/signup');
+    req.nextUrl.pathname.startsWith('/signup') ||
+    req.nextUrl.pathname.startsWith('/forgot-password') || // ✅ added
+    req.nextUrl.pathname.startsWith('/reset-password');    // ✅ added
 
-  const isProtected =
-    !isAuthPage && req.nextUrl.pathname !== '/';
+  const isProtected = !isAuthPage && req.nextUrl.pathname !== '/';
 
   if (!session && isProtected) {
     return NextResponse.redirect(new URL('/login', req.url));
