@@ -88,17 +88,22 @@ export default function Login() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              onKeyDown={handleKey}
-              placeholder="Your password"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-          </div>
+  <div className="flex items-center justify-between">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
+    <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline">
+      Forgot password?
+    </Link>
+  </div>
+  <input
+    name="password"
+    type="password"
+    value={form.password}
+    onChange={handleChange}
+    onKeyDown={handleKey}
+    placeholder="Your password"
+    className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+  />
+</div>
 
           {error && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
