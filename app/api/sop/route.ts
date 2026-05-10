@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const FREE_SOP_LIMIT = 3;
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,23 +31,26 @@ export async function POST(req: Request) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, credits_used, credits_limit')
+      .select('plan, sop_used')
       .eq('id', user.id)
       .single();
 
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    if (profile.credits_used >= profile.credits_limit) {
+    const isPro = profile.plan === 'pro';
+    const sopUsed: number = profile.sop_used ?? 0;
+    const limit = isPro ? 999999 : FREE_SOP_LIMIT;
+
+    if (sopUsed >= limit) {
       return Response.json({
         error: 'limit_reached',
-        message: 'You have used all your free generations. Please upgrade to continue.',
+        message: 'You have used all your free SOP generations. Please upgrade to continue.',
         plan: profile.plan,
-        credits_used: profile.credits_used,
-        credits_limit: profile.credits_limit,
+        used: sopUsed,
+        limit,
       }, { status: 403 });
     }
 
-    // ✅ Upgraded prompt
     const cgpaContext = parseFloat(data.cgpa) >= 3.5
       ? 'excellent academic standing'
       : parseFloat(data.cgpa) >= 3.0
@@ -103,13 +108,12 @@ STRUCTURE (follow exactly):
    - End memorably
 
 TONE & STYLE RULES:
-- Word count: 750-900 words (more detailed than average)
+- Word count: 750-900 words
 - Voice: First person, confident but humble
 - NO clichés: avoid "I have always been passionate", "ever since I was young", "I am a hardworking person"
 - NO filler phrases: every sentence must add value
 - Use active voice throughout
-- Vary sentence length for rhythm — mix short punchy sentences with longer analytical ones
-- The admission committee should feel they KNOW this student after reading
+- Vary sentence length for rhythm
 
 Output ONLY the SOP text. No headers, no labels, no explanations. Just the SOP itself.
 `;
@@ -121,25 +125,21 @@ Output ONLY the SOP text. No headers, no labels, no explanations. Just the SOP i
           role: 'system',
           content: 'You are an expert admission consultant. Write SOPs that are deeply personal, specific, and compelling. Never write generic content.',
         },
-        {
-          role: 'user',
-          content: prompt,
-        },
+        { role: 'user', content: prompt },
       ],
-      temperature: 0.85, // slightly creative but still professional
+      temperature: 0.85,
       max_tokens: 1200,
     });
 
     const result = response?.choices?.[0]?.message?.content;
     if (!result) return Response.json({ error: 'AI did not return a valid response' }, { status: 500 });
 
-    // ✅ Deduct credit
+    // ✅ Deduct sop_used only
     await supabase
       .from('profiles')
-      .update({ credits_used: profile.credits_used + 1 })
+      .update({ sop_used: sopUsed + 1 })
       .eq('id', user.id);
 
-    // ✅ Save to history with extra metadata
     await supabase.from('generations').insert({
       user_id: user.id,
       type: 'sop',
@@ -149,7 +149,7 @@ Output ONLY the SOP text. No headers, no labels, no explanations. Just the SOP i
 
     return Response.json({
       result,
-      credits_remaining: profile.credits_limit - profile.credits_used - 1,
+      credits_remaining: limit - sopUsed - 1,
     });
 
   } catch (error) {

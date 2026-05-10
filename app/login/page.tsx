@@ -37,7 +37,14 @@ export default function Login() {
       });
 
       if (error) {
-        setError(error.message);
+        // ✅ Friendlier error messages
+        if (error.message.toLowerCase().includes('email not confirmed')) {
+          setError('Please confirm your email first. Check your inbox for the verification link.');
+        } else if (error.message.toLowerCase().includes('invalid login credentials')) {
+          setError('Incorrect email or password. Please try again.');
+        } else {
+          setError(error.message);
+        }
         return;
       }
 
@@ -116,7 +123,7 @@ export default function Login() {
           </button>
 
           <p className="text-center text-sm text-gray-500">
-            Don't have an account?{' '}
+            Dont have an account?{' '}
             <Link href="/signup" className="text-blue-600 hover:underline font-medium">Sign up</Link>
           </p>
         </div>

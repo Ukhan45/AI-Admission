@@ -1,44 +1,62 @@
 // lib/credits.ts
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-export async function checkAndDeductCredit(userId: string) {
+type Feature = 'sop' | 'analyzer' | 'chat';
+
+const FREE_LIMITS: Record<Feature, number> = {
+  sop:      3,
+  analyzer: 2,
+  chat:     10,
+};
+
+const USED_COL: Record<Feature, string> = {
+  sop:      'sop_used',
+  analyzer: 'analyzer_used',
+  chat:     'chat_used',
+};
+
+export async function checkAndDeductCredit(userId: string, feature: Feature = 'sop') {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // service role — bypasses RLS
-  )
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-  // Get user's current plan + usage
+  const usedCol = USED_COL[feature];
+
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('plan, credits_used, credits_limit')
+    .select(`plan, ${usedCol}`)
     .eq('id', userId)
-    .single()
+    .single();
 
   if (error || !profile) {
-    return { allowed: false, reason: 'Profile not found' }
+    return { allowed: false, reason: 'Profile not found' };
   }
 
-  // Check if limit reached
-  if (profile.credits_used >= profile.credits_limit) {
+  const isPro = profile.plan === 'pro';
+  const used: number = profile[usedCol] ?? 0;
+  const limit = isPro ? 999999 : FREE_LIMITS[feature];
+
+  if (used >= limit) {
     return {
       allowed: false,
       reason: 'limit_reached',
       plan: profile.plan,
-      credits_used: profile.credits_used,
-      credits_limit: profile.credits_limit,
-    }
+      used,
+      limit,
+    };
   }
 
-  // Deduct credit
+  // Deduct credit for this feature
   await supabase
     .from('profiles')
-    .update({ credits_used: profile.credits_used + 1 })
-    .eq('id', userId)
+    .update({ [usedCol]: used + 1 })
+    .eq('id', userId);
 
   return {
     allowed: true,
-    credits_remaining: profile.credits_limit - profile.credits_used - 1,
-  }
+    credits_remaining: limit - used - 1,
+  };
 }
 
 export async function saveGeneration(
@@ -50,12 +68,12 @@ export async function saveGeneration(
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  );
 
   await supabase.from('generations').insert({
     user_id: userId,
     type,
     content,
     university,
-  })
+  });
 }

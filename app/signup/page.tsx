@@ -10,6 +10,7 @@ export default function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false); // ✅ NEW
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,10 +32,16 @@ export default function Signup() {
     }
 
     setLoading(true);
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin; // ✅ FIXED
+
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.name } },
+      options: {
+        data: { full_name: form.name },
+        emailRedirectTo: `${siteUrl}/api/auth/callback`, // ✅ FIXED
+      },
     });
 
     if (error) {
@@ -43,8 +50,35 @@ export default function Signup() {
       return;
     }
 
-    router.push('/dashboard');
+    setLoading(false);
+    setSuccess(true); // ✅ Show confirmation message instead of redirecting
   };
+
+  // ✅ Success state — don't redirect, ask user to verify email
+  if (success) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center">
+          <div className="text-5xl mb-4">📧</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            We sent a confirmation link to <span className="font-semibold text-gray-700">{form.email}</span>.
+            Click it to activate your account and get started.
+          </p>
+          <p className="text-xs text-gray-400">
+            Didn't receive it? Check your spam folder or{' '}
+            <button
+              onClick={() => setSuccess(false)}
+              className="text-blue-600 hover:underline"
+            >
+              try again
+            </button>
+            .
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">

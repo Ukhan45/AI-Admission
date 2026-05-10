@@ -5,10 +5,10 @@ import { incrementStat } from '@/lib/stats';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function SopGenerator() {
- const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const [form, setForm] = useState({
     name: '',
@@ -42,7 +42,6 @@ export default function SopGenerator() {
     setShowUpgrade(false);
 
     try {
-      // ✅ Get auth token
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
@@ -54,7 +53,7 @@ export default function SopGenerator() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`, // ✅ send token
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(form),
       });
@@ -62,7 +61,6 @@ export default function SopGenerator() {
       const data = await res.json();
 
       if (!res.ok) {
-        // ✅ Handle limit reached
         if (data.error === 'limit_reached') {
           setShowUpgrade(true);
           setError(data.message);
@@ -71,7 +69,7 @@ export default function SopGenerator() {
         }
       } else {
         setResult(data.result);
-        setCreditsRemaining(data.credits_remaining); // ✅ show remaining credits
+        setCreditsRemaining(data.credits_remaining);
         incrementStat('sopsGenerated');
       }
     } catch (err: any) {
@@ -88,7 +86,6 @@ export default function SopGenerator() {
         <p className="text-gray-500 text-sm mt-1">
           Create a strong Statement of Purpose for your international university application.
         </p>
-        {/* ✅ Credits badge */}
         {creditsRemaining !== null && (
           <div className="mt-2 inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
             ✨ {creditsRemaining} generation{creditsRemaining !== 1 ? 's' : ''} remaining
@@ -106,18 +103,21 @@ export default function SopGenerator() {
                 value={form.name}
                 onChange={handleChange}
                 placeholder="e.g. Aisha Khan"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Degree</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Completed Degree
+              </label>
               <input
                 name="degree"
                 value={form.degree}
                 onChange={handleChange}
                 placeholder="e.g. BS Computer Science"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
               />
+              <p className="text-[11px] text-gray-400 mt-1">The degree you have already completed</p>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">CGPA</label>
@@ -126,7 +126,7 @@ export default function SopGenerator() {
                 value={form.cgpa}
                 onChange={handleChange}
                 placeholder="e.g. 3.8 / 4.0"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
               />
             </div>
           </div>
@@ -139,18 +139,21 @@ export default function SopGenerator() {
                 value={form.university}
                 onChange={handleChange}
                 placeholder="e.g. ETH Zurich"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Field of Study</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Applying For (Field of Study)
+              </label>
               <input
                 name="field"
                 value={form.field}
                 onChange={handleChange}
                 placeholder="e.g. Artificial Intelligence"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
               />
+              <p className="text-[11px] text-gray-400 mt-1">The program you are applying to</p>
             </div>
           </div>
         </div>
@@ -164,7 +167,7 @@ export default function SopGenerator() {
               onChange={handleChange}
               rows={4}
               placeholder="Describe your future goals and why you want this program."
-              className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
             />
           </div>
           <div>
@@ -175,7 +178,7 @@ export default function SopGenerator() {
               onChange={handleChange}
               rows={4}
               placeholder="List your relevant achievements, awards, or projects."
-              className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition mt-1"
             />
           </div>
         </div>
@@ -186,18 +189,20 @@ export default function SopGenerator() {
           </div>
         )}
 
-        {/* ✅ Upgrade banner */}
+        {/* ✅ Fixed upgrade banner — single Pro plan only */}
         {showUpgrade && (
-          <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="mt-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <p className="font-semibold text-blue-900 text-sm">You've used your free generation</p>
-              <p className="text-blue-700 text-xs mt-0.5">Upgrade to Basic ($5/mo) for 10 SOPs or Pro ($10/mo) for unlimited</p>
+              <p className="font-bold text-white text-sm">You've used all your free generations 🚀</p>
+              <p className="text-blue-100 text-xs mt-0.5">
+                Upgrade to Pro — PKR 800/month for unlimited SOP generations and all features
+              </p>
             </div>
             <button
               onClick={() => window.location.href = '/checkout'}
-              className="ml-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition whitespace-nowrap"
+              className="ml-4 bg-white text-blue-600 hover:bg-blue-50 text-sm font-bold px-4 py-2 rounded-lg transition whitespace-nowrap"
             >
-              Upgrade now
+              Upgrade to Pro →
             </button>
           </div>
         )}
@@ -215,9 +220,7 @@ export default function SopGenerator() {
               </svg>
               Generating SOP…
             </>
-          ) : (
-            'Generate SOP'
-          )}
+          ) : 'Generate SOP'}
         </button>
       </div>
 

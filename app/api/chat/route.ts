@@ -5,6 +5,8 @@ import { createServerClient } from '@supabase/ssr';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const FREE_CHAT_LIMIT = 10;
+
 async function getUserAndCheckCredits() {
   const cookieStore = await cookies();
 
@@ -29,19 +31,23 @@ async function getUserAndCheckCredits() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan, credits_used, credits_limit')
+    .select('plan, chat_used')
     .eq('id', session.user.id)
     .single();
 
   if (!profile) return { allowed: false, reason: 'profile_not_found' };
-  if (profile.credits_used >= profile.credits_limit) {
+
+  const isPro = profile.plan === 'pro';
+  const chatUsed: number = profile.chat_used ?? 0;
+  const limit = isPro ? 999999 : FREE_CHAT_LIMIT;
+
+  if (chatUsed >= limit) {
     return { allowed: false, reason: 'limit_reached', plan: profile.plan };
   }
 
-  // Deduct credit
   await supabase
     .from('profiles')
-    .update({ credits_used: profile.credits_used + 1 })
+    .update({ chat_used: chatUsed + 1 })
     .eq('id', session.user.id);
 
   return { allowed: true, plan: profile.plan };
@@ -49,7 +55,6 @@ async function getUserAndCheckCredits() {
 
 export async function POST(req: Request) {
   try {
-    // ✅ Credit check
     const credit = await getUserAndCheckCredits();
     if (!credit.allowed) {
       return Response.json({

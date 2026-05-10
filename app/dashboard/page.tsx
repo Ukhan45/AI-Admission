@@ -38,10 +38,13 @@ const planLabels: Record<string, { label: string; color: string }> = {
   pro:   { label: 'Pro Plan',   color: 'bg-violet-100 text-violet-700' },
 };
 
+const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
+
 type Profile = {
   plan: string;
-  credits_used: number;
-  credits_limit: number;
+  sop_used: number;
+  analyzer_used: number;
+  chat_used: number;
 };
 
 type Generation = {
@@ -51,6 +54,44 @@ type Generation = {
   created_at: string;
 };
 
+function FeatureLimitRow({
+  label, emoji, used, limit, isPro,
+}: {
+  label: string; emoji: string; used: number; limit: number; isPro: boolean;
+}) {
+  const percent = isPro ? 0 : Math.min((used / limit) * 100, 100);
+  const left = limit - used;
+  const isExhausted = !isPro && left <= 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm mb-1">
+        <span className="text-gray-600 flex items-center gap-1.5">
+          <span>{emoji}</span> {label}
+        </span>
+        <span className={`font-semibold text-xs ${isExhausted ? 'text-red-500' : 'text-gray-700'}`}>
+          {isPro ? '∞ Unlimited' : `${used} / ${limit}`}
+        </span>
+      </div>
+      {!isPro && (
+        <>
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${
+                percent >= 100 ? 'bg-red-500' : percent >= 70 ? 'bg-amber-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <p className={`text-[11px] ${isExhausted ? 'text-red-400 font-medium' : 'text-gray-400'}`}>
+            {isExhausted ? '⚠️ Limit reached — upgrade to continue' : `${left} remaining`}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,16 +99,10 @@ export default function Dashboard() {
   );
 
   const [stats, setStats] = useState<Stats>({
-    sopsGenerated: 0,
-    universitiesSearched: 0,
-    profilesAnalyzed: 0,
-    chatMessages: 0,
-    lastActive: '',
+    sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '',
   });
-
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentGenerations, setRecentGenerations] = useState<Generation[]>([]);
-  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     setStats(getStats());
@@ -78,18 +113,14 @@ export default function Dashboard() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    setUserEmail(session.user.email ?? '');
-
-    // Load profile (plan + credits)
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('plan, credits_used, credits_limit')
+      .select('plan, sop_used, analyzer_used, chat_used')
       .eq('id', session.user.id)
       .single();
 
     if (profileData) setProfile(profileData);
 
-    // Load last 5 generations
     const { data: genData } = await supabase
       .from('generations')
       .select('id, type, university, created_at')
@@ -102,8 +133,7 @@ export default function Dashboard() {
 
   const score = profileScore(stats);
   const totalActions = stats.sopsGenerated + stats.universitiesSearched + stats.profilesAnalyzed + stats.chatMessages;
-  const creditsLeft = profile ? profile.credits_limit - profile.credits_used : null;
-  const creditPercent = profile ? Math.min((profile.credits_used / profile.credits_limit) * 100, 100) : 0;
+  const isPro = profile?.plan === 'pro';
   const planInfo = planLabels[profile?.plan ?? 'free'];
 
   const statCards = [
@@ -115,8 +145,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto">
-
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">
@@ -125,49 +153,56 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* ✅ Plan + Credits Card */}
+      {/* Plan + Feature Limits */}
       {profile && (
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-800">Your Plan</span>
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${planInfo.color}`}>
                 {planInfo.label}
               </span>
             </div>
-            {profile.plan === 'free' && (
-              <Link href="/checkout">
-                <span className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer">
-                  Upgrade →
-                </span>
+            {!isPro && (
+              <Link href="/checkout" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                Upgrade to Pro →
               </Link>
             )}
           </div>
 
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span>SOP Generations used</span>
-            <span className="font-semibold text-gray-800">
-              {profile.credits_used} / {profile.credits_limit === 999 ? '∞' : profile.credits_limit}
-            </span>
-          </div>
-
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${
-                creditPercent >= 100 ? 'bg-red-500' :
-                creditPercent >= 70  ? 'bg-amber-500' : 'bg-blue-500'
-              }`}
-              style={{ width: `${creditPercent}%` }}
+          <div className="space-y-4">
+            <FeatureLimitRow
+              label="SOP Generations"
+              emoji="📝"
+              used={profile.sop_used ?? 0}
+              limit={FREE_LIMITS.sop}
+              isPro={isPro}
+            />
+            <FeatureLimitRow
+              label="Profile Analyses"
+              emoji="📊"
+              used={profile.analyzer_used ?? 0}
+              limit={FREE_LIMITS.analyzer}
+              isPro={isPro}
+            />
+            <FeatureLimitRow
+              label="AI Chat Messages"
+              emoji="💬"
+              used={profile.chat_used ?? 0}
+              limit={FREE_LIMITS.chat}
+              isPro={isPro}
             />
           </div>
 
-          <p className="text-xs text-gray-400 mt-2">
-            {creditsLeft === 0
-              ? '⚠️ No generations left — upgrade to continue'
-              : creditsLeft === 999
-              ? '✅ Unlimited generations'
-              : `✨ ${creditsLeft} generation${creditsLeft !== 1 ? 's' : ''} remaining`}
-          </p>
+          {!isPro && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <Link href="/checkout">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl text-center hover:opacity-90 transition">
+                  🚀 Upgrade to Pro — Unlimited Everything
+                </div>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
@@ -178,7 +213,7 @@ export default function Dashboard() {
             <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">Profile Completion</p>
             <p className="text-5xl font-bold mt-1">{score}<span className="text-2xl font-normal text-blue-200">%</span></p>
             <p className="text-blue-100 text-sm mt-2">
-              {score === 0   && 'Start using the tools below to build your score'}
+              {score === 0    && 'Start using the tools below to build your score'}
               {score > 0  && score < 50  && 'Good start! Try more tools to improve your score'}
               {score >= 50 && score < 85 && 'Great progress! Keep going 🚀'}
               {score >= 85               && 'Excellent! Your profile is well rounded ✅'}
@@ -257,7 +292,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ✅ Recent Generations */}
+      {/* Recent Generations */}
       {recentGenerations.length > 0 && (
         <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
           <h2 className="font-semibold text-gray-800 mb-4">Recent Generations</h2>
@@ -265,17 +300,13 @@ export default function Dashboard() {
             {recentGenerations.map((gen) => (
               <div key={gen.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">
-                    {gen.type === 'sop' ? '📝' : gen.type === 'cv' ? '📄' : '✉️'}
-                  </span>
+                  <span className="text-lg">{gen.type === 'sop' ? '📝' : gen.type === 'cv' ? '📄' : '✉️'}</span>
                   <div>
                     <p className="text-sm font-medium text-gray-800">
                       {gen.type.toUpperCase()} — {gen.university || 'N/A'}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(gen.created_at).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric'
-                      })}
+                      {new Date(gen.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
@@ -287,7 +318,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
