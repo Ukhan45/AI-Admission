@@ -23,9 +23,10 @@ export async function checkAndDeductCredit(userId: string, feature: Feature = 's
 
   const usedCol = USED_COL[feature];
 
+  // ✅ Select * to avoid TypeScript template string inference error
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select(`plan, ${usedCol}`)
+    .select('*')
     .eq('id', userId)
     .single();
 
@@ -33,21 +34,22 @@ export async function checkAndDeductCredit(userId: string, feature: Feature = 's
     return { allowed: false, reason: 'Profile not found' };
   }
 
-  const isPro = profile.plan === 'pro';
-  const used: number = profile[usedCol] ?? 0;
+  // ✅ Cast profile to any to allow dynamic key access
+  const profileData = profile as any;
+  const isPro = profileData.plan === 'pro';
+  const used: number = profileData[usedCol] ?? 0;
   const limit = isPro ? 999999 : FREE_LIMITS[feature];
 
   if (used >= limit) {
     return {
       allowed: false,
       reason: 'limit_reached',
-      plan: profile.plan,
+      plan: profileData.plan,
       used,
       limit,
     };
   }
 
-  // Deduct credit for this feature
   await supabase
     .from('profiles')
     .update({ [usedCol]: used + 1 })
