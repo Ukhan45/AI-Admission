@@ -1,35 +1,64 @@
-Project: AI Admission System
-
-Stack: Next.js 14, Supabase (auth + DB), Groq/LLaMA AI, Tailwind CSS
-Deployed: ai-admission-eta.vercel.app (GitHub: Ukhan45/AI-Admission)
+AI Admission System — Project Status
+Stack: Next.js 14, Supabase, Groq/LLaMA, Tailwind CSS
+Live: ai-admission-eta.vercel.app | Repo: Ukhan45/AI-Admission
 Payments: Lemon Squeezy — PKR 800/month Pro plan
-Webhook: app/api/webhook/lemonsqueezy/route.ts → updates profiles.plan = 'pro'
 
-Supabase Tables:
+✅ Completed
+Auth Fixes
 
-profiles — id, email, plan, sop_used, analyzer_used, chat_used, credits_used, credits_limit, created_at
-generations — id, user_id, type, university, content, created_at
+Supabase Site URL updated from localhost:3000 → Vercel production URL
+All redirect URLs configured in Supabase (5 URLs including reset-password)
+lib/supabase.ts migrated from custom cookie logic → createBrowserClient from @supabase/ssr
+Removed conflicting @supabase/auth-helpers-nextjs package
+Auth callback route (/api/auth/callback) created and working
+middleware.ts updated to refresh sessions on every request
+Signup now shows "Check your email" screen instead of redirecting prematurely
+emailRedirectTo added to signup using NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_SITE_URL env var added to Vercel
 
-Free Plan Limits:
+Login Fixes
 
-SOP: 3 | Analyzer: 2 | Chat: 10
+Friendly error messages for email not confirmed and invalid login credentials
+Sidebar now hidden on /login, /signup, /forgot-password, /reset-password
 
-Pages:
+Forgot Password Flow (new feature)
 
-/dashboard — stats, plan limits, recent generations
-/sop-generator — generates SOP, uses sop_used
-/profile-analyzer — profile score, uses analyzer_used
-/university-finder — search with filters (no credit gate)
-/chatbot — AI chat, uses chat_used
-/checkout — pricing page (Free vs Pro)
-/sop-history — past generations
+/forgot-password page — sends reset email
+/reset-password page — handles token from email hash, updates password
+Middleware updated to allow these as public routes
 
-Known issues to fix:
+TypeScript / Build Fixes
 
-Mobile responsiveness broken
-Signup/signin not working well on mobile
+lib/credits.ts type error fixed (.select('*') + as any cast)
+Build passing on Vercel ✅
 
-Pending features:
+Mobile Responsiveness
 
-User profile page
+Sidebar fully rewritten with hamburger menu for mobile
+Mobile top bar with Menu/X toggle
+Drawer with backdrop overlay on mobile
+ml-64 → md:ml-64 in layout so mobile isn't pushed
+Dashboard page fully responsive (grid-cols-2 md:grid-cols-4, stacked sections, truncated text)
+
+
+🔄 In Progress
+Mobile Responsiveness — Dashboard done, remaining pages:
+
+/sop-generator
+/profile-analyzer
+/university-finder
+/chatbot
+/checkout
+/sop-history
+
+
+⏳ Pending
+Features
+
+User profile page (/profile)
 Project status tracker on dashboard
+Password reset flow — needs live testing once Supabase email rate limit resets (1 hr cooldown)
+
+Mobile
+
+Remaining 6 pages need responsiveness fixes
