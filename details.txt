@@ -1,0 +1,35 @@
+Project: AI Admission System
+
+Stack: Next.js 14, Supabase (auth + DB), Groq/LLaMA AI, Tailwind CSS
+Deployed: ai-admission-eta.vercel.app (GitHub: Ukhan45/AI-Admission)
+Payments: Lemon Squeezy — PKR 800/month Pro plan
+Webhook: app/api/webhook/lemonsqueezy/route.ts → updates profiles.plan = 'pro'
+
+Supabase Tables:
+
+profiles — id, email, plan, sop_used, analyzer_used, chat_used, credits_used, credits_limit, created_at
+generations — id, user_id, type, university, content, created_at
+
+Free Plan Limits:
+
+SOP: 3 | Analyzer: 2 | Chat: 10
+
+Pages:
+
+/dashboard — stats, plan limits, recent generations
+/sop-generator — generates SOP, uses sop_used
+/profile-analyzer — profile score, uses analyzer_used
+/university-finder — search with filters (no credit gate)
+/chatbot — AI chat, uses chat_used
+/checkout — pricing page (Free vs Pro)
+/sop-history — past generations
+
+Known issues to fix:
+
+Mobile responsiveness broken
+Signup/signin not working well on mobile
+
+Pending features:
+
+User profile page
+Project status tracker on dashboard
