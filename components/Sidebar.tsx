@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, FileText, BarChart, Globe, MessageCircle, LogOut, FolderCheck, History, Menu, X } from 'lucide-react';
+import { Home, FileText, BarChart, Globe, MessageCircle, LogOut, FolderCheck, History, User, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -38,6 +38,7 @@ export default function Sidebar() {
 
   const navItems = [
     { href: '/dashboard',         label: 'Dashboard',        icon: Home },
+    { href: '/profile',           label: 'Profile',          icon: User },
     { href: '/sop-generator',     label: 'SOP Generator',    icon: FileText },
     { href: '/sop-history',       label: 'SOP History',      icon: History },
     { href: '/profile-analyzer',  label: 'Profile Analyzer', icon: BarChart },
