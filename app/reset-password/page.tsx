@@ -1,184 +1,36 @@
-'use client';
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const type = requestUrl.searchParams.get('type')
 
-export default function ResetPassword() {
-  const router = useRouter();
-  const [form, setForm] = useState({ password: '', confirm: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    const handleSession = async () => {
-      // ✅ First check if there's already a session (e.g. from hash token)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setSessionReady(true);
-        setChecking(false);
-        return;
+  if (code) {
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
       }
-
-      // ✅ Try to get token from URL hash manually
-      const hash = window.location.hash;
-      if (hash) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (!error) {
-            setSessionReady(true);
-            setChecking(false);
-            return;
-          }
-        }
-      }
-
-      // ✅ Also listen for PASSWORD_RECOVERY event
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
-          setSessionReady(true);
-          setChecking(false);
-        }
-      });
-
-      setChecking(false);
-      return () => subscription.unsubscribe();
-    };
-
-    handleSession();
-  }, []);
-
-  const handleReset = async () => {
-    if (!sessionReady) {
-      setError('Auth session missing! Please use the link from your email.');
-      return;
-    }
-    if (!form.password || !form.confirm) {
-      setError('Please fill in all fields.');
-      return;
-    }
-    if (form.password !== form.confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    const { error } = await supabase.auth.updateUser({
-      password: form.password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    setSuccess(true);
-    setTimeout(() => router.push('/dashboard'), 2000);
-  };
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Updated!</h1>
-          <p className="text-gray-500 text-sm">Redirecting you to dashboard…</p>
-        </div>
-      </div>
-    );
+    )
+    await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
-          <p className="text-gray-500 text-sm mt-1">Enter your new password below.</p>
-        </div>
+  // ✅ If it's a password recovery, redirect to reset-password page
+  if (type === 'recovery') {
+    return NextResponse.redirect(new URL('/reset-password', requestUrl.origin))
+  }
 
-        {checking && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg px-4 py-3">
-            ⏳ Verifying your reset link…
-          </div>
-        )}
-
-        {!checking && !sessionReady && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-            ⚠️ Invalid or expired reset link. Please{' '}
-            <a href="/forgot-password" className="underline font-medium">request a new one</a>.
-          </div>
-        )}
-
-        {!checking && sessionReady && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3">
-            ✅ Identity verified. Enter your new password below.
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">New Password</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => { setForm({ ...form, password: e.target.value }); setError(''); }}
-              placeholder="Min 6 characters"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confirm Password</label>
-            <input
-              type="password"
-              value={form.confirm}
-              onChange={(e) => { setForm({ ...form, confirm: e.target.value }); setError(''); }}
-              placeholder="Repeat new password"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-              <span>⚠️</span> {error}
-            </div>
-          )}
-
-          <button
-            onClick={handleReset}
-            disabled={loading || !sessionReady || checking}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-                Updating…
-              </>
-            ) : 'Update Password'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
 }
