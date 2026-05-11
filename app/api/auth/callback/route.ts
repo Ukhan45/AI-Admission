@@ -24,12 +24,14 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
-  }
 
-  // ✅ Redirect to reset-password for recovery flow
-  if (type === 'recovery') {
-    return NextResponse.redirect(new URL('/reset-password', requestUrl.origin))
+    const { data } = await supabase.auth.exchangeCodeForSession(code)
+
+    // ✅ Check type param OR recovery_sent_at on user
+    const isRecovery = type === 'recovery' || !!data?.user?.recovery_sent_at
+    if (isRecovery) {
+      return NextResponse.redirect(new URL('/reset-password', requestUrl.origin))
+    }
   }
 
   return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
