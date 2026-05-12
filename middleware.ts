@@ -28,7 +28,10 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith('/login') ||
     req.nextUrl.pathname.startsWith('/signup') ||
     req.nextUrl.pathname.startsWith('/forgot-password') || // ✅ added
-    req.nextUrl.pathname.startsWith('/reset-password');    // ✅ added
+    req.nextUrl.pathname.startsWith('/reset-password') ||  // ✅ added
+    req.nextUrl.pathname.startsWith('/privacy') ||         // ✅ public footer page
+    req.nextUrl.pathname.startsWith('/terms') ||           // ✅ public footer page
+    req.nextUrl.pathname.startsWith('/contact');           // ✅ public footer page
 
   const isProtected = !isAuthPage && req.nextUrl.pathname !== '/';
 
