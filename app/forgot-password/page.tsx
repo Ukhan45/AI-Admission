@@ -1,16 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 
 export default function ForgotPassword() {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleReset = async () => {
+    setError('');
     if (!email) {
       setError('Please enter your email address.');
       return;
@@ -22,12 +27,14 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    setError('');
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    // ✅ FIX: redirectTo must point to /api/auth/callback with next=/reset-password
+    // Without this the reset link sends the user to Supabase's own domain which
+    // can't write the session cookie for your app → "invalid or expired" error.
+    const origin = window.location.origin;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/api/auth/callback?type=recovery`,
+      redirectTo: `${origin}/api/auth/callback?next=/reset-password`,
     });
 
     setLoading(false);
@@ -37,30 +44,36 @@ export default function ForgotPassword() {
       return;
     }
 
-    setSuccess(true);
+    setSent(true);
   };
 
-  if (success) {
+  if (sent) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">📧</div>
+          <div className="text-5xl mb-4">📬</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
           <p className="text-gray-500 text-sm mb-6">
             We sent a password reset link to{' '}
             <span className="font-semibold text-gray-700">{email}</span>.
-            Click it to set a new password.
+            Open it and follow the instructions to set a new password.
           </p>
           <p className="text-xs text-gray-400">
             Didn't receive it? Check your spam folder or{' '}
             <button
-              onClick={() => setSuccess(false)}
+              onClick={() => setSent(false)}
               className="text-blue-600 hover:underline"
             >
-              try again
+              send again
             </button>
             .
           </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-block text-sm text-blue-600 hover:underline"
+          >
+            ← Back to sign in
+          </Link>
         </div>
       </div>
     );
@@ -78,7 +91,9 @@ export default function ForgotPassword() {
 
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Email
+            </label>
             <input
               type="email"
               value={email}
@@ -103,17 +118,21 @@ export default function ForgotPassword() {
             {loading ? (
               <>
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 Sending…
               </>
-            ) : 'Send Reset Link'}
+            ) : (
+              'Send Reset Link'
+            )}
           </button>
 
           <p className="text-center text-sm text-gray-500">
             Remember your password?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
+            <Link href="/login" className="text-blue-600 hover:underline font-medium">
+              Sign in
+            </Link>
           </p>
         </div>
       </div>
