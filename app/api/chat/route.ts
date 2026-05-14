@@ -1,8 +1,7 @@
 import Groq from 'groq-sdk';
-import { cookies } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { adminDb } from '@/lib/firebase-admin';
-import { getDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -32,7 +31,7 @@ async function getUserAndCheckCredits(token: string) {
     }
 
     // Increment chat usage
-    await userDocRef.update({ chat_used: increment(1) });
+    await userDocRef.update({ chat_used: FieldValue.increment(1) });
 
     return { allowed: true, plan: userData?.plan, userId };
   } catch (error: any) {
