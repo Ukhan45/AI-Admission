@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { incrementStat } from '@/lib/stats';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 
 interface Message {
@@ -85,9 +86,24 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
+      // ✅ FIX: Get Firebase ID token and send as Authorization header
+      const token = await auth.currentUser?.getIdToken();
+
+      if (!token) {
+        setMessages([...updated, {
+          role: 'assistant',
+          content: 'You must be logged in to use the chat. Please log in and try again.',
+          timestamp: new Date(),
+        }]);
+        return;
+      }
+
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // ✅ FIX: Send token with every request
+        },
         body: JSON.stringify({
           messages: updated.map(m => ({ role: m.role, content: m.content })),
         }),
