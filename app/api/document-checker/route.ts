@@ -12,6 +12,11 @@ They have uploaded these documents: ${documents.join(', ')}.
 
 For each document, assess its status based on ${country}'s requirements for international students applying to ${university}.
 
+Consider these document categories:
+ADMISSION DOCUMENTS: Academic transcripts, degree certificate, CV/resume, statement of purpose, letters of recommendation, IELTS/TOEFL scores, GRE/GMAT scores, portfolio, work experience certificates.
+
+VISA DOCUMENTS: Passport, visa application form, university acceptance letter, financial proof, health insurance, accommodation proof, police clearance certificate, medical certificate, birth certificate, visa fee payment receipt.
+
 Return ONLY a valid JSON array (no markdown, no explanation):
 [
   {
@@ -23,7 +28,8 @@ Return ONLY a valid JSON array (no markdown, no explanation):
 ]
 
 Also include any MISSING critical documents not in their list.
-Consider ${country}-specific requirements: apostille, HEC attestation, embassy attestation, notarization, translation requirements, expiry dates etc.
+Consider ${country}-specific requirements: apostille, HEC attestation, embassy attestation, notarization, translation requirements, expiry dates, document validity periods, etc.
+Be thorough and specific about ${country}'s immigration and university admission requirements.
 Return only the JSON array.`;
 
     const response = await groq.chat.completions.create({

@@ -19,7 +19,13 @@ export default function DocumentChecker() {
   const [university, setUniversity] = useState('');
   const [degree, setDegree] = useState('');
   const [files, setFiles] = useState<{ [key: string]: File | null }>({
-    passport: null, transcript: null, degree: null, ielts: null, cv: null,
+    // Admission Documents
+    transcript: null, matric: null, intermediate: null, degree: null, cv: null, sop: null, lor1: null, lor2: null, lor3: null,
+    ielts: null, portfolio: null, experience: null,
+    // Visa Documents
+    passport: null, visa_form: null, acceptance_letter: null, financial_proof: null,
+    health_insurance: null, accommodation_proof: null, police_clearance: null,
+    medical_certificate: null, birth_certificate: null, visa_fee: null,
   });
   const [results, setResults] = useState<DocResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,11 +93,30 @@ export default function DocumentChecker() {
   };
 
   const docLabels: { [key: string]: string } = {
-    passport: '🛂 Passport',
-    transcript: '📄 Transcripts',
+    // Admission Documents
+    transcript: '📄 Academic Transcripts',
+    matric: '📘 Matriculation Marksheet / Certificate',
+    intermediate: '📗 Intermediate / HSC Marksheet / Certificate',
     degree: '🎓 Degree Certificate',
-    ielts: '📝 IELTS / Language Test',
     cv: '📋 CV / Resume',
+    sop: '✍️ Statement of Purpose',
+    lor1: '📧 Letter of Recommendation 1',
+    lor2: '📧 Letter of Recommendation 2',
+    lor3: '📧 Letter of Recommendation 3',
+    ielts: '📝 IELTS / TOEFL Scores',
+    portfolio: '📄 Resume',
+    experience: '💼 Work Experience Certificate',
+    // Visa Documents
+    passport: '🛂 Passport',
+    visa_form: '📋 Visa Application Form',
+    acceptance_letter: '📨 University Acceptance Letter',
+    financial_proof: '💰 Financial Proof',
+    health_insurance: '🏥 Health Insurance',
+    accommodation_proof: '🏠 Accommodation Proof',
+    police_clearance: '🚔 Police Clearance Certificate',
+    medical_certificate: '⚕️ Medical Certificate',
+    birth_certificate: '👶 Birth Certificate',
+    visa_fee: '💳 Visa Fee Payment Receipt',
   };
 
   if (checkingAuth) return null;
@@ -124,7 +149,7 @@ export default function DocumentChecker() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Document Checker</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Upload your documents and get AI guidance on what's ready, what needs updating, and what requires attestation or apostille.
+          Upload your admission and visa documents to get AI-powered guidance on requirements, attestations, apostilles, and document validity for your target university and country.
         </p>
       </div>
 
@@ -150,14 +175,45 @@ export default function DocumentChecker() {
         </div>
       </div>
 
-      {/* Document Upload */}
+      {/* Document Upload - Admission Documents */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">Upload Documents</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {Object.entries(docLabels).map(([key, label]) => (
+        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+          <span className="text-blue-600">🎓</span> Admission Documents
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">Upload documents required for university application</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {['transcript', 'matric', 'intermediate', 'degree', 'cv', 'sop', 'lor1', 'lor2', 'lor3', 'ielts', 'portfolio', 'experience'].map((key) => (
             <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
               <label className="cursor-pointer block">
-                <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
+                <p className="text-[11px] text-gray-400 mb-2">PDF, JPG, PNG accepted</p>
+                {files[key] ? (
+                  <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
+                ) : (
+                  <p className="text-xs text-blue-500">Click to upload</p>
+                )}
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                  onChange={e => handleFile(key, e.target.files?.[0] || null)} />
+              </label>
+              {files[key] && (
+                <button onClick={() => handleFile(key, null)} className="text-[11px] text-red-400 hover:text-red-600 mt-1">Remove</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Document Upload - Visa Documents */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
+        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+          <span className="text-green-600">🛂</span> Visa Documents
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">Upload documents required for visa application</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {['passport', 'visa_form', 'acceptance_letter', 'financial_proof', 'health_insurance', 'accommodation_proof', 'police_clearance', 'medical_certificate', 'birth_certificate', 'visa_fee'].map((key) => (
+            <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
+              <label className="cursor-pointer block">
+                <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
                 <p className="text-[11px] text-gray-400 mb-2">PDF, JPG, PNG accepted</p>
                 {files[key] ? (
                   <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
