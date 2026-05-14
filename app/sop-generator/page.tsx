@@ -2,14 +2,9 @@
 
 import { useState } from 'react';
 import { incrementStat } from '@/lib/stats';
-import { createBrowserClient } from '@supabase/ssr';
+import { auth } from '@/lib/firebase';
 
 export default function SopGenerator() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [form, setForm] = useState({
     name: '',
     degree: '',
@@ -42,18 +37,20 @@ export default function SopGenerator() {
     setShowUpgrade(false);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const user = auth.currentUser;
 
-      if (!session) {
+      if (!user) {
         setError('You must be logged in to generate a SOP.');
         return;
       }
+
+      const token = await user.getIdToken();
 
       const res = await fetch('/api/sop', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(form),
       });

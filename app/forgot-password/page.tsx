@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 
 export default function ForgotPassword() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,23 +25,24 @@ export default function ForgotPassword() {
 
     setLoading(true);
 
-    // ✅ FIX: redirectTo must point to /api/auth/callback with next=/reset-password
-    // Without this the reset link sends the user to Supabase's own domain which
-    // can't write the session cookie for your app → "invalid or expired" error.
-    const origin = window.location.origin;
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/api/auth/callback?next=/reset-password`,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSent(true);
+    } catch (err: any) {
+      const code = err?.code ?? '';
+      if (code === 'auth/user-not-found') {
+        // Don't reveal whether email exists — just show success
+        setSent(true);
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many requests. Please wait a few minutes and try again.');
+      } else {
+        setError(err?.message || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setSent(true);
   };
 
   if (sent) {
@@ -54,9 +52,9 @@ export default function ForgotPassword() {
           <div className="text-5xl mb-4">📬</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
           <p className="text-gray-500 text-sm mb-6">
-            We sent a password reset link to{' '}
-            <span className="font-semibold text-gray-700">{email}</span>.
-            Open it and follow the instructions to set a new password.
+            If an account exists for{' '}
+            <span className="font-semibold text-gray-700">{email}</span>,
+            we sent a password reset link. Open it and follow the instructions.
           </p>
           <p className="text-xs text-gray-400">
             Didn't receive it? Check your spam folder or{' '}
@@ -65,13 +63,9 @@ export default function ForgotPassword() {
               className="text-blue-600 hover:underline"
             >
               send again
-            </button>
-            .
+            </button>.
           </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-block text-sm text-blue-600 hover:underline"
-          >
+          <Link href="/login" className="mt-6 inline-block text-sm text-blue-600 hover:underline">
             ← Back to sign in
           </Link>
         </div>

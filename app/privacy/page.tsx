@@ -65,15 +65,15 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">4. Data Storage and Security</h2>
-            <p className="mb-3">Your data is stored securely using Supabase, a trusted cloud database provider with industry-standard encryption. We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
-            <p>Authentication is handled through Supabase Auth with encrypted session tokens. Passwords are never stored in plain text. Payment processing is handled entirely by Lemon Squeezy under PCI-DSS compliance.</p>
+            <p className="mb-3">Your data is stored securely using Firebase (Google Cloud), a trusted cloud platform with industry-standard encryption and security compliance (SOC 2, ISO 27001). We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+            <p>Authentication is handled through Firebase Auth with encrypted session tokens. Passwords are never stored in plain text and are managed securely by Google's infrastructure. Payment processing is handled entirely by Lemon Squeezy under PCI-DSS compliance.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">5. Third-Party Services</h2>
             <p className="mb-3">We use the following third-party services to operate our platform:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong className="text-white">Supabase</strong> — database and authentication</li>
+              <li><strong className="text-white">Firebase (Google Cloud)</strong> — database and authentication</li>
               <li><strong className="text-white">Groq AI (LLaMA)</strong> — AI language model for generating SOPs and analysis</li>
               <li><strong className="text-white">Lemon Squeezy</strong> — payment processing and subscription management</li>
               <li><strong className="text-white">Vercel</strong> — platform hosting and deployment</li>

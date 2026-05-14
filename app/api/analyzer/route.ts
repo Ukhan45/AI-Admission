@@ -1,61 +1,51 @@
 import Groq from 'groq-sdk';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { getAuth } from 'firebase-admin/auth';
+import { adminDb } from '@/lib/firebase-admin';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const FREE_ANALYZER_LIMIT = 2;
 
-async function getUserAndCheckCredits() {
-  const cookieStore = await cookies();
 
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
+async function getUserAndCheckCredits(token: string) {
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    const userId = decodedToken.uid;
+
+    const userDoc = await adminDb.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return { allowed: false, reason: 'profile_not_found' };
     }
-  );
 
-  const { data: { session } } = await supabaseAuth.auth.getSession();
-  if (!session) return { allowed: false, reason: 'not_authenticated' };
+    const profile = userDoc.data();
+    const isPro = profile?.plan === 'pro';
+    const analyzerUsed: number = profile?.analyzer_used ?? 0;
+    const limit = isPro ? 999999 : FREE_ANALYZER_LIMIT;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+    if (analyzerUsed >= limit) {
+      return { allowed: false, reason: 'limit_reached', plan: profile?.plan };
+    }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan, analyzer_used')
-    .eq('id', session.user.id)
-    .single();
+    await adminDb.collection('users').doc(userId).update({
+      analyzer_used: analyzerUsed + 1,
+    });
 
-  if (!profile) return { allowed: false, reason: 'profile_not_found' };
-
-  const isPro = profile.plan === 'pro';
-  const analyzerUsed: number = profile.analyzer_used ?? 0;
-  const limit = isPro ? 999999 : FREE_ANALYZER_LIMIT;
-
-  if (analyzerUsed >= limit) {
-    return { allowed: false, reason: 'limit_reached', plan: profile.plan };
+    return { allowed: true, plan: profile?.plan, userId };
+  } catch (error) {
+    console.error('Auth error:', error);
+    return { allowed: false, reason: 'not_authenticated' };
   }
-
-  await supabase
-    .from('profiles')
-    .update({ analyzer_used: analyzerUsed + 1 })
-    .eq('id', session.user.id);
-
-  return { allowed: true, plan: profile.plan };
 }
 
 export async function POST(req: Request) {
   try {
-    const credit = await getUserAndCheckCredits();
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const credit = await getUserAndCheckCredits(token);
     if (!credit.allowed) {
       return Response.json({
         error: credit.reason === 'limit_reached' ? 'limit_reached' : 'unauthorized',

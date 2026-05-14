@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, FileText, BarChart, Globe, MessageCircle, LogOut, FolderCheck, History, User, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/reset-password'];
 
@@ -15,25 +16,20 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserEmail(session?.user?.email ?? null);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUserEmail(user?.email ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email ?? null);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const navItems = [
@@ -50,7 +46,7 @@ export default function Sidebar() {
   // Hide sidebar on auth pages
   if (AUTH_PAGES.includes(pathname)) return null;
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col">
       <h1 className="text-xl font-bold mb-8">AI Admission</h1>
 
@@ -102,7 +98,7 @@ export default function Sidebar() {
     <>
       {/* ── Desktop sidebar ── */}
       <div className="hidden md:block fixed top-0 left-0 z-40 h-screen">
-        <SidebarContent />
+        {sidebarContent}
       </div>
 
       {/* ── Mobile top bar ── */}
@@ -123,7 +119,7 @@ export default function Sidebar() {
           />
           {/* Drawer */}
           <div className="md:hidden fixed top-0 left-0 z-50 h-screen">
-            <SidebarContent />
+            {sidebarContent}
           </div>
         </>
       )}

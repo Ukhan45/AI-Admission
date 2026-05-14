@@ -1,61 +1,57 @@
 import Groq from 'groq-sdk';
-import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { getAuth } from 'firebase-admin/auth';
+import { adminDb } from '@/lib/firebase-admin';
+import { getDoc, doc, updateDoc, increment } from 'firebase/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const FREE_CHAT_LIMIT = 10;
 
-async function getUserAndCheckCredits() {
-  const cookieStore = await cookies();
+async function getUserAndCheckCredits(token: string) {
+  try {
+    // Verify token with Firebase Admin SDK
+    const decodedToken = await getAuth().verifyIdToken(token);
+    const userId = decodedToken.uid;
 
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
+    // Get user profile from Firestore
+    const userDocRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists()) {
+      return { allowed: false, reason: 'profile_not_found', userId };
     }
-  );
 
-  const { data: { session } } = await supabaseAuth.auth.getSession();
-  if (!session) return { allowed: false, reason: 'not_authenticated' };
+    const userData = userDoc.data();
+    const isPro = userData?.plan === 'pro';
+    const chatUsed: number = userData?.chat_used ?? 0;
+    const limit = isPro ? 999999 : FREE_CHAT_LIMIT;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+    if (chatUsed >= limit) {
+      return { allowed: false, reason: 'limit_reached', plan: userData?.plan, userId };
+    }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan, chat_used')
-    .eq('id', session.user.id)
-    .single();
+    // Increment chat usage
+    await userDocRef.update({ chat_used: increment(1) });
 
-  if (!profile) return { allowed: false, reason: 'profile_not_found' };
-
-  const isPro = profile.plan === 'pro';
-  const chatUsed: number = profile.chat_used ?? 0;
-  const limit = isPro ? 999999 : FREE_CHAT_LIMIT;
-
-  if (chatUsed >= limit) {
-    return { allowed: false, reason: 'limit_reached', plan: profile.plan };
+    return { allowed: true, plan: userData?.plan, userId };
+  } catch (error: any) {
+    console.error('Auth error:', error);
+    return { allowed: false, reason: 'unauthorized' };
   }
-
-  await supabase
-    .from('profiles')
-    .update({ chat_used: chatUsed + 1 })
-    .eq('id', session.user.id);
-
-  return { allowed: true, plan: profile.plan };
 }
 
 export async function POST(req: Request) {
   try {
-    const credit = await getUserAndCheckCredits();
+    // Get token from Authorization header
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const credit = await getUserAndCheckCredits(token);
     if (!credit.allowed) {
       return Response.json({
         error: credit.reason === 'limit_reached' ? 'limit_reached' : 'unauthorized',

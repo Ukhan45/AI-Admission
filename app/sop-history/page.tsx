@@ -1,47 +1,64 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 
 type Generation = {
   id: string;
   university: string;
   content: string;
-  created_at: string;
+  createdAt: Date;
 };
 
 export default function SopHistory() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [selected, setSelected] = useState<Generation | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    loadHistory();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadHistory(user.uid);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const loadHistory = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+  const loadHistory = async (userId: string) => {
+    try {
+      const q = query(
+        collection(db, 'generations'),
+        where('user_id', '==', userId),
+        where('type', '==', 'sop'),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const gens: Generation[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        gens.push({
+          id: doc.id,
+          university: data.university,
+          content: data.content,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        });
+      });
 
-    const { data } = await supabase
-      .from('generations')
-      .select('id, university, content, created_at')
-      .eq('user_id', session.user.id)
-      .eq('type', 'sop')
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      setGenerations(data);
-      if (data.length > 0) setSelected(data[0]); // auto-select latest
+      setGenerations(gens);
+      if (gens.length > 0) setSelected(gens[0]);
+    } catch (error) {
+      console.error('Error loading history:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCopy = () => {

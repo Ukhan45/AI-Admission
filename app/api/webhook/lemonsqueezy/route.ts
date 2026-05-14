@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { adminDb } from '@/lib/firebase-admin';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Verify webhook signature from Lemon Squeezy
 function verifySignature(payload: string, signature: string, secret: string): boolean {
@@ -40,24 +35,30 @@ export async function POST(req: Request) {
       return new Response('No email found', { status: 400 });
     }
 
+    // Query Firebase for user by email
+    const userSnapshot = await adminDb.collection('users')
+      .where('email', '==', customerEmail)
+      .limit(1)
+      .get();
+
+    if (userSnapshot.empty) {
+      console.warn(`User not found for email: ${customerEmail}`);
+      return new Response('User not found', { status: 404 });
+    }
+
+    const userDoc = userSnapshot.docs[0];
+    const userId = userDoc.id;
+
     // Handle subscription activated / order created → upgrade to pro
     if (
       eventName === 'subscription_created' ||
       eventName === 'subscription_resumed' ||
       eventName === 'order_created'
     ) {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'pro',
-          credits_limit: 999999,
-        })
-        .eq('email', customerEmail);
-
-      if (error) {
-        console.error('Supabase update error:', error);
-        return new Response('DB error', { status: 500 });
-      }
+      await adminDb.collection('users').doc(userId).update({
+        plan: 'pro',
+        credits_limit: 999999,
+      });
 
       console.log(`✅ Upgraded ${customerEmail} to Pro`);
     }
@@ -68,18 +69,10 @@ export async function POST(req: Request) {
       eventName === 'subscription_expired' ||
       eventName === 'subscription_paused'
     ) {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'free',
-          credits_limit: 10,
-        })
-        .eq('email', customerEmail);
-
-      if (error) {
-        console.error('Supabase update error:', error);
-        return new Response('DB error', { status: 500 });
-      }
+      await adminDb.collection('users').doc(userId).update({
+        plan: 'free',
+        credits_limit: 10,
+      });
 
       console.log(`⬇️ Downgraded ${customerEmail} to Free`);
     }

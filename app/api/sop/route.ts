@@ -1,17 +1,12 @@
 // app/api/sop/route.ts
 import Groq from 'groq-sdk';
-import { createClient } from '@supabase/supabase-js';
+import { getAuth } from 'firebase-admin/auth';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const FREE_SOP_LIMIT = 3;
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function POST(req: Request) {
   try {
@@ -25,27 +20,33 @@ export async function POST(req: Request) {
     const token = authHeader?.replace('Bearer ', '');
     if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const supabase = getSupabase();
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) return Response.json({ error: 'Invalid session' }, { status: 401 });
+    // Verify token
+    let userId: string;
+    try {
+      const decodedToken = await getAuth().verifyIdToken(token);
+      userId = decodedToken.uid;
+    } catch (error) {
+      return Response.json({ error: 'Invalid session' }, { status: 401 });
+    }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan, sop_used')
-      .eq('id', user.id)
-      .single();
+    // Get user profile from Firestore
+    const userDocRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
 
-    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+    if (!userDoc.exists) {
+      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    }
 
-    const isPro = profile.plan === 'pro';
-    const sopUsed: number = profile.sop_used ?? 0;
+    const userData = userDoc.data();
+    const isPro = userData?.plan === 'pro';
+    const sopUsed: number = userData?.sop_used ?? 0;
     const limit = isPro ? 999999 : FREE_SOP_LIMIT;
 
     if (sopUsed >= limit) {
       return Response.json({
         error: 'limit_reached',
         message: 'You have used all your free SOP generations. Please upgrade to continue.',
-        plan: profile.plan,
+        plan: userData?.plan,
         used: sopUsed,
         limit,
       }, { status: 403 });
@@ -134,17 +135,15 @@ Output ONLY the SOP text. No headers, no labels, no explanations. Just the SOP i
     const result = response?.choices?.[0]?.message?.content;
     if (!result) return Response.json({ error: 'AI did not return a valid response' }, { status: 500 });
 
-    // ✅ Deduct sop_used only
-    await supabase
-      .from('profiles')
-      .update({ sop_used: sopUsed + 1 })
-      .eq('id', user.id);
+    // Update sop_used and create generation record
+    await userDocRef.update({ sop_used: FieldValue.increment(1) });
 
-    await supabase.from('generations').insert({
-      user_id: user.id,
+    await adminDb.collection('generations').add({
+      user_id: userId,
       type: 'sop',
       content: result,
       university: data.university,
+      createdAt: new Date(),
     });
 
     return Response.json({

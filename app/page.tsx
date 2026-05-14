@@ -3,23 +3,21 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function LandingPage() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace('/dashboard');
       else setChecking(false);
     });
+
+    return () => unsubscribe();
   }, []);
 
   if (checking) return null;

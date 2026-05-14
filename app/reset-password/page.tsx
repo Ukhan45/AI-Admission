@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import {
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+  AuthError,
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function ResetPassword() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -20,18 +22,31 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [email, setEmail] = useState('');
 
-  // ✅ The callback route already exchanged the code for a session.
-  // We just need to confirm the session exists before letting the user submit.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    const mode = searchParams?.get('mode');
+    const oobCode = searchParams?.get('oobCode');
+
+    if (mode !== 'resetPassword' || !oobCode) {
+      setError('This reset link is invalid. Please request a new one.');
+      return;
+    }
+
+    verifyPasswordResetCode(auth, oobCode)
+      .then((emailAddress) => {
+        setEmail(emailAddress);
         setSessionReady(true);
-      } else {
-        setError('This reset link has expired or is invalid. Please request a new one.');
-      }
-    });
-  }, []);
+      })
+      .catch((err: AuthError) => {
+        const code = err?.code ?? '';
+        if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
+          setError('This reset link has expired or is invalid. Please request a new one.');
+        } else {
+          setError(err?.message || 'Unable to verify this reset link.');
+        }
+      });
+  }, [searchParams]);
 
   const handleReset = async () => {
     setError('');
@@ -40,29 +55,41 @@ export default function ResetPassword() {
       setError('Please fill in both fields.');
       return;
     }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
+
     if (password !== confirm) {
       setError('Passwords do not match.');
       return;
     }
 
-    setLoading(true);
-
-    const { error } = await supabase.auth.updateUser({ password });
-
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
+    const oobCode = searchParams?.get('oobCode');
+    if (!oobCode) {
+      setError('Unable to reset password. Please request a new link.');
       return;
     }
 
-    setSuccess(true);
-    // Give the user a moment to read the success message, then redirect
-    setTimeout(() => router.push('/login'), 3000);
+    setLoading(true);
+
+    try {
+      await confirmPasswordReset(auth, oobCode, password);
+      setSuccess(true);
+      setTimeout(() => router.push('/login'), 3000);
+    } catch (err: any) {
+      const code = err?.code ?? '';
+      if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
+        setError('This reset link has expired or is invalid. Please request a new one.');
+      } else if (code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else {
+        setError(err?.message || 'Unable to reset your password. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -72,7 +99,7 @@ export default function ResetPassword() {
           <div className="text-5xl mb-4">✅</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Password updated!</h1>
           <p className="text-gray-500 text-sm mb-4">
-            Your password has been changed. You'll be redirected to sign in shortly.
+            Your password has been changed. You&apos;ll be redirected to sign in shortly.
           </p>
           <Link href="/login" className="text-blue-600 hover:underline text-sm">
             Go to sign in now →
@@ -87,7 +114,9 @@ export default function ResetPassword() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Set New Password</h1>
-          <p className="text-gray-500 text-sm mt-1">Choose a strong password for your account.</p>
+          <p className="text-gray-500 text-sm mt-1">
+            {email ? `Set a new password for ${email}` : 'Choose a strong password for your account.'}
+          </p>
         </div>
 
         <div className="space-y-4">

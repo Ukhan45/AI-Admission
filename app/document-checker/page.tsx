@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 
 interface DocResult {
@@ -25,10 +26,12 @@ export default function DocumentChecker() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
       setCheckingAuth(false);
     });
+
+    return () => unsubscribe();
   }, []);
 
   const handleFile = (name: string, file: File | null) => {

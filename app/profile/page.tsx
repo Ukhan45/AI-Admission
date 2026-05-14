@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
 
 const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
@@ -87,11 +89,6 @@ function FeatureLimitRow({ label, emoji, used, limit, isPro }: { label: string; 
 }
 
 export default function ProfilePage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [stats, setStats] = useState<Stats>({
     sopsGenerated: 0,
     universitiesSearched: 0,
@@ -107,41 +104,56 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setStats(getStats());
-    loadProfile();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setEmail(user.email ?? null);
+        loadProfile(user.uid);
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = async (userId: string) => {
     try {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session?.user) {
-        setLoading(false);
-        return;
-      }
-      setEmail(session.user.email ?? null);
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('plan, sop_used, analyzer_used, chat_used')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        setError('Unable to load your profile details.');
-      } else if (profileData) {
-        setProfile(profileData as ProfileRecord);
+      // Load user profile
+      const userDocRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setProfile({
+          plan: data.plan,
+          sop_used: data.sop_used ?? 0,
+          analyzer_used: data.analyzer_used ?? 0,
+          chat_used: data.chat_used ?? 0,
+        });
       }
 
-      const { data: recentData } = await supabase
-        .from('generations')
-        .select('id, type, university, created_at')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      // Load recent generations
+      const q = query(
+        collection(db, 'generations'),
+        where('user_id', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const gens: Generation[] = [];
+      
+      let count = 0;
+      querySnapshot.forEach((doc) => {
+        if (count < 5) {
+          const data = doc.data();
+          gens.push({
+            id: doc.id,
+            type: data.type,
+            university: data.university || null,
+            created_at: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          });
+          count++;
+        }
+      });
 
-      if (recentData) {
-        setRecent(recentData as Generation[]);
-      }
+      setRecent(gens);
     } catch (e) {
       setError('Unable to load profile page. Please refresh.');
     } finally {

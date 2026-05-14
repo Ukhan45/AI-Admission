@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
-import { createBrowserClient } from '@supabase/ssr';
 
 const quickActions = [
   { label: 'Generate SOP',      href: '/sop-generator',      emoji: '📝', color: 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700' },
@@ -93,11 +95,6 @@ function FeatureLimitRow({
 }
 
 export default function Dashboard() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [stats, setStats] = useState<Stats>({
     sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '',
   });
@@ -106,29 +103,56 @@ export default function Dashboard() {
 
   useEffect(() => {
     setStats(getStats());
-    loadSupabaseData();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadFirestoreData(user.uid);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const loadSupabaseData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+  const loadFirestoreData = async (userId: string) => {
+    try {
+      // Load user profile
+      const userDocRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setProfile({
+          plan: data.plan,
+          sop_used: data.sop_used ?? 0,
+          analyzer_used: data.analyzer_used ?? 0,
+          chat_used: data.chat_used ?? 0,
+        });
+      }
 
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('plan, sop_used, analyzer_used, chat_used')
-      .eq('id', session.user.id)
-      .single();
+      // Load recent generations
+      const q = query(
+        collection(db, 'generations'),
+        where('user_id', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const gens: Generation[] = [];
+      
+      let count = 0;
+      querySnapshot.forEach((doc) => {
+        if (count < 5) {
+          const data = doc.data();
+          gens.push({
+            id: doc.id,
+            type: data.type,
+            university: data.university,
+            created_at: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          });
+          count++;
+        }
+      });
 
-    if (profileData) setProfile(profileData);
-
-    const { data: genData } = await supabase
-      .from('generations')
-      .select('id, type, university, created_at')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (genData) setRecentGenerations(genData);
+      setRecentGenerations(gens);
+    } catch (error) {
+      console.error('Error loading Firestore data:', error);
+    }
   };
 
   const score = profileScore(stats);

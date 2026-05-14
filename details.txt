@@ -1,15 +1,11 @@
 AI Admission System — Project Status
-Stack: Next.js 14, Supabase, Groq/LLaMA, Tailwind CSS
+Stack: Next.js 14, Firebase, Groq/LLaMA, Tailwind CSS
 Live: ai-admission-eta.vercel.app | Repo: Ukhan45/AI-Admission
 Payments: Lemon Squeezy — PKR 800/month Pro plan
 
 ✅ Completed
 Auth Fixes
 
-Supabase Site URL updated from localhost:3000 → Vercel production URL
-All redirect URLs configured in Supabase (5 URLs including reset-password)
-lib/supabase.ts migrated from custom cookie logic → createBrowserClient from @supabase/ssr
-Removed conflicting @supabase/auth-helpers-nextjs package
 Auth callback route (/api/auth/callback) created and working
 middleware.ts updated to refresh sessions on every request
 Signup now shows "Check your email" screen instead of redirecting prematurely
@@ -57,7 +53,7 @@ Features
 
 User profile page (/profile)
 Project status tracker on dashboard
-Password reset flow — needs live testing once Supabase email rate limit resets (1 hr cooldown)
+Password reset flow — needs live testing once email rate limit resets (1 hr cooldown)
 
 Mobile
 

@@ -1,28 +1,72 @@
 'use client';
 
-import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { useState, useRef, useEffect } from 'react';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 
-export default function Signup() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+type Step = 'form' | 'otp' | 'success';
 
+export default function Signup() {
+  const [step, setStep] = useState<Step>('form');
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  const otpRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
 
-  const handleSignup = async () => {
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // digits only
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1); // only last char
+    setOtp(newOtp);
+    setError('');
+    // Auto-focus next
+    if (value && index < 3) {
+      otpRefs[index + 1].current?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs[index - 1].current?.focus();
+    }
+    if (e.key === 'Enter') handleVerifyOtp();
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    if (pasted.length === 4) {
+      setOtp(pasted.split(''));
+      otpRefs[3].current?.focus();
+    }
+  };
+
+  // Step 1: Validate form and send OTP
+  const handleSendOtp = async () => {
     if (!form.name || !form.email || !form.password || !form.confirm) {
       setError('Please fill in all fields.');
       return;
@@ -45,53 +89,89 @@ export default function Signup() {
     setError('');
 
     try {
-      // Check if email already exists
-      try {
-        const checkRes = await fetch('/api/auth/check-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email }),
-        });
-        if (checkRes.ok) {
-          const checkData = await checkRes.json();
-          if (checkData.exists) {
-            setError('An account with this email already exists. Please sign in instead.');
-            setLoading(false);
-            return;
-          }
-        }
-      } catch {
-        // If check fails, proceed with signup anyway
-      }
-
-      const origin = window.location.origin;
-      const { error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: { full_name: form.name },
-          emailRedirectTo: `${origin}/api/auth/callback?next=/dashboard`,
-        },
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
 
-      if (error) {
-        if (
-          error.message.toLowerCase().includes('already registered') ||
-          error.message.toLowerCase().includes('user already exists') ||
-          error.message.toLowerCase().includes('already been registered')
-        ) {
-          setError('An account with this email already exists. Please sign in instead.');
-        } else {
-          setError(error.message);
-        }
-        return;
-      }
-
-      setSuccess(true);
+      setStep('otp');
+      setCountdown(60);
+      setTimeout(() => otpRefs[0].current?.focus(), 100);
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP then create account
+  const handleVerifyOtp = async () => {
+    const code = otp.join('');
+    if (code.length < 4) {
+      setError('Please enter the 4-digit code.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Verify OTP
+      const verifyRes = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, otp: code }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error);
+
+      // Create Firebase Auth account
+      const { user } = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      await updateProfile(user, { displayName: form.name });
+
+      // Create Firestore user document
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        fullName: form.name,
+        email: form.email,
+        credits: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      setStep('success');
+    } catch (err: any) {
+      const code = err?.code ?? '';
+      if (code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(err.message || 'Verification failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setError('');
+    setOtp(['', '', '', '']);
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setCountdown(60);
+      otpRefs[0].current?.focus();
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -106,28 +186,94 @@ export default function Signup() {
     </svg>
   );
 
-  if (success) {
+  // ── Success screen ────────────────────────────────────────────────
+  if (step === 'success') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">📧</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
+          <div className="text-5xl mb-4">🎉</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h1>
           <p className="text-gray-500 text-sm mb-6">
-            We sent a confirmation link to{' '}
-            <span className="font-semibold text-gray-700">{form.email}</span>.
-            Click it to activate your account.
+            Welcome, <span className="font-semibold text-gray-700">{form.name}</span>!
+            Your email has been verified and your account is ready.
           </p>
-          <p className="text-xs text-gray-400">
-            Didn't receive it? Check your spam folder or{' '}
-            <button onClick={() => setSuccess(false)} className="text-blue-600 hover:underline">
-              try again
-            </button>.
-          </p>
+          <Link href="/dashboard"
+            className="w-full inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-center">
+            Go to Dashboard
+          </Link>
         </div>
       </div>
     );
   }
 
+  // ── OTP screen ───────────────────────────────────────────────────
+  if (step === 'otp') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
+          <div className="mb-6 text-center">
+            <div className="text-4xl mb-3">📬</div>
+            <h1 className="text-2xl font-bold text-gray-900">Enter OTP</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              We sent a 4-digit code to{' '}
+              <span className="font-semibold text-gray-700">{form.email}</span>
+            </p>
+          </div>
+
+          <div className="flex justify-center gap-3 mb-6" onPaste={handleOtpPaste}>
+            {otp.map((digit, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(i, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition bg-slate-50"
+              />
+            ))}
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+              <span className="shrink-0">⚠️</span> {error}
+            </div>
+          )}
+
+          <button onClick={handleVerifyOtp} disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4">
+            {loading ? (
+              <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>Verifying…</>
+            ) : 'Verify & Create Account'}
+          </button>
+
+          <div className="text-center text-sm text-gray-500">
+            Didn't receive it?{' '}
+            {countdown > 0 ? (
+              <span className="text-gray-400">Resend in {countdown}s</span>
+            ) : (
+              <button onClick={handleResend} disabled={resendLoading}
+                className="text-blue-600 hover:underline font-medium disabled:opacity-50">
+                {resendLoading ? 'Sending…' : 'Resend code'}
+              </button>
+            )}
+          </div>
+
+          <button onClick={() => { setStep('form'); setOtp(['', '', '', '']); setError(''); }}
+            className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-600">
+            ← Change email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Signup form ──────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
@@ -189,14 +335,14 @@ export default function Signup() {
             </div>
           )}
 
-          <button onClick={handleSignup} disabled={loading}
+          <button onClick={handleSendOtp} disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {loading ? (
               <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>Creating account…</>
-            ) : 'Create Account'}
+              </svg>Sending OTP…</>
+            ) : 'Continue'}
           </button>
 
           <p className="text-center text-sm text-gray-500">

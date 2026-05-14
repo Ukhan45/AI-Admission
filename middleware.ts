@@ -1,49 +1,20 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// TODO: Implement Firebase session verification in middleware
+// For now, we rely on client-side Firebase auth checks
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
-
   const isAuthPage =
     req.nextUrl.pathname.startsWith('/login') ||
     req.nextUrl.pathname.startsWith('/signup') ||
-    req.nextUrl.pathname.startsWith('/forgot-password') || // ✅ added
-    req.nextUrl.pathname.startsWith('/reset-password') ||  // ✅ added
-    req.nextUrl.pathname.startsWith('/privacy') ||         // ✅ public footer page
-    req.nextUrl.pathname.startsWith('/terms') ||           // ✅ public footer page
-    req.nextUrl.pathname.startsWith('/contact');           // ✅ public footer page
+    req.nextUrl.pathname.startsWith('/forgot-password') ||
+    req.nextUrl.pathname.startsWith('/reset-password') ||
+    req.nextUrl.pathname.startsWith('/privacy') ||
+    req.nextUrl.pathname.startsWith('/terms') ||
+    req.nextUrl.pathname.startsWith('/contact');
 
-  const isProtected = !isAuthPage && req.nextUrl.pathname !== '/';
-
-  if (!session && isProtected) {
-    return NextResponse.redirect(new URL('/login', req.url));
-  }
-
-  if (session && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
-
-  return res;
+  // Allow all requests; Firebase will handle auth on client-side
+  return NextResponse.next();
 }
 
 export const config = {

@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
   const router = useRouter();
-  // ✅ createBrowserClient from @supabase/ssr — same package your callback route
-  //    uses. Writes the session into cookies so middleware & server components
-  //    can read it. This is what makes router.push('/dashboard') actually work.
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -40,34 +34,19 @@ export default function Login() {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
-      });
-
-      if (error) {
-        if (error.message.toLowerCase().includes('email not confirmed')) {
-          setError('Please confirm your email first. Check your inbox for the verification link.');
-        } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-          setError('Incorrect email or password. Please try again.');
-        } else {
-          setError(error.message);
-        }
-        return;
-      }
-
-      if (!data?.session) {
-        setError('Unable to sign in. Please check your credentials and try again.');
-        return;
-      }
-
-      // ✅ FIX: router.refresh() forces Next.js to re-read the new session cookie
-      // BEFORE navigating — without this the dashboard gets a stale (unauthenticated)
-      // render and may redirect back to login, making it look like "nothing happened".
-      router.refresh();
+      await signInWithEmailAndPassword(auth, form.email, form.password);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err?.message ?? 'An unexpected error occurred. Please try again.');
+      const code = err?.code ?? '';
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setError('Incorrect email or password. Please try again.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later or reset your password.');
+      } else if (code === 'auth/user-disabled') {
+        setError('This account has been disabled. Please contact support.');
+      } else {
+        setError(err?.message ?? 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -110,7 +89,6 @@ export default function Login() {
                 Forgot password?
               </Link>
             </div>
-            {/* ✅ FIX: Added show/hide password toggle */}
             <div className="relative">
               <input
                 name="password"
@@ -165,7 +143,6 @@ export default function Login() {
             )}
           </button>
 
-          {/* ✅ FIX: Corrected "Dont" → "Don't" */}
           <p className="text-center text-sm text-gray-500">
             Don't have an account?{' '}
             <Link href="/signup" className="text-blue-600 hover:underline font-medium">
