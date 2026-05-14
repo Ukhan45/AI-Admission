@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { incrementStat } from '@/lib/stats';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 
 type University = {
@@ -124,9 +125,18 @@ export default function ProfileAnalyzer() {
     setResult(null);
 
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        setError('You must be logged in to analyze your profile.');
+        return;
+      }
+
       const res = await fetch('/api/analyzer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(form),
       });
 
