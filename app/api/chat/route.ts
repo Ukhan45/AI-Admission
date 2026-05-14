@@ -18,7 +18,7 @@ async function getUserAndCheckCredits(token: string) {
     const userDocRef = adminDb.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       return { allowed: false, reason: 'profile_not_found', userId };
     }
 
