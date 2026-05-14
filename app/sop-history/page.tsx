@@ -140,7 +140,7 @@ export default function SopHistory() {
                 </div>
                 <p className="text-sm font-semibold text-gray-800 truncate">{gen.university}</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {new Date(gen.created_at).toLocaleDateString('en-US', {
+                  {new Date(gen.createdAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric'
                   })}
                 </p>
