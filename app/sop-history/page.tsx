@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 
@@ -155,7 +155,7 @@ export default function SopHistory() {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{selected.university}</h2>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(selected.created_at).toLocaleDateString('en-US', {
+                    {new Date(selected.createdAt).toLocaleDateString('en-US', {
                       weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
                     })}
                   </p>
