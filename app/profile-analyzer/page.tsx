@@ -103,7 +103,7 @@ function UpgradeBanner() {
 
 export default function ProfileAnalyzer() {
   const [form, setForm] = useState({
-    cgpa: '', degree: '', ielts: '', budget: '', country: '', field: '',
+    cgpa: '', degree: '', ielts: '', budget: '', country: '', field: '', level: 'MS', matric: '', inter: '',
   });
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState('');
@@ -116,9 +116,16 @@ export default function ProfileAnalyzer() {
   };
 
   const analyze = async () => {
-    if (!form.cgpa || !form.degree || !form.budget || !form.country) {
-      setError('Please fill in all required fields.');
-      return;
+    if (form.level === 'MS') {
+      if (!form.cgpa || !form.degree || !form.budget || !form.country) {
+        setError('Please fill in all required fields.');
+        return;
+      }
+    } else {
+      if (!form.matric || !form.inter || !form.degree || !form.budget || !form.country) {
+        setError('Please fill in all required fields.');
+        return;
+      }
     }
     setLoading(true);
     setError('');
@@ -178,28 +185,120 @@ export default function ProfileAnalyzer() {
       {!limitReached && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="grid grid-cols-2 gap-4">
-            {[
-              { name: 'cgpa',    label: 'CGPA',              placeholder: 'e.g. 3.8',                   hint: 'Out of 4.0 scale',              required: true },
-              { name: 'degree',  label: 'Degree',            placeholder: 'e.g. BS Software Engineering', hint: 'Your completed degree',        required: true },
-              { name: 'field',   label: 'Field of Interest', placeholder: 'e.g. Cyber Security, AI',    hint: 'What you want to study for MS', required: false },
-              { name: 'ielts',   label: 'IELTS Score',       placeholder: 'e.g. 7.0 or No IELTS',       hint: 'Leave blank if not taken',      required: false },
-              { name: 'budget',  label: 'Monthly Budget ($)', placeholder: 'e.g. 1000',                 hint: 'Amount in USD per month',       required: true },
-              { name: 'country', label: 'Preferred Country', placeholder: 'e.g. Germany or Any',        hint: 'Type Any for global results',   required: true },
-            ].map(({ name, label, placeholder, hint, required }) => (
-              <div key={name} className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  {label} {required && <span className="text-red-400">*</span>}
-                </label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Applying For</label>
+              <select
+                name="level"
+                value={form.level}
+                onChange={(e) => setForm({ ...form, level: e.target.value })}
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              >
+                <option value="MS">MS (Masters)</option>
+                <option value="BS">BS (Undergraduate)</option>
+              </select>
+              <span className="text-[11px] text-gray-400">Select whether you're applying for BS or MS</span>
+            </div>
+
+            {/* Conditional: show CGPA for MS, percentages for BS */}
+            {form.level === 'MS' ? (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">CGPA <span className="text-red-400">*</span></label>
                 <input
-                  name={name}
-                  value={form[name as keyof typeof form]}
+                  name="cgpa"
+                  value={form.cgpa}
                   onChange={handleChange}
-                  placeholder={placeholder}
-                  className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  placeholder="e.g. 3.8"
+                  className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 />
-                <span className="text-[11px] text-gray-400">{hint}</span>
+                <span className="text-[11px] text-gray-400">Out of 4.0 scale</span>
               </div>
-            ))}
+            ) : (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Matric Percentage <span className="text-red-400">*</span></label>
+                  <input
+                    name="matric"
+                    value={form.matric}
+                    onChange={handleChange}
+                    placeholder="e.g. 85"
+                    className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  />
+                  <span className="text-[11px] text-gray-400">Percentage (0-100)</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Intermediate Percentage <span className="text-red-400">*</span></label>
+                  <input
+                    name="inter"
+                    value={form.inter}
+                    onChange={handleChange}
+                    placeholder="e.g. 80"
+                    className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  />
+                  <span className="text-[11px] text-gray-400">Percentage (0-100)</span>
+                </div>
+              </>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Degree <span className="text-red-400">*</span></label>
+              <input
+                name="degree"
+                value={form.degree}
+                onChange={handleChange}
+                placeholder="e.g. BS Software Engineering"
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span className="text-[11px] text-gray-400">Your completed degree</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Field of Interest</label>
+              <input
+                name="field"
+                value={form.field}
+                onChange={handleChange}
+                placeholder={`e.g. Cyber Security, AI`}
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span className="text-[11px] text-gray-400">{`What you want to study for ${form.level}`}</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">IELTS Score</label>
+              <input
+                name="ielts"
+                value={form.ielts}
+                onChange={handleChange}
+                placeholder="e.g. 7.0 or No IELTS"
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span className="text-[11px] text-gray-400">Leave blank if not taken</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Monthly Budget ($) <span className="text-red-400">*</span></label>
+              <input
+                name="budget"
+                value={form.budget}
+                onChange={handleChange}
+                placeholder="e.g. 1000"
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span className="text-[11px] text-gray-400">Amount in USD per month</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Preferred Country <span className="text-red-400">*</span></label>
+              <input
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                placeholder="e.g. Germany or Any"
+                className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span className="text-[11px] text-gray-400">Type Any for global results</span>
+            </div>
           </div>
 
           {error && (

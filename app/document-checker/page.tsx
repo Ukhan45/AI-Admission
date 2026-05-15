@@ -105,7 +105,7 @@ export default function DocumentChecker() {
     lor3: '📧 Letter of Recommendation 3',
     ielts: '📝 IELTS / TOEFL Scores',
     portfolio: '📄 Resume',
-    experience: '💼 Work Experience Certificate',
+    experience: '💼 Work Experience Certificate ( in case of Gap)',
     // Visa Documents
     passport: '🛂 Passport',
     visa_form: '📋 Visa Application Form',

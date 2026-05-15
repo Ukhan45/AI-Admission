@@ -54,12 +54,24 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
+    const level = (data.level || 'MS').toString();
 
-    if (!data.cgpa || !data.degree || !data.budget || !data.country) {
+    if (!data.degree || !data.budget || !data.country) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const cgpa = parseFloat(data.cgpa);
+    let cgpa = 0;
+    if (level === 'MS') {
+      if (!data.cgpa) return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      cgpa = parseFloat(data.cgpa);
+    } else {
+      const matric = parseFloat(data.matric);
+      const inter = parseFloat(data.inter);
+      if (isNaN(matric) || isNaN(inter)) return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      const avgPerc = (matric + inter) / 2;
+      cgpa = Math.min(Math.max((avgPerc / 100) * 4.0, 0), 4.0);
+    }
+
     const budget = parseFloat(data.budget);
     const ielts = parseFloat(data.ielts) || 0;
 
@@ -68,11 +80,11 @@ export async function POST(req: Request) {
         result: {
           overall_score: cgpa < 2.0 ? 8 : 12,
           verdict: cgpa < 2.0
-            ? `With a CGPA of ${cgpa}, international MS admission is not realistic at this stage.`
+            ? `With a CGPA of ${cgpa}, international ${level} admission is not realistic at this stage.`
             : `A monthly budget of $${budget} is not sufficient for international study.`,
           strengths: ['You have identified your goal early', 'There is still time to improve before applying'],
           weaknesses: cgpa < 2.0 ? [
-            `CGPA of ${cgpa} is below the minimum threshold for any accredited MS program`,
+            `CGPA of ${cgpa} is below the minimum threshold for any accredited ${level} program`,
             `Most universities require minimum 2.5 CGPA — you are ${(2.5 - cgpa).toFixed(1)} points below`,
           ] : [
             `Budget of $${budget}/month is far below the minimum needed ($400–500/month)`,
@@ -80,7 +92,7 @@ export async function POST(req: Request) {
           universities: [],
           improvements: cgpa < 2.0 ? [
             { action: 'Retake failed courses to raise CGPA above 2.5', impact: 'High', timeline: '1-2 years' },
-            { action: 'Consider local MS programs first', impact: 'High', timeline: '6-12 months' },
+            { action: `Consider local ${level} programs first`, impact: 'High', timeline: '6-12 months' },
           ] : [
             { action: 'Research full scholarships covering tuition and living costs', impact: 'High', timeline: '3-6 months' },
           ],
@@ -119,7 +131,8 @@ export async function POST(req: Request) {
 Analyze this student profile and return a JSON response ONLY. No extra text, no markdown.
 
 STUDENT PROFILE:
-- CGPA: ${data.cgpa}/4.0
+- Applying For: ${level}
+- ${level === 'MS' ? `- CGPA: ${data.cgpa}/4.0` : `- Matric: ${data.matric}% | Intermediate: ${data.inter}% | Approx CGPA: ${cgpa.toFixed(2)}/4.0`}
 - Degree: ${data.degree}
 - IELTS Score: ${data.ielts || 'Not taken'}
 - Monthly Budget: $${data.budget} USD
