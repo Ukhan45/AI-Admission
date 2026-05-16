@@ -73,7 +73,18 @@ export async function POST(req: Request) {
     }
 
     const budget = parseFloat(data.budget);
-    const ielts = parseFloat(data.ielts) || 0;
+    const rawIelts = (data.ielts || '').toString().trim();
+    let ielts = 0;
+    if (rawIelts) {
+      const parsedIelts = parseFloat(rawIelts);
+      if (!isNaN(parsedIelts)) {
+        ielts = parsedIelts;
+      } else if (/no\s*ielts/i.test(rawIelts)) {
+        ielts = 0;
+      } else {
+        ielts = 7.0;
+      }
+    }
 
     if (cgpa < 2.0 || budget < 50) {
       return Response.json({
@@ -134,7 +145,7 @@ STUDENT PROFILE:
 - Applying For: ${level}
 - ${level === 'MS' ? `- CGPA: ${data.cgpa}/4.0` : `- Matric: ${data.matric}% | Intermediate: ${data.inter}% | Approx CGPA: ${cgpa.toFixed(2)}/4.0`}
 - Degree: ${data.degree}
-- IELTS Score: ${data.ielts || 'Not taken'}
+- IELTS Score or Proof: ${rawIelts || 'Not taken'}
 - Monthly Budget: $${data.budget} USD
 - Preferred Country: ${data.country}
 - Field of Interest: ${data.field || 'Same as degree'}

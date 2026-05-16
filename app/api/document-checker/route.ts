@@ -1,14 +1,30 @@
 import Groq from 'groq-sdk';
 
+type DocumentUpload = {
+  name: string;
+  fileName?: string;
+  merged?: boolean;
+  attested?: boolean;
+};
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: Request) {
   try {
     const { country, university, degree, documents } = await req.json();
 
+    const documentDescriptions = ((documents || []) as DocumentUpload[]).map((doc) => {
+      const mergedText = doc.merged ? ' (merged front/back PDF)' : '';
+      const attestedText = doc.attested ? ' with required attestation stamps on the back' : '';
+      const fileNameText = doc.fileName ? ` - ${doc.fileName}` : '';
+      return `${doc.name}${mergedText}${attestedText}${fileNameText}`;
+    }).join(', ');
+
     const prompt = `You are an international admissions document expert. A student is applying to ${university} in ${country} for a ${degree} program.
 
-They have uploaded these documents: ${documents.join(', ')}.
+They have uploaded these documents: ${documentDescriptions}.
+
+When a document is marked as a merged front/back PDF, assume the upload includes both sides. If the document is also noted as having required attestation stamps on the back, treat it as already attested and do not request additional HEC/MOFA or embassy stamps unless ${country} specifically requires extra legalization beyond those stamps.
 
 For each document, assess its status based on ${country}'s requirements for international students applying to ${university}.
 

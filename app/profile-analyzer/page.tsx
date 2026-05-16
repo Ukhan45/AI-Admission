@@ -78,7 +78,7 @@ function UpgradeBanner() {
     <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white mb-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-bold text-base">You've reached your free analysis limit 🚀</p>
+          <p className="font-bold text-base">You&apos;ve reached your free analysis limit 🚀</p>
           <p className="text-blue-100 text-sm mt-1">
             Upgrade to Pro for unlimited profile analyses, SOP generation, university searches, and AI chat.
           </p>
@@ -196,7 +196,7 @@ export default function ProfileAnalyzer() {
                 <option value="MS">MS (Masters)</option>
                 <option value="BS">BS (Undergraduate)</option>
               </select>
-              <span className="text-[11px] text-gray-400">Select whether you're applying for BS or MS</span>
+              <span className="text-[11px] text-gray-400">Select whether you&apos;re applying for BS or MS</span>
             </div>
 
             {/* Conditional: show CGPA for MS, percentages for BS */}
@@ -246,7 +246,7 @@ export default function ProfileAnalyzer() {
                 name="degree"
                 value={form.degree}
                 onChange={handleChange}
-                placeholder="e.g. BS Software Engineering"
+                placeholder={form.level === 'MS' ? 'e.g. BS Software Engineering' : 'e.g. Pre-Engineering'}
                 className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
               <span className="text-[11px] text-gray-400">Your completed degree</span>
@@ -270,10 +270,10 @@ export default function ProfileAnalyzer() {
                 name="ielts"
                 value={form.ielts}
                 onChange={handleChange}
-                placeholder="e.g. 7.0 or No IELTS"
+                placeholder="e.g. 7.0 or English Proficiency Certificate"
                 className="border border-gray-200 bg-slate-50 text-gray-900 placeholder:text-gray-400 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
-              <span className="text-[11px] text-gray-400">Leave blank if not taken</span>
+              <span className="text-[11px] text-gray-400">Leave blank if not taken; text is accepted for alternative English proof</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -336,7 +336,7 @@ export default function ProfileAnalyzer() {
                 <ScoreRing score={result.overall_score} />
               </div>
               <div>
-                <p className="text-sm text-gray-700 leading-relaxed mb-4 italic">"{result.verdict}"</p>
+                <p className="text-sm text-gray-700 leading-relaxed mb-4 italic">“{result.verdict}”</p>
                 <div className="mb-3">
                   <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2">Strengths</p>
                   <ul className="space-y-1">

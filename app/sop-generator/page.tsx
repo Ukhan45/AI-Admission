@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { incrementStat } from '@/lib/stats';
 import { auth } from '@/lib/firebase';
 
@@ -17,6 +17,7 @@ export default function SopGenerator() {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
@@ -24,6 +25,12 @@ export default function SopGenerator() {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = window.setTimeout(() => setSuccessMessage(''), 5000);
+    return () => window.clearTimeout(timer);
+  }, [successMessage]);
 
   const generateSop = async () => {
     if (!form.name || !form.degree || !form.cgpa || !form.university || !form.field) {
@@ -33,6 +40,7 @@ export default function SopGenerator() {
 
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     setResult('');
     setShowUpgrade(false);
 
@@ -67,10 +75,12 @@ export default function SopGenerator() {
       } else {
         setResult(data.result);
         setCreditsRemaining(data.credits_remaining);
+        setSuccessMessage('Your SOP has been generated successfully!');
         incrementStat('sopsGenerated');
       }
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -83,6 +93,21 @@ export default function SopGenerator() {
         <p className="text-gray-500 text-sm mt-1">
           Create a strong Statement of Purpose for your international university application.
         </p>
+        {successMessage && (
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✅</span>
+              <span>{successMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSuccessMessage('')}
+              className="text-emerald-900 hover:text-emerald-700 font-semibold"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {creditsRemaining !== null && (
           <div className="mt-2 inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
             ✨ {creditsRemaining} generation{creditsRemaining !== 1 ? 's' : ''} remaining
@@ -190,7 +215,7 @@ export default function SopGenerator() {
         {showUpgrade && (
           <div className="mt-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <p className="font-bold text-white text-sm">You've used all your free generations 🚀</p>
+              <p className="font-bold text-white text-sm">You&apos;ve used all your free generations 🚀</p>
               <p className="text-blue-100 text-xs mt-0.5">
                 Upgrade to Pro — PKR 800/month for unlimited SOP generations and all features
               </p>

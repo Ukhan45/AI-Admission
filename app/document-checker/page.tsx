@@ -20,13 +20,34 @@ export default function DocumentChecker() {
   const [degree, setDegree] = useState('');
   const [files, setFiles] = useState<{ [key: string]: File | null }>({
     // Admission Documents
-    transcript: null, matric: null, intermediate: null, degree: null, cv: null, sop: null, lor1: null, lor2: null, lor3: null,
-    ielts: null, portfolio: null, experience: null,
+    transcript: null,
+    matric_marksheet: null,
+    matric_certificate: null,
+    intermediate_marksheet: null,
+    intermediate_certificate: null,
+    degree: null,
+    cv: null,
+    sop: null,
+    lor1: null,
+    lor2: null,
+    lor3: null,
+    ielts: null,
+    portfolio: null,
+    experience: null,
     // Visa Documents
-    passport: null, visa_form: null, acceptance_letter: null, financial_proof: null,
-    health_insurance: null, accommodation_proof: null, police_clearance: null,
-    medical_certificate: null, birth_certificate: null, visa_fee: null,
+    passport: null,
+    visa_form: null,
+    acceptance_letter: null,
+    financial_proof: null,
+    health_insurance: null,
+    accommodation_proof: null,
+    police_clearance: null,
+    medical_certificate: null,
+    birth_certificate: null,
+    visa_fee: null,
   });
+  const [mergedPages, setMergedPages] = useState<{ [key: string]: boolean }>({});
+  const [attestationProvided, setAttestationProvided] = useState<{ [key: string]: boolean }>({});
   const [results, setResults] = useState<DocResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,6 +63,18 @@ export default function DocumentChecker() {
 
   const handleFile = (name: string, file: File | null) => {
     setFiles(prev => ({ ...prev, [name]: file }));
+    if (!file) {
+      setMergedPages(prev => ({ ...prev, [name]: false }));
+      setAttestationProvided(prev => ({ ...prev, [name]: false }));
+    }
+  };
+
+  const handleMergedPageToggle = (name: string) => {
+    setMergedPages(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const handleAttestationToggle = (name: string) => {
+    setAttestationProvided(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
   const checkDocuments = async () => {
@@ -51,7 +84,12 @@ export default function DocumentChecker() {
     }
     const uploadedDocs = Object.entries(files)
       .filter(([, f]) => f !== null)
-      .map(([name]) => name);
+      .map(([name, file]) => ({
+        name,
+        fileName: file?.name || '',
+        merged: mergedPages[name] || false,
+        attested: attestationProvided[name] || false,
+      }));
 
     if (uploadedDocs.length === 0) {
       setError('Please upload at least one document.');
@@ -95,8 +133,10 @@ export default function DocumentChecker() {
   const docLabels: { [key: string]: string } = {
     // Admission Documents
     transcript: '📄 Academic Transcripts',
-    matric: '📘 Matriculation Marksheet / Certificate',
-    intermediate: '📗 Intermediate / HSC Marksheet / Certificate',
+    matric_marksheet: '📘 Matriculation Marksheet',
+    matric_certificate: '📗 Matriculation Certificate',
+    intermediate_marksheet: '📘 Intermediate / HSC Marksheet',
+    intermediate_certificate: '📗 Intermediate / HSC Certificate',
     degree: '🎓 Degree Certificate',
     cv: '📋 CV / Resume',
     sop: '✍️ Statement of Purpose',
@@ -180,19 +220,39 @@ export default function DocumentChecker() {
         <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
           <span className="text-blue-600">🎓</span> Admission Documents
         </h2>
-        <p className="text-xs text-gray-500 mb-4">Upload documents required for university application</p>
+        <p className="text-xs text-gray-500 mb-4">Upload PDF documents only. Merged PDFs are supported for front/back pages. After uploading, mark the file as merged if it includes both sides.</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {['transcript', 'matric', 'intermediate', 'degree', 'cv', 'sop', 'lor1', 'lor2', 'lor3', 'ielts', 'portfolio', 'experience'].map((key) => (
+          {['transcript', 'matric_marksheet', 'matric_certificate', 'intermediate_marksheet', 'intermediate_certificate', 'degree', 'cv', 'sop', 'lor1', 'lor2', 'lor3', 'ielts', 'portfolio', 'experience'].map((key) => (
             <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
               <label className="cursor-pointer block">
                 <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
-                <p className="text-[11px] text-gray-400 mb-2">PDF, JPG, PNG accepted</p>
+                <p className="text-[11px] text-gray-400 mb-2">PDF only. Merged front/back PDFs are supported.</p>
                 {files[key] ? (
-                  <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
+                  <>
+                    <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
+                    <label className="inline-flex items-center gap-2 mt-3 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={mergedPages[key] || false}
+                        onChange={() => handleMergedPageToggle(key)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      This PDF includes both front and back pages
+                    </label>
+                    <label className="inline-flex items-center gap-2 mt-2 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={attestationProvided[key] || false}
+                        onChange={() => handleAttestationToggle(key)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      This PDF includes required attestation stamps (HEC/MOFA/embassy) on the back
+                    </label>
+                  </>
                 ) : (
                   <p className="text-xs text-blue-500">Click to upload</p>
                 )}
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                <input type="file" accept=".pdf" className="hidden"
                   onChange={e => handleFile(key, e.target.files?.[0] || null)} />
               </label>
               {files[key] && (
@@ -208,19 +268,39 @@ export default function DocumentChecker() {
         <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
           <span className="text-green-600">🛂</span> Visa Documents
         </h2>
-        <p className="text-xs text-gray-500 mb-4">Upload documents required for visa application</p>
+        <p className="text-xs text-gray-500 mb-4">Upload PDF documents only. Merged PDFs are supported for front/back pages.</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {['passport', 'visa_form', 'acceptance_letter', 'financial_proof', 'health_insurance', 'accommodation_proof', 'police_clearance', 'medical_certificate', 'birth_certificate', 'visa_fee'].map((key) => (
             <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
               <label className="cursor-pointer block">
                 <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
-                <p className="text-[11px] text-gray-400 mb-2">PDF, JPG, PNG accepted</p>
+                <p className="text-[11px] text-gray-400 mb-2">PDF only. Merged front/back PDFs are supported.</p>
                 {files[key] ? (
-                  <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
+                  <>
+                    <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
+                    <label className="inline-flex items-center gap-2 mt-3 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={mergedPages[key] || false}
+                        onChange={() => handleMergedPageToggle(key)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      This PDF includes both front and back pages
+                    </label>
+                    <label className="inline-flex items-center gap-2 mt-2 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={attestationProvided[key] || false}
+                        onChange={() => handleAttestationToggle(key)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      This PDF includes required attestation stamps (HEC/MOFA/embassy) on the back
+                    </label>
+                  </>
                 ) : (
                   <p className="text-xs text-blue-500">Click to upload</p>
                 )}
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                <input type="file" accept=".pdf" className="hidden"
                   onChange={e => handleFile(key, e.target.files?.[0] || null)} />
               </label>
               {files[key] && (
