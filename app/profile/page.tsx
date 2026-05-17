@@ -9,12 +9,6 @@ import { getStats, type Stats } from '@/lib/stats';
 
 const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
 
-const planLabels: Record<string, { label: string; color: string }> = {
-  free:  { label: 'Free Plan',  color: 'bg-gray-100 text-gray-600' },
-  basic: { label: 'Basic Plan', color: 'bg-blue-100 text-blue-700' },
-  pro:   { label: 'Pro Plan',   color: 'bg-violet-100 text-violet-700' },
-};
-
 type ProfileRecord = {
   plan: string;
   sop_used: number;
@@ -33,300 +27,290 @@ function formatLastActive(iso: string) {
   if (!iso) return 'No activity yet';
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
+  if (mins < 1)  return 'Just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`; 
+  if (hrs < 24)  return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function profileScore(stats: Stats) {
   let score = 0;
-  if (stats.sopsGenerated > 0)         score += 30;
-  if (stats.universitiesSearched > 0)  score += 25;
-  if (stats.profilesAnalyzed > 0)      score += 30;
-  if (stats.chatMessages > 2)          score += 15;
+  if (stats.sopsGenerated > 0)        score += 30;
+  if (stats.universitiesSearched > 0) score += 25;
+  if (stats.profilesAnalyzed > 0)     score += 30;
+  if (stats.chatMessages > 2)         score += 15;
   return score;
 }
 
-function FeatureLimitRow({ label, emoji, used, limit, isPro }: { label: string; emoji: string; used: number; limit: number; isPro: boolean; }) {
-  const percent = isPro ? 100 : Math.min((used / limit) * 100, 100);
-  const left = limit - used;
-  const isExhausted = !isPro && left <= 0;
+function LimitBar({ label, emoji, used, limit, isPro }: {
+  label: string; emoji: string; used: number; limit: number; isPro: boolean;
+}) {
+  const pct      = isPro ? 0 : Math.min((used / limit) * 100, 100);
+  const left     = limit - used;
+  const exhausted = !isPro && left <= 0;
+  const warn      = !isPro && pct >= 70 && !exhausted;
 
   return (
-    <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
-      <div className="flex items-center justify-between text-sm text-gray-700 mb-3">
-        <span className="flex items-center gap-2 font-semibold">
-          <span>{emoji}</span> {label}
+    <div className="bg-[#0f1117] border border-white/5 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-slate-300 flex items-center gap-2 font-medium">
+          <span>{emoji}</span>{label}
         </span>
-        <span className={`text-xs font-semibold ${isExhausted ? 'text-red-500' : 'text-gray-700'}`}>
-          {isPro ? 'Unlimited' : `${used} / ${limit}`}
+        <span className={`text-xs font-bold tabular-nums ${exhausted ? 'text-red-400' : isPro ? 'text-emerald-400' : 'text-slate-300'}`}>
+          {isPro ? '∞ Unlimited' : `${used} / ${limit}`}
         </span>
       </div>
-
       {!isPro && (
         <>
-          <div className="h-2 rounded-full bg-gray-200 overflow-hidden mb-2">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${
-                percent >= 100 ? 'bg-red-500' : percent >= 70 ? 'bg-amber-500' : 'bg-blue-500'
-              }`}
-              style={{ width: `${percent}%` }}
-            />
+          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-1.5">
+            <div className={`h-full rounded-full transition-all duration-700 ${exhausted ? 'bg-red-500' : warn ? 'bg-amber-400' : 'bg-indigo-500'}`}
+              style={{ width: `${pct}%` }} />
           </div>
-          <p className={`text-[11px] ${isExhausted ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
-            {isExhausted ? 'Limit reached — upgrade for more.' : `${left >= 0 ? left : 0} remaining`}
+          <p className={`text-[11px] ${exhausted ? 'text-red-400 font-semibold' : 'text-slate-600'}`}>
+            {exhausted ? '⚠️ Limit reached — upgrade to continue' : `${left} remaining`}
           </p>
         </>
       )}
-
-      {isPro && (
-        <p className="text-[11px] text-gray-400">Unlimited access on Pro.</p>
-      )}
+      {isPro && <p className="text-[11px] text-slate-600">Unlimited access on Pro</p>}
     </div>
   );
 }
 
+function RadialProgress({ score }: { score: number }) {
+  const r    = 54;
+  const circ = 2 * Math.PI * r;
+  const off  = circ - (score / 100) * circ;
+  return (
+    <svg width="130" height="130" viewBox="0 0 140 140">
+      <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="10" />
+      <circle cx="70" cy="70" r={r} fill="none" stroke="white" strokeWidth="10"
+        strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+        transform="rotate(-90 70 70)" style={{ transition: 'stroke-dashoffset 1s ease' }} />
+      <text x="70" y="65" textAnchor="middle" fill="white" fontSize="26" fontWeight="800">{score}</text>
+      <text x="70" y="82" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="11">/ 100</text>
+    </svg>
+  );
+}
+
 export default function ProfilePage() {
-  const [stats, setStats] = useState<Stats>({
-    sopsGenerated: 0,
-    universitiesSearched: 0,
-    profilesAnalyzed: 0,
-    chatMessages: 0,
-    lastActive: '',
-  });
+  const [stats, setStats]     = useState<Stats>({ sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '' });
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
-  const [recent, setRecent] = useState<Generation[]>([]);
-  const [email, setEmail] = useState<string | null>(null);
+  const [recent, setRecent]   = useState<Generation[]>([]);
+  const [email, setEmail]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
   useEffect(() => {
     setStats(getStats());
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setEmail(user.email ?? null);
-        loadProfile(user.uid);
-      } else {
-        setLoading(false);
-      }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) { setEmail(user.email ?? null); loadProfile(user.uid); }
+      else setLoading(false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   const loadProfile = async (userId: string) => {
     try {
-      // Load user profile
-      const userDocRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userDocRef);
+      const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
-        const data = userDoc.data();
-        setProfile({
-          plan: data.plan,
-          sop_used: data.sop_used ?? 0,
-          analyzer_used: data.analyzer_used ?? 0,
-          chat_used: data.chat_used ?? 0,
-        });
+        const d = userDoc.data();
+        setProfile({ plan: d.plan, sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0 });
       }
-
-      // Load recent generations
-      const q = query(
-        collection(db, 'generations'),
-        where('user_id', '==', userId),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
+      const q = query(collection(db, 'generations'), where('user_id', '==', userId), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
       const gens: Generation[] = [];
-      
-      let count = 0;
-      querySnapshot.forEach((doc) => {
-        if (count < 5) {
-          const data = doc.data();
-          gens.push({
-            id: doc.id,
-            type: data.type,
-            university: data.university || null,
-            created_at: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          });
-          count++;
+      snap.forEach((doc) => {
+        if (gens.length < 5) {
+          const d = doc.data();
+          gens.push({ id: doc.id, type: d.type, university: d.university || null, created_at: d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString() });
         }
       });
-
       setRecent(gens);
-    } catch (e) {
-      setError('Unable to load profile page. Please refresh.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Unable to load profile. Please refresh.'); }
+    finally  { setLoading(false); }
   };
 
-  const score = profileScore(stats);
-  const isPro = profile?.plan === 'pro';
-  const planInfo = planLabels[profile?.plan ?? 'free'];
-  const lastActiveText = stats.lastActive ? formatLastActive(stats.lastActive) : 'No activity yet';
+  const score      = profileScore(stats);
+  const isPro      = profile?.plan === 'pro';
+  const lastActive = stats.lastActive ? formatLastActive(stats.lastActive) : 'No activity yet';
+
+  const genTypeLabel = (t: string) =>
+    t === 'sop' ? 'SOP Generation' : t === 'cv' ? 'CV Generation' : t === 'lor' ? 'LOR Generation' : 'Generation';
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-500 mt-2 text-sm">Your account details, plan limits, and recent activity in one place.</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/checkout" className="inline-flex items-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-            Upgrade to Pro
-          </Link>
-          <Link href="/dashboard" className="inline-flex items-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#0f1117]">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
 
-      {loading ? (
-        <div className="rounded-3xl border border-gray-200 bg-white p-10 text-center text-gray-500 shadow-sm">Loading profile details…</div>
-      ) : !email ? (
-        <div className="rounded-3xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-          <p className="text-lg font-semibold text-gray-900">Please sign in to view your profile.</p>
-          <p className="mt-2 text-sm text-gray-500">You need to log in before you can manage your account and see usage details.</p>
-          <div className="mt-6 flex justify-center gap-3 flex-wrap">
-            <Link href="/login" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition">Sign in</Link>
-            <Link href="/signup" className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">Sign up</Link>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-7">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Profile</h1>
+            <p className="text-slate-400 text-sm mt-1">Your account, plan limits, and activity in one place.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {!isPro && (
+              <Link href="/checkout"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
+                Upgrade to Pro →
+              </Link>
+            )}
+            <Link href="/dashboard"
+              className="bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+              Dashboard
+            </Link>
           </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {error && (
-            <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
-          )}
 
-          <section className="grid gap-6 xl:grid-cols-[1.9fr_1.1fr]">
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-3xl font-bold text-blue-600">
+        {loading ? (
+          <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-10 text-center text-slate-500 animate-pulse">
+            Loading profile…
+          </div>
+        ) : !email ? (
+          <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-10 text-center">
+            <p className="text-lg font-semibold text-white mb-2">Please sign in to view your profile.</p>
+            <p className="text-slate-400 text-sm mb-6">You need to be logged in to manage your account.</p>
+            <div className="flex justify-center gap-3">
+              <Link href="/login" className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">Sign In</Link>
+              <Link href="/signup" className="bg-white/5 border border-white/10 text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-xl transition hover:bg-white/10">Sign Up</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
+                {error}
+              </div>
+            )}
+
+            {/* Top row — Account + Score */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* Account card */}
+              <div className="md:col-span-2 rounded-2xl bg-[#1a1d27] border border-white/5 p-5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Account</p>
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-2xl font-bold text-indigo-300 shrink-0">
                     {email.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Account</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">{email}</h2>
-                    <p className="mt-2 text-sm text-gray-500">Manage your plan, limits, and AI admission activity.</p>
+                  <div className="min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${isPro ? 'bg-violet-500/20 text-violet-300' : 'bg-white/10 text-slate-400'}`}>
+                        {isPro ? '⚡ Pro Plan' : 'Free Plan'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                  {planInfo.label}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#0f1117] border border-white/5 rounded-xl p-4">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Plan Status</p>
+                    <p className="text-white font-semibold text-sm">{isPro ? 'Pro — Unlimited' : 'Free Plan'}</p>
+                    <p className="text-slate-500 text-xs mt-1">{isPro ? 'Full access to all tools.' : 'Limited monthly usage.'}</p>
+                  </div>
+                  <div className="bg-[#0f1117] border border-white/5 rounded-xl p-4">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Last Active</p>
+                    <p className="text-white font-semibold text-sm">{lastActive}</p>
+                    <p className="text-slate-500 text-xs mt-1">Based on tool usage.</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-3xl bg-gray-50 p-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Plan status</p>
-                  <p className="mt-3 text-lg font-semibold text-gray-900">{planInfo.label}</p>
-                  <p className="mt-2 text-sm text-gray-500">{isPro ? 'Unlimited access to all tools.' : 'Free plan with monthly limits.'}</p>
+              {/* Score card */}
+              <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-20"
+                  style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
+                <p className="text-[11px] font-bold text-indigo-200 uppercase tracking-widest mb-3 relative z-10">Profile Score</p>
+                <div className="relative z-10">
+                  <RadialProgress score={score} />
                 </div>
-                <div className="rounded-3xl bg-gray-50 p-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Last activity</p>
-                  <p className="mt-3 text-lg font-semibold text-gray-900">{lastActiveText}</p>
-                  <p className="mt-2 text-sm text-gray-500">Your recent tool usage is reflected here.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-linear-to-br from-blue-600 via-sky-600 to-cyan-500 p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.2em] text-blue-100">Profile score</p>
-                  <h3 className="mt-3 text-4xl font-bold">{score}%</h3>
-                  <p className="mt-3 text-sm text-blue-100">
-                    {score === 0 && 'Start using the tools to raise your score.'}
-                    {score > 0 && score < 50 && 'Nice start — use more features to improve.'}
-                    {score >= 50 && score < 85 && 'Great progress — keep going.'}
-                    {score >= 85 && 'Excellent work — your profile is strong.'}
-                  </p>
-                </div>
-                <div className="relative h-24 w-24">
-                  <svg viewBox="0 0 36 36" className="h-24 w-24 -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="3"
-                      strokeDasharray={`${score} ${100 - score}`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 grid place-items-center text-lg font-semibold">{score}%</span>
-                </div>
+                <p className="text-indigo-200 text-xs mt-3 relative z-10 leading-relaxed">
+                  {score === 0  && 'Use tools to build your score'}
+                  {score > 0  && score < 50  && 'Good start! Keep exploring'}
+                  {score >= 50 && score < 85 && 'Great progress! Keep going 🚀'}
+                  {score >= 85 && 'Excellent — strong profile ✅'}
+                </p>
               </div>
             </div>
-          </section>
 
-          <section className="grid gap-6 xl:grid-cols-[1.6fr_1.4fr]">
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Feature limits</h2>
-                  <p className="mt-1 text-sm text-gray-500">Your current usage against monthly allowances.</p>
+            {/* Middle row — Limits + Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Feature limits */}
+              <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Feature Limits</p>
+                  {!isPro && (
+                    <Link href="/checkout" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition">
+                      Upgrade →
+                    </Link>
+                  )}
                 </div>
-                <Link href="/checkout" className="text-sm font-semibold text-blue-600 hover:text-blue-700">Upgrade plan</Link>
+                <div className="space-y-3">
+                  <LimitBar label="SOP Generations"  emoji="📝" used={profile?.sop_used ?? 0}      limit={FREE_LIMITS.sop}      isPro={isPro} />
+                  <LimitBar label="Profile Analyses"  emoji="📊" used={profile?.analyzer_used ?? 0} limit={FREE_LIMITS.analyzer} isPro={isPro} />
+                  <LimitBar label="AI Chat Messages"  emoji="💬" used={profile?.chat_used ?? 0}     limit={FREE_LIMITS.chat}     isPro={isPro} />
+                </div>
+                {!isPro && (
+                  <Link href="/checkout"
+                    className="mt-4 block w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold py-2.5 rounded-xl text-center transition">
+                    🚀 Upgrade — Unlock Everything
+                  </Link>
+                )}
               </div>
 
-              <div className="mt-6 space-y-4">
-                <FeatureLimitRow label="SOP Generations" emoji="📝" used={profile?.sop_used ?? 0} limit={FREE_LIMITS.sop} isPro={isPro} />
-                <FeatureLimitRow label="Profile Analyses" emoji="📊" used={profile?.analyzer_used ?? 0} limit={FREE_LIMITS.analyzer} isPro={isPro} />
-                <FeatureLimitRow label="AI Chat Messages" emoji="💬" used={profile?.chat_used ?? 0} limit={FREE_LIMITS.chat} isPro={isPro} />
-              </div>
-
-              {!isPro && (
-                <div className="mt-6 rounded-3xl bg-blue-50 p-4 text-sm text-blue-700">
-                  <p className="font-semibold">Free plan reminder</p>
-                  <p className="mt-2 text-sm text-blue-700">Upgrade to Pro to remove usage limits and keep working without interruption.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900">Recent activity</h2>
-                <p className="mt-1 text-sm text-gray-500">Your latest admissions actions.</p>
-
+              {/* Recent Activity */}
+              <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Recent Activity</p>
                 {recent.length === 0 ? (
-                  <div className="mt-6 rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-                    No recent actions yet. Use the tools below to start tracking your progress.
+                  <div className="text-center py-8">
+                    <p className="text-3xl mb-2">📄</p>
+                    <p className="text-slate-400 text-sm">No activity yet.</p>
+                    <Link href="/sop-generator" className="text-indigo-400 text-xs mt-1 hover:text-indigo-300 transition inline-block">
+                      Generate your first SOP →
+                    </Link>
                   </div>
                 ) : (
-                  <div className="mt-6 space-y-3">
+                  <div className="space-y-2">
                     {recent.map((item) => (
-                      <div key={item.id} className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{item.type === 'sop' ? 'SOP generation' : item.type === 'cv' ? 'CV generation' : item.type === 'lor' ? 'LOR generation' : 'Generation'}</p>
-                            <p className="mt-1 text-sm text-gray-500">{item.university ?? 'No university specified'}</p>
-                          </div>
-                          <span className="text-xs uppercase text-gray-400">{new Date(item.created_at).toLocaleDateString()}</span>
+                      <div key={item.id} className="bg-[#0f1117] border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-slate-200 text-sm font-medium">{genTypeLabel(item.type)}</p>
+                          <p className="text-slate-500 text-xs truncate mt-0.5">{item.university ?? 'No university specified'}</p>
                         </div>
+                        <span className="text-[10px] text-slate-600 shrink-0">
+                          {new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900">Quick links</h2>
-                <div className="mt-5 grid gap-3">
-                  <Link href="/sop-generator" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Generate SOP</Link>
-                  <Link href="/profile-analyzer" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Analyze profile</Link>
-                  <Link href="/university-finder" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Find universities</Link>
-                  <Link href="/chatbot" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Open AI chat</Link>
-                </div>
+            {/* Quick links */}
+            <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-5">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Quick Links</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: '📝 Generate SOP',      href: '/sop-generator'     },
+                  { label: '📊 Analyze Profile',   href: '/profile-analyzer'  },
+                  { label: '🏛️ Find Universities',  href: '/university-finder' },
+                  { label: '💬 AI Chat',            href: '/chatbot'           },
+                ].map(({ label, href }) => (
+                  <Link key={href} href={href}
+                    className="bg-[#0f1117] border border-white/5 hover:border-white/15 text-slate-300 hover:text-white text-sm font-medium px-4 py-3 rounded-xl transition text-center">
+                    {label}
+                  </Link>
+                ))}
               </div>
             </div>
-          </section>
-        </div>
-      )}
+
+          </div>
+        )}
+      </div>
     </div>
   );
 }

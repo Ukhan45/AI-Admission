@@ -21,13 +21,9 @@ export default function SopHistory() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        loadHistory(user.uid);
-      } else {
-        setLoading(false);
-      }
+      if (user) loadHistory(user.uid);
+      else setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -39,23 +35,16 @@ export default function SopHistory() {
         where('type', '==', 'sop'),
         orderBy('createdAt', 'desc')
       );
-      const querySnapshot = await getDocs(q);
+      const snap = await getDocs(q);
       const gens: Generation[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        gens.push({
-          id: doc.id,
-          university: data.university,
-          content: data.content,
-          createdAt: data.createdAt?.toDate() || new Date(),
-        });
+      snap.forEach((doc) => {
+        const d = doc.data();
+        gens.push({ id: doc.id, university: d.university, content: d.content, createdAt: d.createdAt?.toDate() || new Date() });
       });
-
       setGenerations(gens);
       if (gens.length > 0) setSelected(gens[0]);
-    } catch (error) {
-      console.error('Error loading history:', error);
+    } catch (e) {
+      console.error('Error loading history:', e);
     } finally {
       setLoading(false);
     }
@@ -81,108 +70,122 @@ export default function SopHistory() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-100 rounded w-48" />
-          <div className="h-4 bg-gray-100 rounded w-72" />
-          <div className="h-96 bg-gray-100 rounded-2xl" />
+      <div className="min-h-screen bg-[#0f1117] px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-4 animate-pulse">
+          <div className="h-8 bg-white/5 rounded-xl w-48" />
+          <div className="h-4 bg-white/5 rounded-xl w-64" />
+          <div className="h-96 bg-white/5 rounded-2xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">SOP History</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {generations.length} SOP{generations.length !== 1 ? 's' : ''} generated
-          </p>
-        </div>
-        <Link href="/sop-generator">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
-            + Generate New SOP
-          </button>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-[#0f1117]">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
 
-      {generations.length === 0 ? (
-        <div className="text-center py-24 bg-white border border-gray-100 rounded-2xl">
-          <div className="text-5xl mb-4">📝</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No SOPs yet</h2>
-          <p className="text-gray-500 text-sm mb-6">Generate your first SOP to see it here.</p>
-          <Link href="/sop-generator">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
-              Generate SOP
-            </button>
+        {/* Header */}
+        <div className="flex items-start justify-between mb-7">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">SOP History</h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {generations.length} SOP{generations.length !== 1 ? 's' : ''} generated
+            </p>
+          </div>
+          <Link href="/sop-generator"
+            className="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
+            + New SOP
           </Link>
         </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-6">
 
-          {/* Left — list */}
-          <div className="col-span-1 space-y-2">
-            {generations.map((gen) => (
-              <div
-                key={gen.id}
-                onClick={() => setSelected(gen)}
-                className={`cursor-pointer rounded-xl p-4 border transition ${
-                  selected?.id === gen.id
-                    ? 'bg-blue-50 border-blue-300'
-                    : 'bg-white border-gray-100 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">📝</span>
-                  <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">SOP</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-800 truncate">{gen.university}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(gen.createdAt).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric'
-                  })}
-                </p>
-              </div>
-            ))}
+        {/* Empty state */}
+        {generations.length === 0 ? (
+          <div className="rounded-2xl bg-[#1a1d27] border border-white/5 text-center py-24 px-6">
+            <p className="text-5xl mb-4">📝</p>
+            <h2 className="text-lg font-semibold text-white mb-2">No SOPs yet</h2>
+            <p className="text-slate-400 text-sm mb-6">Generate your first SOP to see it here.</p>
+            <Link href="/sop-generator"
+              className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
+              Generate SOP →
+            </Link>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-          {/* Right — viewer */}
-          {selected && (
-            <div className="col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{selected.university}</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(selected.createdAt).toLocaleDateString('en-US', {
-                      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-                    })}
+            {/* Left — list */}
+            <div className="md:col-span-1 space-y-2">
+              {generations.map((gen) => (
+                <div key={gen.id} onClick={() => setSelected(gen)}
+                  className={`cursor-pointer rounded-xl p-4 border transition group ${
+                    selected?.id === gen.id
+                      ? 'bg-indigo-500/10 border-indigo-500/40'
+                      : 'bg-[#1a1d27] border-white/5 hover:border-white/15'
+                  }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+                      SOP
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      {new Date(gen.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className={`text-sm font-semibold truncate ${selected?.id === gen.id ? 'text-white' : 'text-slate-300'}`}>
+                    {gen.university}
+                  </p>
+                  <p className="text-[11px] text-slate-600 mt-1.5 line-clamp-2">
+                    {gen.content.slice(0, 80)}…
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCopy}
-                    className="text-sm font-medium border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
-                  >
-                    {copied ? '✅ Copied!' : '📋 Copy'}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition"
-                  >
-                    ⬇️ Download
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-4 prose max-w-none whitespace-pre-wrap text-gray-800 text-sm leading-relaxed max-h-[60vh] overflow-y-auto">
-                {selected.content}
-              </div>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Right — viewer */}
+            {selected && (
+              <div className="md:col-span-2 rounded-2xl bg-[#1a1d27] border border-white/5 p-5 md:p-6 flex flex-col">
+
+                {/* Viewer header */}
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div>
+                    <h2 className="text-white font-bold text-base">{selected.university}</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      {new Date(selected.createdAt).toLocaleDateString('en-US', {
+                        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={handleCopy}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border
+                        bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition">
+                      {copied ? '✅ Copied!' : '📋 Copy'}
+                    </button>
+                    <button onClick={handleDownload}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
+                        bg-indigo-600 hover:bg-indigo-500 text-white transition">
+                      ⬇️ Download
+                    </button>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-white/5 mb-5" />
+
+                {/* SOP content */}
+                <div className="flex-1 bg-[#0f1117] border border-white/5 rounded-xl p-5 overflow-y-auto max-h-[62vh]">
+                  <p className="text-slate-300 text-sm leading-8 whitespace-pre-wrap font-light">
+                    {selected.content}
+                  </p>
+                </div>
+
+                {/* Footer hint */}
+                <p className="text-[11px] text-slate-600 mt-3 text-right">
+                  Review and personalise before submitting to your university.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
