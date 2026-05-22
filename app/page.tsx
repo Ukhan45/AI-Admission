@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -11,13 +10,19 @@ export default function LandingPage() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
+    // Load AdmitAI fonts
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bricolage+Grotesque:wght@500;600;700&display=swap';
+    document.head.appendChild(link);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) router.replace('/dashboard');
       else setChecking(false);
     });
-
     return () => unsubscribe();
   }, [router]);
 
@@ -33,9 +38,9 @@ export default function LandingPage() {
   ];
 
   const steps = [
-    { title: 'Create Your Profile', description: 'Add your academic details, goals, and preferred study destination.' },
-    { title: 'Use AI Tools', description: 'Generate SOPs, analyze your profile, and discover universities instantly.' },
-    { title: 'Apply Smarter', description: 'Prepare stronger applications with AI-powered guidance and insights.' },
+    { title: 'Create Your Profile', description: 'Add your academic details, goals, and preferred study destination.', icon: '👤', color: '#E1F5EE', num: '#1D9E75' },
+    { title: 'Use AI Tools', description: 'Generate SOPs, analyze your profile, and discover universities instantly.', icon: '⚡', color: '#FAEEDA', num: '#EF9F27' },
+    { title: 'Apply Smarter', description: 'Prepare stronger applications with AI-powered guidance and insights.', icon: '🎯', color: '#EEEDFE', num: '#534AB7' },
   ];
 
   const faqs = [
@@ -46,340 +51,576 @@ export default function LandingPage() {
     { q: 'How do I upgrade to Pro?', a: 'Click "Upgrade to Pro" from your dashboard or the pricing section. We accept all major cards, Apple Pay, Google Pay, and PayPal.' },
   ];
 
-  return (
-    <div className="min-h-screen bg-black text-white">
+  const base: React.CSSProperties = { fontFamily: "'Nunito', sans-serif" };
+  const heading: React.CSSProperties = { fontFamily: "'Bricolage Grotesque', sans-serif" };
 
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFFBF5', color: '#2C2C2A', ...base }}>
+
+      {/* ── NAVBAR ── */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        background: 'rgba(255,251,245,0.92)', backdropFilter: 'blur(12px)',
+        borderBottom: '1.5px solid #E1F5EE',
+        boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="UniQuest AI"
-              width={36}
-              height={36}
-              className="rounded-xl shrink-0"
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg,#085041,#1D9E75)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18 }}>
+              U
+            </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">UniQuest AI</h1>
-              <p className="text-[10px] text-gray-400">by Ariesian Tech</p>
+              <p style={{ ...heading, fontSize: 16, fontWeight: 700, color: '#085041', margin: 0, lineHeight: 1.2 }}>UniQuest AI</p>
+              <p style={{ fontSize: 10, color: '#888780', margin: 0 }}>by Ariesian Tech</p>
             </div>
           </div>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-300">
-            <a href="#features" className="hover:text-white transition">Features</a>
-            <a href="#how" className="hover:text-white transition">How It Works</a>
-            <a href="#pricing" className="hover:text-white transition">Pricing</a>
-            <a href="#faq" className="hover:text-white transition">FAQ</a>
+          {/* Desktop links */}
+          <div style={{ display: 'flex', gap: 32, fontSize: 14, fontWeight: 700, color: '#5F5E5A' }} className="hide-mobile">
+            {[['#features','Features'],['#how','How It Works'],['#pricing','Pricing'],['#faq','FAQ']].map(([href,label]) => (
+              <a key={href} href={href} style={{ textDecoration: 'none', color: 'inherit', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#1D9E75')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#5F5E5A')}
+              >{label}</a>
+            ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/10 transition">
-              Login
-            </Link>
-            <Link href="/signup" className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-medium hover:bg-indigo-500 transition">
-              Get Started
-            </Link>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }} className="hide-mobile">
+            <Link href="/login" style={{
+              padding: '9px 18px', borderRadius: 50, border: '1.5px solid #9FE1CB',
+              fontSize: 14, fontWeight: 700, color: '#0F6E56', textDecoration: 'none',
+              transition: 'background 0.15s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#E1F5EE')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >Login</Link>
+            <Link href="/signup" style={{
+              padding: '9px 20px', borderRadius: 50,
+              background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14,
+              textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.25)',
+              transition: 'background 0.15s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
+            >Get Started →</Link>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg border border-white/10 hover:bg-white/10 transition"
             onClick={() => setMenuOpen(!menuOpen)}
+            style={{ display: 'none', padding: 8, borderRadius: 10, border: '1.5px solid #9FE1CB', background: 'transparent', cursor: 'pointer' }}
+            className="show-mobile"
           >
-            {menuOpen ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+            {menuOpen
+              ? <svg width="20" height="20" fill="none" stroke="#0F6E56" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              : <svg width="20" height="20" fill="none" stroke="#0F6E56" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            }
           </button>
         </div>
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-white/10 bg-black/95 px-4 py-4 space-y-3">
-            {['#features', '#how', '#pricing', '#faq'].map((href) => (
-              <a
-                key={href}
-                href={href}
-                onClick={() => setMenuOpen(false)}
-                className="block text-sm text-gray-300 hover:text-white py-2 transition capitalize"
-              >
-                {href.replace('#', '').replace('-', ' ')}
-              </a>
+          <div style={{ borderTop: '1.5px solid #E1F5EE', background: '#FFFBF5', padding: '12px 24px 20px' }}>
+            {[['#features','Features'],['#how','How It Works'],['#pricing','Pricing'],['#faq','FAQ']].map(([href,label]) => (
+              <a key={href} href={href} onClick={() => setMenuOpen(false)}
+                style={{ display: 'block', padding: '10px 8px', fontSize: 14, fontWeight: 700, color: '#085041', textDecoration: 'none' }}
+              >{label}</a>
             ))}
-            <div className="pt-3 flex flex-col gap-2 border-t border-white/10">
-              <Link href="/login" className="block text-center rounded-xl border border-white/10 px-4 py-2.5 text-sm hover:bg-white/10 transition">
-                Login
-              </Link>
-              <Link href="/signup" className="block text-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium hover:bg-indigo-500 transition">
-                Get Started
-              </Link>
+            <div style={{ borderTop: '1.5px solid #E1F5EE', paddingTop: 12, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Link href="/login" style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 14, border: '1.5px solid #9FE1CB', fontSize: 14, fontWeight: 700, color: '#0F6E56', textDecoration: 'none' }}>Login</Link>
+              <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 14, background: '#1D9E75', fontSize: 14, fontWeight: 800, color: '#fff', textDecoration: 'none' }}>Get Started →</Link>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.25),transparent_40%)]" />
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2">
+      {/* ── HERO ── */}
+      <section style={{ position: 'relative', overflow: 'hidden', minHeight: 620, display: 'flex', alignItems: 'center' }}>
+
+        {/* Animated background layers */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #D4F0E5 0%, #FFFBF5 55%, #FAEEDA 100%)' }} />
+
+        {/* Grid overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'linear-gradient(rgba(29,158,117,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(29,158,117,0.07) 1px,transparent 1px)',
+          backgroundSize: '44px 44px',
+        }} />
+
+        {/* Glowing orbs */}
+        <div style={{ position: 'absolute', top: -80, left: -60, width: 340, height: 340, borderRadius: '50%', background: '#1D9E75', filter: 'blur(70px)', opacity: 0.2, animation: 'orbdrift 11s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: -30, right: -50, width: 280, height: 280, borderRadius: '50%', background: '#EF9F27', filter: 'blur(70px)', opacity: 0.18, animation: 'orbdrift 14s 4s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: 30, left: '35%', width: 200, height: 200, borderRadius: '50%', background: '#AFA9EC', filter: 'blur(60px)', opacity: 0.18, animation: 'orbdrift 9s 2s ease-in-out infinite' }} />
+
+        {/* SVG illustrated backdrop */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9FE1CB" stopOpacity="0.4"/><stop offset="100%" stopColor="#E1F5EE" stopOpacity="0"/></linearGradient>
+            <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#AFA9EC" stopOpacity="0.35"/><stop offset="100%" stopColor="#EEEDFE" stopOpacity="0"/></linearGradient>
+          </defs>
+          {/* Left skyline */}
+          <rect x="0" y="360" width="55" height="260" fill="url(#bg1)" rx="3"/>
+          <rect x="20" y="320" width="32" height="300" fill="url(#bg1)" rx="3"/>
+          <rect x="60" y="380" width="42" height="240" fill="url(#bg1)" rx="3"/>
+          <rect x="88" y="310" width="52" height="310" fill="url(#bg1)" rx="3"/>
+          <rect x="126" y="340" width="36" height="280" fill="url(#bg1)" rx="3"/>
+          <rect x="24" y="340" width="8" height="6" fill="#1D9E75" opacity="0.25" rx="1"/>
+          <rect x="24" y="362" width="8" height="6" fill="#EF9F27" opacity="0.3" rx="1"/>
+          <rect x="94" y="328" width="10" height="7" fill="#1D9E75" opacity="0.2" rx="1"/>
+          {/* Right skyline */}
+          <rect x="1020" y="330" width="58" height="290" fill="url(#bg2)" rx="3"/>
+          <rect x="1065" y="295" width="44" height="325" fill="url(#bg2)" rx="3"/>
+          <rect x="1100" y="355" width="68" height="265" fill="url(#bg2)" rx="3"/>
+          <rect x="1118" y="278" width="32" height="342" fill="url(#bg2)" rx="3"/>
+          <rect x="1072" y="316" width="9" height="7" fill="#7F77DD" opacity="0.3" rx="1"/>
+          <rect x="1072" y="338" width="9" height="7" fill="#EF9F27" opacity="0.25" rx="1"/>
+          {/* Airplane trail */}
+          <line x1="820" y1="70" x2="1060" y2="38" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="7 5" opacity="0.3"/>
+          <ellipse cx="822" cy="71" rx="9" ry="6" fill="#1D9E75" opacity="0.45"/>
+          <polygon points="812,71 822,65 822,77" fill="#0F6E56" opacity="0.55"/>
+          {/* Left floating card — acceptance */}
+          <g transform="translate(36,175)" opacity="0.7">
+            <rect width="126" height="84" rx="14" fill="white" stroke="#9FE1CB" strokeWidth="1.5"/>
+            <rect x="12" y="14" width="64" height="8" rx="4" fill="#1D9E75" opacity="0.55"/>
+            <rect x="12" y="30" width="100" height="5" rx="2.5" fill="#D3D1C7"/>
+            <rect x="12" y="42" width="82" height="5" rx="2.5" fill="#D3D1C7"/>
+            <rect x="12" y="54" width="90" height="5" rx="2.5" fill="#D3D1C7"/>
+            <circle cx="104" cy="64" r="11" fill="#E1F5EE"/>
+            <text x="104" y="68" textAnchor="middle" fontSize="12" fill="#0F6E56" fontWeight="700">✓</text>
+          </g>
+          {/* Right floating card — visa */}
+          <g transform="translate(1020,180)" opacity="0.65">
+            <rect width="116" height="78" rx="14" fill="white" stroke="#FAC775" strokeWidth="1.5"/>
+            <rect x="10" y="12" width="52" height="8" rx="4" fill="#EF9F27" opacity="0.65"/>
+            <rect x="10" y="28" width="94" height="5" rx="2.5" fill="#D3D1C7"/>
+            <rect x="10" y="40" width="72" height="5" rx="2.5" fill="#D3D1C7"/>
+            <rect x="66" y="50" width="40" height="18" rx="9" fill="#FAEEDA" stroke="#EF9F27" strokeWidth="1"/>
+            <text x="86" y="63" textAnchor="middle" fontSize="10" fill="#854F0B" fontWeight="800">VISA</text>
+          </g>
+          {/* Graduation cap */}
+          <g transform="translate(920,72)" opacity="0.18">
+            <rect x="0" y="16" width="52" height="7" rx="2" fill="#085041"/>
+            <polygon points="26,0 52,16 26,24 0,16" fill="#085041"/>
+            <line x1="46" y1="16" x2="52" y2="40" stroke="#085041" strokeWidth="2"/>
+            <circle cx="52" cy="42" r="5" fill="#EF9F27"/>
+          </g>
+          {/* Globe hint bottom */}
+          <circle cx="600" cy="640" r="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.12"/>
+          <ellipse cx="600" cy="640" rx="44" ry="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.09"/>
+          <line x1="510" y1="640" x2="690" y2="640" stroke="#1D9E75" strokeWidth="0.8" opacity="0.1"/>
+        </svg>
+
+        {/* Hero content */}
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 1200, margin: '0 auto', padding: '72px 28px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
+
+          {/* Left: text */}
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-300">
-              🚀 AI-Powered University Admission Platform
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.88)', border: '1.5px solid #9FE1CB', borderRadius: 50, padding: '7px 16px', fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 24 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', display: 'inline-block', animation: 'pulse 1.6s ease infinite' }} />
+              AI-Powered University Admission Platform
             </div>
-            <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
-              Get Admitted <span className="text-indigo-500">Smarter</span> with AI
+            <h1 style={{ ...heading, fontSize: 52, fontWeight: 700, lineHeight: 1.12, color: '#085041', margin: '0 0 20px' }}>
+              Get Admitted{' '}
+              <span style={{ background: 'linear-gradient(100deg,#1D9E75 30%,#EF9F27 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Smarter</span>{' '}
+              with AI
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-gray-400 sm:text-lg">
+            <p style={{ fontSize: 17, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 36, maxWidth: 480 }}>
               Generate SOPs, analyze your profile, discover universities, and prepare your applications — all in one intelligent platform.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/signup" className="rounded-2xl bg-indigo-600 px-7 py-4 font-medium hover:bg-indigo-500 transition">
-                Start Free
-              </Link>
-              <a href="#features" className="rounded-2xl border border-white/10 px-7 py-4 font-medium hover:bg-white/10 transition">
-                See Features ↓
-              </a>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 36 }}>
+              <Link href="/signup" style={{
+                padding: '15px 32px', borderRadius: 50, background: '#1D9E75', color: '#fff',
+                fontWeight: 800, fontSize: 15, textDecoration: 'none',
+                boxShadow: '0 6px 24px rgba(29,158,117,0.28)',
+                transition: 'transform 0.15s, background 0.15s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#0F6E56'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#1D9E75'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >Start Free →</Link>
+              <a href="#features" style={{
+                padding: '14px 28px', borderRadius: 50, border: '2px solid #1D9E75',
+                color: '#0F6E56', fontWeight: 800, fontSize: 15, textDecoration: 'none',
+                background: 'rgba(255,255,255,0.8)', transition: 'transform 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+              >See Features ↓</a>
             </div>
-            <div className="mt-10 flex flex-wrap gap-3 text-sm text-gray-400">
-              <div className="rounded-full border border-white/10 px-4 py-2">🤖 AI Powered</div>
-              <div className="rounded-full border border-white/10 px-4 py-2">🎓 University Matching</div>
-              <div className="rounded-full border border-white/10 px-4 py-2">🔒 Secure Platform</div>
+            {/* Floating pills */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {[['🤖','AI Powered'],['🎓','University Matching'],['🔒','Secure Platform']].map(([icon,label]) => (
+                <span key={label} style={{
+                  background: 'rgba(255,255,255,0.85)', border: '1.5px solid #9FE1CB',
+                  borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#085041',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>{icon} {label}</span>
+              ))}
             </div>
           </div>
 
-          {/* Dashboard Preview */}
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-indigo-500/20 blur-3xl" />
-            <div className="relative rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5 backdrop-blur-xl shadow-2xl">
-              <div className="mb-4 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                <div className="h-3 w-3 rounded-full bg-green-500" />
+          {/* Right: dashboard preview card */}
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: -16, borderRadius: 28, background: 'rgba(29,158,117,0.08)', filter: 'blur(24px)' }} />
+            <div style={{
+              position: 'relative', borderRadius: 24, border: '1.5px solid #9FE1CB',
+              background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(16px)',
+              padding: 22, boxShadow: '0 20px 60px rgba(29,158,117,0.14)',
+            }}>
+              {/* Browser bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+                {['#F09595','#FAC775','#97C459'].map((c,i) => <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
+                <div style={{ marginLeft: 10, flex: 1, height: 24, borderRadius: 8, background: '#E1F5EE', display: 'flex', alignItems: 'center', paddingLeft: 12, fontSize: 11, color: '#888780', fontWeight: 600 }}>
+                  uniquestai.com/dashboard
+                </div>
               </div>
-              <div className="grid gap-4 grid-cols-2">
-                <div className="rounded-2xl bg-black/40 p-4 border border-white/10">
-                  <h3 className="text-sm font-semibold">Admission Score</h3>
-                  <p className="mt-2 text-3xl font-bold text-indigo-400">87%</p>
-                  <p className="mt-1 text-xs text-gray-400">Strong profile for Canadian universities.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ borderRadius: 16, background: 'linear-gradient(135deg,#085041,#1D9E75)', padding: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#9FE1CB', margin: '0 0 6px' }}>Admission Score</p>
+                  <p style={{ ...heading, fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>87%</p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', margin: 0 }}>Strong profile for Canadian universities</p>
                 </div>
-                <div className="rounded-2xl bg-black/40 p-4 border border-white/10">
-                  <h3 className="text-sm font-semibold">SOPs Generated</h3>
-                  <p className="mt-2 text-3xl font-bold text-indigo-400">12</p>
-                  <p className="mt-1 text-xs text-gray-400">AI-generated SOP drafts.</p>
+                <div style={{ borderRadius: 16, background: '#FAEEDA', border: '1.5px solid #FAC775', padding: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#854F0B', margin: '0 0 6px' }}>SOPs Generated</p>
+                  <p style={{ ...heading, fontSize: 32, fontWeight: 700, color: '#633806', margin: '0 0 4px' }}>12</p>
+                  <p style={{ fontSize: 11, color: '#888780', margin: 0 }}>AI-generated SOP drafts</p>
                 </div>
-                <div className="rounded-2xl bg-black/40 p-4 border border-white/10 col-span-2">
-                  <h3 className="mb-3 text-sm font-semibold">Recommended Universities</h3>
-                  <div className="space-y-2">
-                    {[
-                      { name: 'University of Toronto', country: 'Canada', match: 'High Match', color: 'text-green-400 bg-green-500/10' },
-                      { name: 'University of Melbourne', country: 'Australia', match: 'Medium Match', color: 'text-yellow-400 bg-yellow-500/10' },
-                    ].map((u) => (
-                      <div key={u.name} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2.5">
-                        <div>
-                          <p className="text-sm font-medium">{u.name}</p>
-                          <p className="text-xs text-gray-400">{u.country}</p>
-                        </div>
-                        <span className={`rounded-full px-2.5 py-1 text-xs ${u.color}`}>{u.match}</span>
+                <div style={{ borderRadius: 16, background: '#fff', border: '1.5px solid #E1F5EE', padding: 16, gridColumn: 'span 2' }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>Recommended Universities</p>
+                  {[
+                    { name: 'University of Toronto', country: 'Canada', match: 'High Match', bg: '#E1F5EE', color: '#0F6E56' },
+                    { name: 'University of Melbourne', country: 'Australia', match: 'Good Match', bg: '#FAEEDA', color: '#854F0B' },
+                  ].map((u) => (
+                    <div key={u.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderRadius: 12, background: '#FFFBF5', marginBottom: 6 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#085041', margin: 0 }}>{u.name}</p>
+                        <p style={{ fontSize: 11, color: '#888780', margin: 0 }}>{u.country}</p>
                       </div>
-                    ))}
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 50, background: u.bg, color: u.color }}>{u.match}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATS BAR ── */}
+      <section style={{ background: 'linear-gradient(90deg,#085041,#1D9E75)', padding: '28px 28px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, textAlign: 'center' }}>
+          {[['10,000+','Students Helped'],['50+','Countries Supported'],['98%','Satisfaction Rate'],['500+','Universities Listed']].map(([val,label]) => (
+            <div key={label}>
+              <p style={{ ...heading, fontSize: 30, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>{val}</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, margin: 0 }}>{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PROBLEM & SOLUTION ── */}
+      <section style={{ background: '#FFFBF5', padding: '72px 28px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+          {/* Problem */}
+          <div style={{ borderRadius: 24, border: '1.5px solid #F7C1C1', background: '#fff', padding: 40 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FCEBEB', border: '1.5px solid #F7C1C1', borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#A32D2D', marginBottom: 18 }}>
+              ❌ The Problem
+            </div>
+            <h2 style={{ ...heading, fontSize: 26, fontWeight: 700, color: '#2C2C2A', margin: '0 0 20px' }}>Students Struggle with Admissions</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {['Writing SOPs is time-consuming and stressful','Finding suitable universities is confusing','Admission chances are unclear without data','Application documents often contain mistakes'].map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#FCEBEB', color: '#A32D2D', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>✕</span>
+                  <span style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.6 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Solution */}
+          <div style={{ borderRadius: 24, border: '1.5px solid #9FE1CB', background: '#fff', padding: 40 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#E1F5EE', border: '1.5px solid #9FE1CB', borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 18 }}>
+              ✅ Our Solution
+            </div>
+            <h2 style={{ ...heading, fontSize: 26, fontWeight: 700, color: '#2C2C2A', margin: '0 0 12px' }}>AI That Guides Every Step</h2>
+            <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 20 }}>
+              UniQuest AI simplifies the entire admission journey using artificial intelligence — from SOP generation to university matching and profile analysis.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {['AI writes your SOP in minutes','Smart university matching by profile','Real-time admission score insights','Document checklist & error detection'].map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>✓</span>
+                  <span style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.6 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section id="features" style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: '#E1F5EE', color: '#0F6E56', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Features</span>
+            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Everything You Need for University Admissions</h2>
+            <p style={{ fontSize: 15, color: '#888780', maxWidth: 480, margin: '0 auto' }}>All the AI tools you need to apply to universities with confidence — in one platform.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 18 }}>
+            {features.map((f) => (
+              <div key={f.title} style={{
+                borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
+                transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s', cursor: 'default',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#9FE1CB'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.1)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#E1F5EE'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
+              >
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18 }}>{f.icon}</div>
+                <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: '0 0 14px' }}>{f.description}</p>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75' }}>Learn more →</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" style={{ background: '#FFFBF5', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: '#FAEEDA', color: '#854F0B', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>How It Works</span>
+            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Simple, Fast, Intelligent</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, position: 'relative' }}>
+            {/* Connector */}
+            <div style={{ position: 'absolute', top: 48, left: '18%', right: '18%', height: 2, background: 'linear-gradient(90deg,#9FE1CB,#FAC775)', borderRadius: 2, zIndex: 0 }} />
+            {steps.map((step, i) => (
+              <div key={step.title} style={{
+                position: 'relative', zIndex: 1, borderRadius: 22, border: '1.5px solid #E1F5EE',
+                background: '#fff', padding: 32, textAlign: 'center',
+                boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
+                transition: 'transform 0.18s, box-shadow 0.18s',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(29,158,117,0.06)'; }}
+              >
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: step.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 16px' }}>{step.icon}</div>
+                <div style={{ position: 'absolute', top: -12, right: 20, width: 28, height: 28, borderRadius: '50%', background: step.num, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>{i+1}</div>
+                <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{step.title}</h3>
+                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: 0 }}>{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: '#EEEDFE', color: '#3C3489', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Testimonials</span>
+            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Students Love Using UniQuest AI</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+            {[
+              { review: 'The SOP generator saved me hours of work and helped me structure my application professionally.', name: 'Ahmed R.', country: 'Pakistan', initials: 'AR', bg: '#E1F5EE', color: '#0F6E56' },
+              { review: 'The university recommendations were surprisingly accurate for my profile and budget.', name: 'Sarah M.', country: 'Egypt', initials: 'SM', bg: '#FAEEDA', color: '#854F0B' },
+              { review: 'This platform made the entire admission process much easier and less stressful.', name: 'Ali K.', country: 'Bangladesh', initials: 'AK', bg: '#EEEDFE', color: '#3C3489' },
+            ].map((t) => (
+              <div key={t.name} style={{
+                borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
+                transition: 'transform 0.18s, box-shadow 0.18s',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 10px 28px rgba(29,158,117,0.1)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
+              >
+                <div style={{ color: '#EF9F27', fontSize: 16, marginBottom: 14 }}>★★★★★</div>
+                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 20 }}>"{t.review}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.bg, color: t.color, fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#085041', margin: 0 }}>{t.name}</p>
+                    <p style={{ fontSize: 12, color: '#888780', margin: 0 }}>{t.country}</p>
                   </div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" style={{ background: '#FFFBF5', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: '#FAEEDA', color: '#854F0B', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Pricing</span>
+            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 8px' }}>Start Free, Upgrade Anytime</h2>
+            <p style={{ fontSize: 14, color: '#888780' }}>No hidden fees. Cancel anytime.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+            {/* Free */}
+            <div style={{ borderRadius: 24, border: '1.5px solid #E1F5EE', background: '#fff', padding: 40 }}>
+              <h3 style={{ ...heading, fontSize: 22, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Free Plan</h3>
+              <p style={{ ...heading, fontSize: 38, fontWeight: 700, color: '#085041', margin: '0 0 6px' }}>PKR 0 <span style={{ fontSize: 16, fontWeight: 500, color: '#888780' }}>/month</span></p>
+              <p style={{ fontSize: 13, color: '#888780', marginBottom: 28 }}>Great for exploring the platform</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                {['3 SOP Generations','2 Profile Analyses','10 AI Chat Messages','3 Scholarship Searches','University Search'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 14, color: '#5F5E5A' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/signup" style={{
+                display: 'block', textAlign: 'center', padding: '14px', borderRadius: 14,
+                border: '2px solid #9FE1CB', color: '#0F6E56', fontWeight: 800, fontSize: 14,
+                textDecoration: 'none', transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#E1F5EE')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >Get Started Free</Link>
+            </div>
+
+            {/* Pro */}
+            <div style={{ position: 'relative', borderRadius: 24, border: '2px solid #1D9E75', background: '#fff', padding: 40, boxShadow: '0 8px 40px rgba(29,158,117,0.12)' }}>
+              <div style={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', background: '#EF9F27', color: '#412402', fontSize: 12, fontWeight: 800, padding: '6px 18px', borderRadius: 50, whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(239,159,39,0.3)' }}>
+                ⭐ Most Popular
+              </div>
+              <h3 style={{ ...heading, fontSize: 22, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Pro Plan</h3>
+              <p style={{ ...heading, fontSize: 38, fontWeight: 700, color: '#085041', margin: '0 0 6px' }}>PKR 800 <span style={{ fontSize: 16, fontWeight: 500, color: '#888780' }}>/month</span></p>
+              <p style={{ fontSize: 13, color: '#1D9E75', fontWeight: 700, marginBottom: 28 }}>7-day free trial included</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                {['Unlimited SOP Generations','Unlimited Profile Analyses','Unlimited AI Chat','Unlimited Scholarship Searches','Priority University Matching','7-day free trial'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 14, color: '#5F5E5A' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/checkout" style={{
+                display: 'block', textAlign: 'center', padding: '14px', borderRadius: 14,
+                background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14,
+                textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.25)',
+                transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
+              >Upgrade to Pro →</Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Problem & Solution */}
-      <section className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="rounded-3xl border border-red-500/10 bg-red-500/5 p-8 sm:p-10">
-              <h2 className="text-2xl font-bold sm:text-3xl">The Problem</h2>
-              <ul className="mt-6 space-y-4 text-gray-300 text-sm sm:text-base">
-                <li>❌ Students struggle with writing SOPs</li>
-                <li>❌ Finding suitable universities is confusing</li>
-                <li>❌ Admission chances are unclear</li>
-                <li>❌ Application documents often contain mistakes</li>
-              </ul>
-            </div>
-            <div className="rounded-3xl border border-indigo-500/10 bg-indigo-500/5 p-8 sm:p-10">
-              <h2 className="text-2xl font-bold sm:text-3xl">Our Solution</h2>
-              <p className="mt-6 text-base leading-8 text-gray-300">
-                UniQuest AI simplifies the entire admission journey using artificial intelligence — from SOP generation to university matching and profile analysis.
-              </p>
-            </div>
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: '#E1F5EE', color: '#0F6E56', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>FAQ</span>
+            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Frequently Asked Questions</h2>
           </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">Features</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Everything You Need for University Admissions</h2>
-          </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-3xl border border-white/10 bg-white/3 p-6 sm:p-8 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition">
-                <div className="text-3xl">{f.icon}</div>
-                <h3 className="mt-4 text-lg font-semibold sm:text-xl">{f.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-gray-400">{f.description}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {faqs.map((faq, i) => (
+              <div key={faq.q} style={{ borderRadius: 18, border: `1.5px solid ${openFaq === i ? '#9FE1CB' : '#E1F5EE'}`, background: '#fff', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <span style={{ ...heading, fontSize: 15, fontWeight: 700, color: '#085041', paddingRight: 16 }}>{faq.q}</span>
+                  <span style={{
+                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                    background: openFaq === i ? '#1D9E75' : '#E1F5EE',
+                    color: openFaq === i ? '#fff' : '#0F6E56',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 18, fontWeight: 700, transition: 'background 0.2s, color 0.2s',
+                  }}>
+                    {openFaq === i ? '−' : '+'}
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <div style={{ padding: '0 24px 20px' }}>
+                    <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, margin: 0 }}>{faq.a}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how" className="border-y border-white/10 bg-white/2">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">How It Works</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Simple, Fast, Intelligent</h2>
-          </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {steps.map((step, i) => (
-              <div key={step.title} className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold">{i + 1}</div>
-                <h3 className="mt-5 text-lg font-semibold sm:text-xl">{step.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-gray-400">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">Testimonials</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Students Love Using UniQuest AI</h2>
-          </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-3">
-            {[
-              { review: 'The SOP generator saved me hours of work and helped me structure my application professionally.', name: 'Ahmed R.', country: 'Pakistan' },
-              { review: 'The university recommendations were surprisingly accurate for my profile and budget.', name: 'Sarah M.', country: 'Egypt' },
-              { review: 'This platform made the entire admission process much easier and less stressful.', name: 'Ali K.', country: 'Bangladesh' },
-            ].map((t, i) => (
-              <div key={i} className="rounded-3xl border border-white/10 bg-white/3 p-6 sm:p-8">
-                <div className="mb-3 text-xl">⭐️⭐️⭐️⭐️⭐️</div>
-                <p className="text-sm leading-7 text-gray-300">"{t.review}"</p>
-                <p className="mt-4 text-xs text-gray-500">— {t.name}, {t.country}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="border-b border-white/10 bg-white/2">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">Pricing</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Start Free, Upgrade Anytime</h2>
-          </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 max-w-4xl mx-auto">
-            <div className="rounded-3xl border border-white/10 bg-black/40 p-8 sm:p-10">
-              <h3 className="text-2xl font-bold">Free</h3>
-              <p className="mt-3 text-4xl font-bold">PKR 0 <span className="text-lg font-normal text-gray-400">/month</span></p>
-              <ul className="mt-8 space-y-3 text-sm text-gray-300">
-                <li>✔ 3 SOP Generations</li>
-                <li>✔ 2 Profile Analyses</li>
-                <li>✔ 10 AI Chat Messages</li>
-                <li>✔ 3 Scholarship Searches</li>
-                <li>✔ University Search</li>
-              </ul>
-              <Link href="/signup" className="mt-8 block w-full rounded-2xl border border-white/10 py-3.5 text-center text-sm hover:bg-white/10 transition">
-                Get Started Free
-              </Link>
-            </div>
-            <div className="rounded-3xl border border-indigo-500 bg-indigo-500/10 p-8 sm:p-10 shadow-2xl shadow-indigo-500/20">
-              <div className="mb-4 inline-flex rounded-full bg-indigo-500 px-4 py-1.5 text-xs font-medium">Most Popular</div>
-              <h3 className="text-2xl font-bold">Pro</h3>
-              <p className="mt-3 text-4xl font-bold">PKR 800 <span className="text-lg font-normal text-gray-300">/month</span></p>
-              <ul className="mt-8 space-y-3 text-sm text-gray-200">
-                <li>✔ Unlimited SOP Generations</li>
-                <li>✔ Unlimited Profile Analyses</li>
-                <li>✔ Unlimited AI Chat</li>
-                <li>✔ Unlimited Scholarship Searches</li>
-                <li>✔ Priority University Matching</li>
-                <li>✔ 7-day free trial</li>
-              </ul>
-              <Link href="/checkout" className="mt-8 block w-full rounded-2xl bg-indigo-600 py-3.5 text-center text-sm font-medium hover:bg-indigo-500 transition">
-                Upgrade to Pro
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">FAQ</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Frequently Asked Questions</h2>
-          </div>
-          <div className="mt-12 space-y-5">
-            {faqs.map((faq) => (
-              <div key={faq.q} className="rounded-3xl border border-white/10 bg-white/3 p-6 sm:p-8">
-                <h3 className="text-base font-semibold sm:text-lg">{faq.q}</h3>
-                <p className="mt-3 text-sm leading-7 text-gray-400">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="relative overflow-hidden border-t border-white/10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.25),transparent_50%)]" />
-        <div className="relative mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">Start Your Admission Journey with AI</h2>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-gray-400">
+      {/* ── FINAL CTA ── */}
+      <section style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#04342C 0%,#085041 50%,#1D9E75 100%)', padding: '80px 28px' }}>
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(239,159,39,0.15)' }} />
+        <div style={{ position: 'absolute', bottom: -40, left: '30%', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(239,159,39,0.2)', border: '1.5px solid rgba(239,159,39,0.4)', borderRadius: 50, padding: '6px 16px', fontSize: 13, fontWeight: 700, color: '#FAC775', marginBottom: 24 }}>
+            🎓 Join 10,000+ Students
+          </span>
+          <h2 style={{ ...heading, fontSize: 42, fontWeight: 700, color: '#fff', margin: '0 0 20px', lineHeight: 1.15 }}>
+            Start Your Admission Journey with AI
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.75, marginBottom: 36, maxWidth: 500, margin: '0 auto 36px' }}>
             Join students using UniQuest AI to prepare stronger university applications faster and smarter.
           </p>
-          <Link href="/signup" className="mt-8 inline-flex rounded-2xl bg-indigo-600 px-8 py-4 text-base font-medium hover:bg-indigo-500 transition sm:px-10 sm:py-5 sm:text-lg">
-            Get Started Free
-          </Link>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/signup" style={{
+              padding: '16px 36px', borderRadius: 50, background: '#EF9F27', color: '#412402',
+              fontWeight: 800, fontSize: 16, textDecoration: 'none',
+              boxShadow: '0 6px 24px rgba(239,159,39,0.35)',
+              transition: 'transform 0.15s, background 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#EF9F27'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >Get Started Free →</Link>
+            <a href="#features" style={{
+              padding: '15px 32px', borderRadius: 50, border: '2px solid rgba(255,255,255,0.35)',
+              color: '#fff', fontWeight: 800, fontSize: 16, textDecoration: 'none',
+              transition: 'background 0.15s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >Learn More</a>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 bg-black">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-10 text-center sm:px-6 md:flex-row md:text-left">
-          <div className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="UniQuest AI"
-              width={32}
-              height={32}
-              className="rounded-lg shrink-0"
-            />
+      {/* ── FOOTER ── */}
+      <footer style={{ background: '#04342C', borderTop: '1.5px solid rgba(255,255,255,0.08)', padding: '32px 28px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#1D9E75', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16 }}>U</div>
             <div>
-              <h3 className="text-base font-bold">UniQuest AI</h3>
-              <p className="text-xs text-gray-500">Built by Ariesian Tech</p>
+              <p style={{ ...heading, fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>UniQuest AI</p>
+              <p style={{ fontSize: 11, color: '#5DCAA5', margin: 0 }}>Built by Ariesian Tech</p>
             </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
-            <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link>
-            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {[['Privacy Policy','/privacy'],['Terms & Conditions','/terms'],['Contact','/contact']].map(([label,href]) => (
+              <Link key={href} href={href} style={{ fontSize: 13, fontWeight: 600, color: '#9FE1CB', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#EF9F27')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#9FE1CB')}
+              >{label}</Link>
+            ))}
           </div>
+          <p style={{ fontSize: 12, color: '#5DCAA5' }}>© 2025 UniQuest AI. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Global keyframes */}
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.65)} }
+        @keyframes orbdrift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(18px,-12px) scale(1.05)} 66%{transform:translate(-12px,10px) scale(.96)} }
+        @media(max-width:768px){
+          .hide-mobile{display:none!important}
+          .show-mobile{display:flex!important}
+        }
+        @media(min-width:769px){
+          .show-mobile{display:none!important}
+        }
+      `}</style>
     </div>
   );
 }

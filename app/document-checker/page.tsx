@@ -7,7 +7,12 @@ import Link from 'next/link';
 
 interface DocResult {
   document: string;
-  status: 'OK' | 'Update Needed' | 'Missing' | 'Attestation Required' | 'Apostille Required';
+  status:
+    | 'OK'
+    | 'Update Needed'
+    | 'Missing'
+    | 'Attestation Required'
+    | 'Apostille Required';
   message: string;
   action: string;
 }
@@ -15,11 +20,12 @@ interface DocResult {
 export default function DocumentChecker() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
   const [country, setCountry] = useState('');
   const [university, setUniversity] = useState('');
   const [degree, setDegree] = useState('');
+
   const [files, setFiles] = useState<{ [key: string]: File | null }>({
-    // Admission Documents
     transcript: null,
     matric_marksheet: null,
     matric_certificate: null,
@@ -34,7 +40,6 @@ export default function DocumentChecker() {
     ielts: null,
     portfolio: null,
     experience: null,
-    // Visa Documents
     passport: null,
     visa_form: null,
     acceptance_letter: null,
@@ -46,8 +51,15 @@ export default function DocumentChecker() {
     birth_certificate: null,
     visa_fee: null,
   });
-  const [mergedPages, setMergedPages] = useState<{ [key: string]: boolean }>({});
-  const [attestationProvided, setAttestationProvided] = useState<{ [key: string]: boolean }>({});
+
+  const [mergedPages, setMergedPages] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const [attestationProvided, setAttestationProvided] = useState<{
+    [key: string]: boolean;
+  }>({});
+
   const [results, setResults] = useState<DocResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -62,26 +74,46 @@ export default function DocumentChecker() {
   }, []);
 
   const handleFile = (name: string, file: File | null) => {
-    setFiles(prev => ({ ...prev, [name]: file }));
+    setFiles((prev) => ({
+      ...prev,
+      [name]: file,
+    }));
+
     if (!file) {
-      setMergedPages(prev => ({ ...prev, [name]: false }));
-      setAttestationProvided(prev => ({ ...prev, [name]: false }));
+      setMergedPages((prev) => ({
+        ...prev,
+        [name]: false,
+      }));
+
+      setAttestationProvided((prev) => ({
+        ...prev,
+        [name]: false,
+      }));
     }
   };
 
   const handleMergedPageToggle = (name: string) => {
-    setMergedPages(prev => ({ ...prev, [name]: !prev[name] }));
+    setMergedPages((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
   };
 
   const handleAttestationToggle = (name: string) => {
-    setAttestationProvided(prev => ({ ...prev, [name]: !prev[name] }));
+    setAttestationProvided((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
   };
 
   const checkDocuments = async () => {
     if (!country || !university || !degree) {
-      setError('Please fill in Country, University, and Degree.');
+      setError(
+        'Please fill in Country, University, and Degree.'
+      );
       return;
     }
+
     const uploadedDocs = Object.entries(files)
       .filter(([, f]) => f !== null)
       .map(([name, file]) => ({
@@ -103,7 +135,9 @@ export default function DocumentChecker() {
     try {
       const res = await fetch('/api/document-checker', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           country,
           university,
@@ -112,31 +146,53 @@ export default function DocumentChecker() {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to check documents');
+      if (!res.ok) {
+        throw new Error('Failed to check documents');
+      }
+
       const data = await res.json();
+
       setResults(data.results || []);
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(
+        'Something went wrong. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const statusConfig = {
-    'OK':                   { icon: '✅', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
-    'Update Needed':        { icon: '⚠️', cls: 'bg-amber-50 border-amber-200 text-amber-800' },
-    'Missing':              { icon: '❌', cls: 'bg-red-50 border-red-200 text-red-800' },
-    'Attestation Required': { icon: '🔏', cls: 'bg-blue-50 border-blue-200 text-blue-800' },
-    'Apostille Required':   { icon: '📜', cls: 'bg-violet-50 border-violet-200 text-violet-800' },
+    OK: {
+      icon: '✅',
+      cls: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+    },
+    'Update Needed': {
+      icon: '⚠️',
+      cls: 'bg-amber-50 border-amber-200 text-amber-800',
+    },
+    Missing: {
+      icon: '❌',
+      cls: 'bg-red-50 border-red-200 text-red-800',
+    },
+    'Attestation Required': {
+      icon: '🔏',
+      cls: 'bg-blue-50 border-blue-200 text-blue-800',
+    },
+    'Apostille Required': {
+      icon: '📜',
+      cls: 'bg-violet-50 border-violet-200 text-violet-800',
+    },
   };
 
   const docLabels: { [key: string]: string } = {
-    // Admission Documents
     transcript: '📄 Academic Transcripts',
     matric_marksheet: '📘 Matriculation Marksheet',
     matric_certificate: '📗 Matriculation Certificate',
-    intermediate_marksheet: '📘 Intermediate / HSC Marksheet',
-    intermediate_certificate: '📗 Intermediate / HSC Certificate',
+    intermediate_marksheet:
+      '📘 Intermediate / HSC Marksheet',
+    intermediate_certificate:
+      '📗 Intermediate / HSC Certificate',
     degree: '🎓 Degree Certificate',
     cv: '📋 CV / Resume',
     sop: '✍️ Statement of Purpose',
@@ -145,37 +201,54 @@ export default function DocumentChecker() {
     lor3: '📧 Letter of Recommendation 3',
     ielts: '📝 IELTS / TOEFL Scores',
     portfolio: '📄 Resume',
-    experience: '💼 Work Experience Certificate ( in case of Gap)',
-    // Visa Documents
+    experience:
+      '💼 Work Experience Certificate',
     passport: '🛂 Passport',
     visa_form: '📋 Visa Application Form',
-    acceptance_letter: '📨 University Acceptance Letter',
+    acceptance_letter:
+      '📨 University Acceptance Letter',
     financial_proof: '💰 Financial Proof',
     health_insurance: '🏥 Health Insurance',
     accommodation_proof: '🏠 Accommodation Proof',
-    police_clearance: '🚔 Police Clearance Certificate',
-    medical_certificate: '⚕️ Medical Certificate',
+    police_clearance:
+      '🚔 Police Clearance Certificate',
+    medical_certificate:
+      '⚕️ Medical Certificate',
     birth_certificate: '👶 Birth Certificate',
     visa_fee: '💳 Visa Fee Payment Receipt',
   };
 
   if (checkingAuth) return null;
 
-  // Not logged in — show gate
   if (!isLoggedIn) {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10">
-          <p className="text-5xl mb-4">🔒</p>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            The Document Checker is available for registered users only. Create a free account to access this feature.
+      <div className="min-h-screen bg-[#f5f7f2] flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-[32px] border border-[#e5eee9] p-10 shadow-sm text-center">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-r from-[#0c8f6f] to-[#28b487] flex items-center justify-center text-4xl shadow-lg mb-6">
+            🔒
+          </div>
+
+          <h2 className="text-3xl font-bold text-[#063b36] mb-3">
+            Sign In Required
+          </h2>
+
+          <p className="text-[#6b7280] text-sm leading-relaxed mb-8">
+            Create a free account to access AI-powered
+            document analysis and visa guidance.
           </p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition">
+
+          <div className="flex gap-3">
+            <Link
+              href="/signup"
+              className="flex-1 bg-gradient-to-r from-[#0c8f6f] to-[#28b487] text-white py-3 rounded-2xl font-semibold shadow-lg hover:scale-105 transition"
+            >
               Create Account
             </Link>
-            <Link href="/login" className="border border-gray-200 hover:border-gray-400 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-semibold transition">
+
+            <Link
+              href="/login"
+              className="flex-1 border border-[#d7e7de] bg-white text-[#063b36] py-3 rounded-2xl font-semibold hover:border-[#0c8f6f] transition"
+            >
               Sign In
             </Link>
           </div>
@@ -185,176 +258,219 @@ export default function DocumentChecker() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Document Checker</h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          Upload your admission and visa documents to get AI-powered guidance on requirements, attestations, apostilles, and document validity for your target university and country.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#f5f7f2] p-6">
+      <div className="max-w-7xl mx-auto">
 
-      {/* Target Info */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">Application Details</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Country <span className="text-red-400">*</span></label>
-            <input value={country} onChange={e => setCountry(e.target.value)} placeholder="e.g. Germany"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        {/* HEADER */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 bg-[#dff1e8] px-4 py-2 rounded-full text-[#0c8f6f] text-sm font-semibold mb-4">
+            📑 DOCUMENT ANALYZER
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">University <span className="text-red-400">*</span></label>
-            <input value={university} onChange={e => setUniversity(e.target.value)} placeholder="e.g. TU Munich"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Your Degree <span className="text-red-400">*</span></label>
-            <input value={degree} onChange={e => setDegree(e.target.value)} placeholder="e.g. BS CS"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-          </div>
+
+          <h1 className="text-5xl font-bold text-[#063b36]">
+            UniQuest Document Checker
+          </h1>
+
+          <p className="text-[#6b7280] mt-4 text-lg max-w-3xl leading-relaxed">
+            Upload admission and visa documents to get
+            AI-powered verification, attestation checks,
+            and application guidance.
+          </p>
         </div>
-      </div>
 
-      {/* Document Upload - Admission Documents */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
-          <span className="text-blue-600">🎓</span> Admission Documents
-        </h2>
-        <p className="text-xs text-gray-500 mb-4">Upload PDF documents only. Merged PDFs are supported for front/back pages. After uploading, mark the file as merged if it includes both sides.</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {['transcript', 'matric_marksheet', 'matric_certificate', 'intermediate_marksheet', 'intermediate_certificate', 'degree', 'cv', 'sop', 'lor1', 'lor2', 'lor3', 'ielts', 'portfolio', 'experience'].map((key) => (
-            <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
-              <label className="cursor-pointer block">
-                <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
-                <p className="text-[11px] text-gray-400 mb-2">PDF only. Merged front/back PDFs are supported.</p>
-                {files[key] ? (
-                  <>
-                    <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
-                    <label className="inline-flex items-center gap-2 mt-3 text-xs text-gray-500">
-                      <input
-                        type="checkbox"
-                        checked={mergedPages[key] || false}
-                        onChange={() => handleMergedPageToggle(key)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      This PDF includes both front and back pages
-                    </label>
-                    <label className="inline-flex items-center gap-2 mt-2 text-xs text-gray-500">
-                      <input
-                        type="checkbox"
-                        checked={attestationProvided[key] || false}
-                        onChange={() => handleAttestationToggle(key)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      This PDF includes required attestation stamps (HEC/MOFA/embassy) on the back
-                    </label>
-                  </>
-                ) : (
-                  <p className="text-xs text-blue-500">Click to upload</p>
-                )}
-                <input type="file" accept=".pdf" className="hidden"
-                  onChange={e => handleFile(key, e.target.files?.[0] || null)} />
-              </label>
-              {files[key] && (
-                <button onClick={() => handleFile(key, null)} className="text-[11px] text-red-400 hover:text-red-600 mt-1">Remove</button>
-              )}
+        {/* APPLICATION DETAILS */}
+        <div className="bg-white rounded-[32px] border border-[#e5eee9] shadow-sm p-8 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#dff1e8] flex items-center justify-center text-2xl">
+              🎯
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Document Upload - Visa Documents */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
-          <span className="text-green-600">🛂</span> Visa Documents
-        </h2>
-        <p className="text-xs text-gray-500 mb-4">Upload PDF documents only. Merged PDFs are supported for front/back pages.</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {['passport', 'visa_form', 'acceptance_letter', 'financial_proof', 'health_insurance', 'accommodation_proof', 'police_clearance', 'medical_certificate', 'birth_certificate', 'visa_fee'].map((key) => (
-            <div key={key} className={`border-2 border-dashed rounded-xl p-4 transition ${files[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-blue-300'}`}>
-              <label className="cursor-pointer block">
-                <p className="text-sm font-medium text-gray-700 mb-1">{docLabels[key]}</p>
-                <p className="text-[11px] text-gray-400 mb-2">PDF only. Merged front/back PDFs are supported.</p>
-                {files[key] ? (
-                  <>
-                    <p className="text-xs text-emerald-700 font-medium truncate">✅ {files[key]!.name}</p>
-                    <label className="inline-flex items-center gap-2 mt-3 text-xs text-gray-500">
-                      <input
-                        type="checkbox"
-                        checked={mergedPages[key] || false}
-                        onChange={() => handleMergedPageToggle(key)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      This PDF includes both front and back pages
-                    </label>
-                    <label className="inline-flex items-center gap-2 mt-2 text-xs text-gray-500">
-                      <input
-                        type="checkbox"
-                        checked={attestationProvided[key] || false}
-                        onChange={() => handleAttestationToggle(key)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      This PDF includes required attestation stamps (HEC/MOFA/embassy) on the back
-                    </label>
-                  </>
-                ) : (
-                  <p className="text-xs text-blue-500">Click to upload</p>
-                )}
-                <input type="file" accept=".pdf" className="hidden"
-                  onChange={e => handleFile(key, e.target.files?.[0] || null)} />
-              </label>
-              {files[key] && (
-                <button onClick={() => handleFile(key, null)} className="text-[11px] text-red-400 hover:text-red-600 mt-1">Remove</button>
-              )}
+            <div>
+              <h2 className="text-2xl font-bold text-[#063b36]">
+                Application Details
+              </h2>
+
+              <p className="text-[#6b7280] text-sm mt-1">
+                Enter your target university information
+              </p>
             </div>
-          ))}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            <div>
+              <label className="text-sm font-semibold text-[#063b36] block mb-2">
+                Target Country *
+              </label>
+
+              <input
+                value={country}
+                onChange={(e) =>
+                  setCountry(e.target.value)
+                }
+                placeholder="Germany"
+                className="w-full bg-[#f7faf8] border border-[#d7e7de] rounded-2xl px-5 py-4 outline-none focus:border-[#0c8f6f] focus:ring-4 focus:ring-[#0c8f6f]/10 transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-[#063b36] block mb-2">
+                University *
+              </label>
+
+              <input
+                value={university}
+                onChange={(e) =>
+                  setUniversity(e.target.value)
+                }
+                placeholder="TU Munich"
+                className="w-full bg-[#f7faf8] border border-[#d7e7de] rounded-2xl px-5 py-4 outline-none focus:border-[#0c8f6f] focus:ring-4 focus:ring-[#0c8f6f]/10 transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-[#063b36] block mb-2">
+                Degree *
+              </label>
+
+              <input
+                value={degree}
+                onChange={(e) =>
+                  setDegree(e.target.value)
+                }
+                placeholder="BS Computer Science"
+                className="w-full bg-[#f7faf8] border border-[#d7e7de] rounded-2xl px-5 py-4 outline-none focus:border-[#0c8f6f] focus:ring-4 focus:ring-[#0c8f6f]/10 transition"
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
-      {error && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
-          <span>⚠️</span> {error}
-        </div>
-      )}
+        {/* ADMISSION DOCS */}
+        <div className="bg-white rounded-[32px] border border-[#e5eee9] shadow-sm p-8 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#dff1e8] flex items-center justify-center text-2xl">
+              🎓
+            </div>
 
-      <button onClick={checkDocuments} disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-6">
-        {loading ? (
-          <>
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
-            Checking your documents…
-          </>
-        ) : '🔍 Check Documents'}
-      </button>
+            <div>
+              <h2 className="text-2xl font-bold text-[#063b36]">
+                Admission Documents
+              </h2>
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="font-bold text-gray-900 text-lg">Document Review</h2>
-          {results.map((r, i) => {
-            const cfg = statusConfig[r.status] || statusConfig['OK'];
-            return (
-              <div key={i} className={`rounded-xl border p-4 ${cfg.cls}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-sm flex items-center gap-2">
-                    <span>{cfg.icon}</span> {r.document}
+              <p className="text-[#6b7280] text-sm mt-1">
+                Upload all academic documents in PDF format
+              </p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              'transcript',
+              'matric_marksheet',
+              'matric_certificate',
+              'intermediate_marksheet',
+              'intermediate_certificate',
+              'degree',
+              'cv',
+              'sop',
+              'lor1',
+              'lor2',
+              'lor3',
+              'ielts',
+              'portfolio',
+              'experience',
+            ].map((key) => (
+              <div
+                key={key}
+                className={`rounded-3xl border-2 border-dashed p-5 transition-all ${
+                  files[key]
+                    ? 'border-[#28b487] bg-[#effaf6]'
+                    : 'border-[#d7e7de] bg-[#fbfcfb] hover:border-[#0c8f6f]'
+                }`}
+              >
+                <label className="cursor-pointer block">
+                  <p className="text-sm font-semibold text-[#063b36] mb-2">
+                    {docLabels[key]}
                   </p>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white bg-opacity-60 border">
-                    {r.status}
-                  </span>
-                </div>
-                <p className="text-sm mt-1">{r.message}</p>
-                {r.action && (
-                  <p className="text-xs mt-2 font-medium opacity-80">👉 {r.action}</p>
+
+                  <p className="text-xs text-[#6b7280] mb-4">
+                    PDF format only
+                  </p>
+
+                  {files[key] ? (
+                    <>
+                      <div className="bg-white rounded-2xl px-4 py-3 border border-[#d7e7de]">
+                        <p className="text-sm text-[#0c8f6f] font-semibold truncate">
+                          ✅ {files[key]!.name}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3 mt-4">
+                        <label className="flex items-start gap-3 text-xs text-[#6b7280]">
+                          <input
+                            type="checkbox"
+                            checked={
+                              mergedPages[key] || false
+                            }
+                            onChange={() =>
+                              handleMergedPageToggle(key)
+                            }
+                            className="mt-0.5"
+                          />
+
+                          Includes front & back pages
+                        </label>
+
+                        <label className="flex items-start gap-3 text-xs text-[#6b7280]">
+                          <input
+                            type="checkbox"
+                            checked={
+                              attestationProvided[key] ||
+                              false
+                            }
+                            onChange={() =>
+                              handleAttestationToggle(key)
+                            }
+                            className="mt-0.5"
+                          />
+
+                          Includes attestation stamps
+                        </label>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-[#dff1e8] text-[#0c8f6f] rounded-2xl py-3 text-center text-sm font-semibold">
+                      Upload PDF
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleFile(
+                        key,
+                        e.target.files?.[0] || null
+                      )
+                    }
+                  />
+                </label>
+
+                {files[key] && (
+                  <button
+                    onClick={() =>
+                      handleFile(key, null)
+                    }
+                    className="text-xs text-red-500 mt-4 hover:text-red-700"
+                  >
+                    Remove File
+                  </button>
                 )}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -41,37 +41,59 @@ function sortResults(results: University[], sort: string): University[] {
   return arr;
 }
 
+// UniQuest AI theme: chance badge styles
 const chanceCfg = {
-  High:   { badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-400' },
-  Medium: { badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',       dot: 'bg-amber-400'   },
-  Low:    { badge: 'bg-red-500/20 text-red-300 border-red-500/30',             dot: 'bg-red-400'     },
+  High:   {
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dot:   'bg-emerald-500',
+    card:  'border-l-emerald-400',
+  },
+  Medium: {
+    badge: 'bg-amber-50 text-amber-700 border-amber-200',
+    dot:   'bg-amber-500',
+    card:  'border-l-amber-400',
+  },
+  Low: {
+    badge: 'bg-red-50 text-red-600 border-red-200',
+    dot:   'bg-red-500',
+    card:  'border-l-red-400',
+  },
 };
 
-const inputCls = `w-full bg-[#0f1117] border border-white/10 text-white placeholder-slate-600
-  px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1
-  focus:ring-indigo-500 transition`;
-const labelCls = `block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5`;
-const hintCls  = `text-[11px] text-slate-600 mt-1`;
+// Shared input / label classes — UniQuest AI style
+const inputCls = `
+  w-full bg-white border border-gray-200 text-gray-800 placeholder-gray-400
+  px-3.5 py-2.5 rounded-xl text-sm
+  focus:outline-none focus:border-[#2ecc71] focus:ring-2 focus:ring-[#2ecc71]/20
+  transition
+`.trim();
+
+const labelCls = `block text-[11px] font-bold text-[#1a5c38] uppercase tracking-widest mb-1.5`;
+const hintCls  = `text-[11px] text-gray-400 mt-1`;
 
 export default function Universities() {
   const [filters, setFilters] = useState({
     degree: '', country: '', budget: '', ielts: '', gpa: '', intake: 'Any', ranking: 'Any',
   });
-  const [results, setResults] = useState<University[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [results,  setResults]  = useState<University[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
   const [searched, setSearched] = useState(false);
-  const [sort, setSort]         = useState('default');
+  const [sort,     setSort]     = useState('default');
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
     setError('');
   };
 
-  const handleSelect = (key: string, value: string) => setFilters({ ...filters, [key]: value });
+  const handleSelect = (key: string, value: string) =>
+    setFilters({ ...filters, [key]: value });
 
   const search = async () => {
-    if (!filters.degree || !filters.country) { setError('Please enter at least a Degree and Country.'); return; }
+    if (!filters.degree || !filters.country) {
+      setError('Please enter at least a Degree and Country.');
+      return;
+    }
     setLoading(true); setError(''); setResults([]); setSearched(false);
     try {
       const res = await fetch('/api/universities', {
@@ -91,65 +113,130 @@ export default function Universities() {
     }
   };
 
-  const sorted     = sortResults(results, sort);
-  const highCount  = results.filter(r => r.admissionChance === 'High').length;
-  const medCount   = results.filter(r => r.admissionChance === 'Medium').length;
-  const lowCount   = results.filter(r => r.admissionChance === 'Low').length;
+  const sorted    = sortResults(results, sort);
+  const highCount = results.filter(r => r.admissionChance === 'High').length;
+  const medCount  = results.filter(r => r.admissionChance === 'Medium').length;
+  const lowCount  = results.filter(r => r.admissionChance === 'Low').length;
 
   return (
-    <div className="min-h-screen bg-[#0f1117]">
-      <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+    <div
+      className="min-h-screen"
+      style={{
+        background: '#f7f8f3',
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+      }}
+    >
+      {/* ── Page header ── */}
+      <div className="bg-white border-b border-gray-100 px-6 py-5">
+        <div className="max-w-5xl mx-auto">
+          {/* pill label — same style as "YOUR DASHBOARD" / "ADMISSIONS TOOLS" */}
+          <span
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest
+              px-3 py-1 rounded-full border mb-3"
+            style={{
+              background: '#f0faf4',
+              borderColor: '#b6e8ca',
+              color: '#1a5c38',
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f5a623] inline-block" />
+            University Search
+          </span>
 
-        {/* Header */}
-        <div className="mb-7">
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">University Finder</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-900">University Finder</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
             Search real universities based on your profile, budget, and preferences.
           </p>
         </div>
+      </div>
 
-        {/* Filter card */}
-        <div className="rounded-2xl bg-[#1a1d27] border border-white/5 p-5 md:p-6 mb-5">
-          <h2 className="text-white font-semibold text-xs uppercase tracking-widest mb-5">Search Filters</h2>
+      <div className="max-w-5xl mx-auto px-6 py-6">
+
+        {/* ── Filter card ── */}
+        <div
+          className="rounded-2xl bg-white border border-gray-100 p-5 md:p-6 mb-5"
+          style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+        >
+          <h2
+            className="text-[11px] font-bold uppercase tracking-widest mb-5"
+            style={{ color: '#1a5c38' }}
+          >
+            Search Filters
+          </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
+            {/* Degree */}
             <div>
-              <label className={labelCls}>Field / Degree <span className="text-red-400">*</span></label>
-              <input name="degree" value={filters.degree} onChange={handleChange}
-                placeholder="e.g. Computer Science, MBA, Law" className={inputCls} />
+              <label className={labelCls}>
+                Field / Degree <span className="text-red-400">*</span>
+              </label>
+              <input
+                name="degree"
+                value={filters.degree}
+                onChange={handleChange}
+                placeholder="e.g. Computer Science, MBA, Law"
+                className={inputCls}
+              />
               <p className={hintCls}>Your intended field of study</p>
             </div>
 
+            {/* Country */}
             <div>
-              <label className={labelCls}>Country <span className="text-red-400">*</span></label>
-              <input name="country" value={filters.country} onChange={handleChange}
-                placeholder='e.g. Germany, Canada, or Any' className={inputCls} />
+              <label className={labelCls}>
+                Country <span className="text-red-400">*</span>
+              </label>
+              <input
+                name="country"
+                value={filters.country}
+                onChange={handleChange}
+                placeholder='e.g. Germany, Canada, or Any'
+                className={inputCls}
+              />
               <p className={hintCls}>Preferred country or "Any"</p>
             </div>
 
+            {/* Budget */}
             <div>
               <label className={labelCls}>Monthly Budget (USD)</label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
-                <input name="budget" value={filters.budget} onChange={handleChange}
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+                  $
+                </span>
+                <input
+                  name="budget"
+                  value={filters.budget}
+                  onChange={handleChange}
                   placeholder="e.g. 1000"
-                  className={`${inputCls} pl-8`} />
+                  className={`${inputCls} pl-8`}
+                />
               </div>
               <p className={hintCls}>Leave blank to see all options</p>
             </div>
 
+            {/* IELTS */}
             <div>
               <label className={labelCls}>IELTS Score</label>
-              <input name="ielts" value={filters.ielts} onChange={handleChange}
-                placeholder='e.g. 7.0  or  No IELTS' className={inputCls} />
+              <input
+                name="ielts"
+                value={filters.ielts}
+                onChange={handleChange}
+                placeholder='e.g. 7.0  or  No IELTS'
+                className={inputCls}
+              />
               <p className={hintCls}>Type "No IELTS" if not taken</p>
             </div>
 
+            {/* GPA */}
             <div>
               <label className={labelCls}>GPA / Academic Score</label>
-              <input name="gpa" value={filters.gpa} onChange={handleChange}
-                placeholder="e.g. 3.5 / 4.0 or 75%" className={inputCls} />
+              <input
+                name="gpa"
+                value={filters.gpa}
+                onChange={handleChange}
+                placeholder="e.g. 3.5 / 4.0 or 75%"
+                className={inputCls}
+              />
               <p className={hintCls}>Helps estimate admission chance</p>
             </div>
 
@@ -158,12 +245,16 @@ export default function Universities() {
               <label className={labelCls}>Intake Season</label>
               <div className="flex flex-wrap gap-1.5">
                 {INTAKE_OPTIONS.map(opt => (
-                  <button key={opt} onClick={() => handleSelect('intake', opt)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition ${
+                  <button
+                    key={opt}
+                    onClick={() => handleSelect('intake', opt)}
+                    className="text-xs px-3 py-1.5 rounded-lg border font-medium transition"
+                    style={
                       filters.intake === opt
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-slate-200'
-                    }`}>
+                        ? { background: '#1a5c38', color: '#fff', borderColor: '#1a5c38' }
+                        : { background: '#fff', color: '#374151', borderColor: '#e5e7eb' }
+                    }
+                  >
                     {opt}
                   </button>
                 ))}
@@ -176,12 +267,16 @@ export default function Universities() {
               <label className={labelCls}>Ranking Preference</label>
               <div className="flex flex-wrap gap-2">
                 {RANKING_OPTIONS.map(opt => (
-                  <button key={opt} onClick={() => handleSelect('ranking', opt)}
-                    className={`text-xs px-4 py-1.5 rounded-lg border font-medium transition ${
+                  <button
+                    key={opt}
+                    onClick={() => handleSelect('ranking', opt)}
+                    className="text-xs px-4 py-1.5 rounded-lg border font-medium transition"
+                    style={
                       filters.ranking === opt
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white/5 text-slate-400 border-white/10 hover:border-white/20 hover:text-slate-200'
-                    }`}>
+                        ? { background: '#1a5c38', color: '#fff', borderColor: '#1a5c38' }
+                        : { background: '#fff', color: '#374151', borderColor: '#e5e7eb' }
+                    }
+                  >
                     {opt}
                   </button>
                 ))}
@@ -191,116 +286,179 @@ export default function Universities() {
 
           </div>
 
+          {/* Error */}
           {error && (
-            <div className="mt-4 flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
+            <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               <span>⚠️</span> {error}
             </div>
           )}
 
-          <button onClick={search} disabled={loading}
-            className="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed
-              text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+          {/* Search button — green CTA like dashboard */}
+          <button
+            onClick={search}
+            disabled={loading}
+            className="mt-5 w-full text-white font-bold py-3.5 rounded-xl transition
+              flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: loading ? '#2ecc71' : '#1a5c38' }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#155e32'; }}
+            onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#1a5c38'; }}
+          >
             {loading ? (
               <>
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 Searching universities…
               </>
-            ) : '🔍 Find Universities'}
+            ) : (
+              <>🔍 Find Universities</>
+            )}
           </button>
         </div>
 
-        {/* Empty state */}
+        {/* ── Empty state ── */}
         {searched && results.length === 0 && (
-          <div className="text-center py-16 rounded-2xl bg-[#1a1d27] border border-white/5">
+          <div
+            className="text-center py-16 rounded-2xl bg-white border border-gray-100"
+            style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+          >
             <p className="text-4xl mb-3">🎓</p>
-            <p className="text-slate-300 font-medium">No universities found.</p>
-            <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or broadening your country.</p>
+            <p className="text-gray-700 font-semibold">No universities found.</p>
+            <p className="text-gray-400 text-sm mt-1">
+              Try adjusting your filters or broadening your country.
+            </p>
           </div>
         )}
 
-        {/* Results */}
+        {/* ── Results ── */}
         {results.length > 0 && (
           <div>
             {/* Summary bar */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3 flex-wrap">
-                <p className="text-slate-400 text-sm">
-                  <span className="text-white font-bold">{results.length}</span> universities found
+                <p className="text-gray-500 text-sm">
+                  <span className="text-gray-900 font-bold">{results.length}</span> universities found
                 </p>
                 <div className="flex items-center gap-1.5">
                   {highCount > 0 && (
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {highCount} High
                     </span>
                   )}
                   {medCount > 0 && (
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                       {medCount} Medium
                     </span>
                   )}
                   {lowCount > 0 && (
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
                       {lowCount} Low
                     </span>
                   )}
                 </div>
               </div>
 
+              {/* Sort dropdown */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-medium">Sort:</span>
-                <select value={sort} onChange={e => setSort(e.target.value)}
-                  className="text-xs bg-[#1a1d27] border border-white/10 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 transition">
-                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                <span className="text-xs text-gray-400 font-medium">Sort:</span>
+                <select
+                  value={sort}
+                  onChange={e => setSort(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 text-gray-800 rounded-lg px-2.5 py-1.5
+                    focus:outline-none focus:border-[#2ecc71] transition"
+                >
+                  {SORT_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            {/* Cards */}
+            {/* University cards */}
             <div className="space-y-3">
               {sorted.map((uni, i) => {
                 const cfg = chanceCfg[uni.admissionChance] ?? chanceCfg.Medium;
                 return (
-                  <div key={i} className="rounded-2xl bg-[#1a1d27] border border-white/5 hover:border-white/10 p-5 transition">
+                  <div
+                    key={i}
+                    className={`rounded-2xl bg-white border border-gray-100 border-l-4 ${cfg.card} p-5 transition hover:shadow-sm`}
+                    style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
+                  >
+                    {/* Card header */}
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <h3 className="font-bold text-white text-base">{uni.name}</h3>
-                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}>
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${cfg.dot} mr-1`} />
+                          <h3 className="font-bold text-gray-900 text-base">{uni.name}</h3>
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                             {uni.admissionChance} Chance
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500">📍 {uni.city}, {uni.country}</p>
+                        <p className="text-sm text-gray-400">📍 {uni.city}, {uni.country}</p>
                       </div>
+
                       {uni.website && uni.website !== 'N/A' && (
-                        <a href={uni.website.startsWith('http') ? uni.website : `https://${uni.website}`}
-                          target="_blank" rel="noopener noreferrer"
-                          className="shrink-0 text-xs font-semibold text-indigo-400 hover:text-indigo-300 border border-indigo-500/20 hover:border-indigo-500/40 px-3 py-1.5 rounded-lg transition bg-indigo-500/5">
+                        <a
+                          href={uni.website.startsWith('http') ? uni.website : `https://${uni.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition"
+                          style={{
+                            color: '#1a5c38',
+                            borderColor: '#b6e8ca',
+                            background: '#f0faf4',
+                          }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = '#dcf5e7';
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = '#f0faf4';
+                          }}
+                        >
                           Visit →
                         </a>
                       )}
                     </div>
 
+                    {/* Info chips */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       {[
-                        { label: 'Tuition',        value: uni.tuition        },
-                        { label: 'Language',        value: uni.language       },
-                        { label: 'IELTS Required',  value: uni.ieltsRequired  },
+                        { label: 'Tuition',       value: uni.tuition       },
+                        { label: 'Language',       value: uni.language      },
+                        { label: 'IELTS Required', value: uni.ieltsRequired },
                       ].map(({ label, value }) => (
-                        <div key={label} className="bg-[#0f1117] border border-white/5 rounded-xl px-3 py-2.5">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">{label}</p>
-                          <p className="text-sm font-semibold text-slate-200">{value}</p>
+                        <div
+                          key={label}
+                          className="rounded-xl px-3 py-2.5 border"
+                          style={{ background: '#f7f8f3', borderColor: '#e8ede6' }}
+                        >
+                          <p
+                            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                            style={{ color: '#1a5c38' }}
+                          >
+                            {label}
+                          </p>
+                          <p className="text-sm font-semibold text-gray-800">{value}</p>
                         </div>
                       ))}
                     </div>
 
+                    {/* Program tags */}
                     {uni.programs?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {uni.programs.map((p, j) => (
-                          <span key={j} className="text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2.5 py-1 rounded-full">
+                          <span
+                            key={j}
+                            className="text-xs px-2.5 py-1 rounded-full border font-medium"
+                            style={{
+                              background: '#f0faf4',
+                              borderColor: '#b6e8ca',
+                              color: '#1a5c38',
+                            }}
+                          >
                             {p}
                           </span>
                         ))}

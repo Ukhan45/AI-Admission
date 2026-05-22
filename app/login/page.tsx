@@ -36,8 +36,8 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, form.email, form.password);
       router.push('/dashboard');
-    } catch (err: any) {
-      const code = err?.code ?? '';
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? '';
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         setError('Incorrect email or password. Please try again.');
       } else if (code === 'auth/too-many-requests') {
@@ -45,7 +45,8 @@ export default function Login() {
       } else if (code === 'auth/user-disabled') {
         setError('This account has been disabled. Please contact support.');
       } else {
-        setError(err?.message ?? 'An unexpected error occurred. Please try again.');
+        const e = err as Error;
+        setError(e.message ?? 'An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -57,16 +58,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
+    <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
+      <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-10 w-full max-w-md">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 text-sm mt-1">Sign in to your AI Admission account</p>
+          <h1 className="text-2xl font-bold text-[#085041]">Welcome Back</h1>
+          <p className="text-[#5F5E5A] text-sm mt-1">Sign in to your AI Admission account</p>
         </div>
 
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
               Email
             </label>
             <input
@@ -76,16 +77,16 @@ export default function Login() {
               onChange={handleChange}
               onKeyDown={handleKey}
               placeholder="you@email.com"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
                 Password
               </label>
-              <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline">
+              <Link href="/forgot-password" className="text-[#1D9E75] hover:text-[#0F6E56] hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -97,7 +98,7 @@ export default function Login() {
                 onChange={handleChange}
                 onKeyDown={handleKey}
                 placeholder="Your password"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
               />
               <button
                 type="button"
@@ -120,7 +121,7 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-4 py-3">
               <span>⚠️</span> {error}
             </div>
           )}
@@ -128,7 +129,7 @@ export default function Login() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -143,9 +144,9 @@ export default function Login() {
             )}
           </button>
 
-          <p className="text-center text-sm text-gray-500">
-            Don't have an account?{' '}
-            <Link href="/signup" className="text-blue-600 hover:underline font-medium">
+          <p className="text-center text-sm text-[#5F5E5A]">
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="text-[#1D9E75] hover:text-[#0F6E56] font-medium">
               Sign up
             </Link>
           </p>

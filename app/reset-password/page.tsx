@@ -101,7 +101,7 @@ function ResetPasswordContent() {
           <p className="text-gray-500 text-sm mb-4">
             Your password has been changed. You&apos;ll be redirected to sign in shortly.
           </p>
-          <Link href="/login" className="text-blue-600 hover:underline text-sm">
+          <Link href="/login" className="text-orange-500 hover:underline text-sm">
             Go to sign in now →
           </Link>
         </div>
@@ -131,7 +131,7 @@ function ResetPasswordContent() {
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 placeholder="Min 6 characters"
                 disabled={!sessionReady}
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition disabled:opacity-50"
               />
               <button
                 type="button"
@@ -165,7 +165,7 @@ function ResetPasswordContent() {
                 onKeyDown={(e) => e.key === 'Enter' && handleReset()}
                 placeholder="Repeat your password"
                 disabled={!sessionReady}
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition disabled:opacity-50"
               />
               <button
                 type="button"
@@ -203,7 +203,7 @@ function ResetPasswordContent() {
           <button
             onClick={handleReset}
             disabled={loading || !sessionReady}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

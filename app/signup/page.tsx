@@ -6,6 +6,19 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
 
+function EyeIcon({ show }: { show: boolean }) {
+  return show ? (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 4.411m0 0L21 21" />
+    </svg>
+  ) : (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
+
 type Step = 'form' | 'otp' | 'success';
 
 export default function Signup() {
@@ -100,8 +113,8 @@ export default function Signup() {
       setStep('otp');
       setCountdown(60);
       setTimeout(() => otpRefs[0].current?.focus(), 100);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -142,12 +155,12 @@ export default function Signup() {
       });
 
       setStep('success');
-    } catch (err: any) {
-      const code = err?.code ?? '';
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? '';
       if (code === 'auth/email-already-in-use') {
         setError('An account with this email already exists. Please sign in instead.');
       } else {
-        setError(err.message || 'Verification failed. Please try again.');
+        setError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -168,37 +181,26 @@ export default function Signup() {
       if (!res.ok) throw new Error(data.error);
       setCountdown(60);
       otpRefs[0].current?.focus();
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP.');
     } finally {
       setResendLoading(false);
     }
   };
 
-  const EyeIcon = ({ show }: { show: boolean }) => show ? (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 4.411m0 0L21 21" />
-    </svg>
-  ) : (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
-
   // ── Success screen ────────────────────────────────────────────────
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md text-center">
+      <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
+        <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-8 w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h1>
-          <p className="text-gray-500 text-sm mb-6">
+          <h1 className="text-2xl font-bold text-[#085041] mb-2">Account Created!</h1>
+          <p className="text-[#5F5E5A] text-sm mb-6">
             Welcome, <span className="font-semibold text-gray-700">{form.name}</span>!
             Your email has been verified and your account is ready.
           </p>
           <Link href="/dashboard"
-            className="w-full inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-center">
+            className="w-full inline-block bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition text-center">
             Go to Dashboard
           </Link>
         </div>
@@ -209,14 +211,14 @@ export default function Signup() {
   // ── OTP screen ───────────────────────────────────────────────────
   if (step === 'otp') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
+      <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
+        <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-8 w-full max-w-md">
           <div className="mb-6 text-center">
             <div className="text-4xl mb-3">📬</div>
-            <h1 className="text-2xl font-bold text-gray-900">Enter OTP</h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-[#085041]">Enter OTP</h1>
+            <p className="text-[#5F5E5A] text-sm mt-1">
               We sent a 4-digit code to{' '}
-              <span className="font-semibold text-gray-700">{form.email}</span>
+              <span className="font-semibold text-[#2C2C2A]">{form.email}</span>
             </p>
           </div>
 
@@ -231,19 +233,19 @@ export default function Signup() {
                 value={digit}
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition bg-slate-50"
+                className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition bg-white"
               />
             ))}
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-4 py-3 mb-4">
               <span className="shrink-0">⚠️</span> {error}
             </div>
           )}
 
           <button onClick={handleVerifyOtp} disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4">
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4">
             {loading ? (
               <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -252,13 +254,13 @@ export default function Signup() {
             ) : 'Verify & Create Account'}
           </button>
 
-          <div className="text-center text-sm text-gray-500">
-            Didn't receive it?{' '}
+          <div className="text-center text-sm text-[#5F5E5A]">
+            Didn&apos;t receive it?{' '}
             {countdown > 0 ? (
               <span className="text-gray-400">Resend in {countdown}s</span>
             ) : (
               <button onClick={handleResend} disabled={resendLoading}
-                className="text-blue-600 hover:underline font-medium disabled:opacity-50">
+                className="text-orange-500 hover:underline font-medium disabled:opacity-50">
                 {resendLoading ? 'Sending…' : 'Resend code'}
               </button>
             )}
@@ -275,34 +277,34 @@ export default function Signup() {
 
   // ── Signup form ──────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
+    <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
+      <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-10 w-full max-w-md">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-500 text-sm mt-1">Join AI Admission to track your journey</p>
+          <h1 className="text-2xl font-bold text-[#085041]">Create Account</h1>
+          <p className="text-[#5F5E5A] text-sm mt-1">Join AI Admission to track your journey</p>
         </div>
 
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Full Name</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Full Name</label>
             <input name="name" value={form.name} onChange={handleChange}
               placeholder="e.g. Ahmed Khan"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Email</label>
             <input name="email" type="email" value={form.email} onChange={handleChange}
               placeholder="you@email.com"
-              className="border border-gray-200 bg-slate-50 px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Password</label>
             <div className="relative">
               <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange}
                 placeholder="Min 6 characters"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <EyeIcon show={showPassword} />
@@ -311,11 +313,11 @@ export default function Signup() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confirm Password</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Confirm Password</label>
             <div className="relative">
               <input name="confirm" type={showConfirm ? 'text' : 'password'} value={form.confirm} onChange={handleChange}
                 placeholder="Repeat your password"
-                className="w-full border border-gray-200 bg-slate-50 px-3 py-2.5 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <EyeIcon show={showConfirm} />
@@ -324,19 +326,19 @@ export default function Signup() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-4 py-3">
               <span className="shrink-0">⚠️</span>
               <span>
                 {error}
                 {error.includes('already exists') && (
-                  <> — <Link href="/login" className="underline font-medium">Sign in instead</Link></>
+                  <> — <Link href="/login" className="text-[#1D9E75] hover:text-[#0F6E56] underline font-medium">Sign in instead</Link></>
                 )}
               </span>
             </div>
           )}
 
           <button onClick={handleSendOtp} disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            className="w-full bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {loading ? (
               <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -345,9 +347,9 @@ export default function Signup() {
             ) : 'Continue'}
           </button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-[#5F5E5A]">
             Already have an account?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
+            <Link href="/login" className="text-[#1D9E75] hover:text-[#0F6E56] hover:underline font-medium">Sign in</Link>
           </p>
         </div>
       </div>

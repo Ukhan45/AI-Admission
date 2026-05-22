@@ -60,24 +60,24 @@ export default function Checkout() {
         </div>
 
         {/* Pro Plan */}
-        <div className="bg-blue-600 rounded-2xl shadow-lg p-7 flex flex-col relative overflow-hidden">
+        <div className="bg-orange-500 rounded-2xl shadow-lg p-7 flex flex-col relative overflow-hidden">
           {/* Popular badge */}
           <div className="absolute top-4 right-4">
-            <span className="bg-white text-blue-600 text-[11px] font-bold px-2.5 py-1 rounded-full">
+            <span className="bg-white text-orange-600 text-[11px] font-bold px-2.5 py-1 rounded-full">
               MOST POPULAR
             </span>
           </div>
 
           {/* Glow effect */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500 rounded-full opacity-30 blur-2xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-400 rounded-full opacity-30 blur-2xl" />
 
           <div className="mb-5 relative">
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue-200">Pro</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-orange-100">Pro</span>
             <div className="mt-2 flex items-end gap-1">
               <span className="text-4xl font-bold text-white">pkr 800</span>
-              <span className="text-blue-200 text-sm mb-1">/month</span>
+              <span className="text-orange-100 text-sm mb-1">/month</span>
             </div>
-            <p className="text-sm text-blue-200 mt-1">Everything you need to get admitted</p>
+            <p className="text-sm text-orange-100 mt-1">Everything you need to get admitted</p>
           </div>
 
           <ul className="space-y-3 flex-1 mb-7 relative">
@@ -93,7 +93,7 @@ export default function Checkout() {
             href={PRO_CHECKOUT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="relative bg-white text-blue-600 hover:bg-blue-50 font-bold text-sm py-3.5 rounded-xl text-center transition block"
+            className="relative bg-white text-orange-600 hover:bg-orange-50 font-bold text-sm py-3.5 rounded-xl text-center transition block"
           >
             Start 7-Day Free Trial →
           </a>
