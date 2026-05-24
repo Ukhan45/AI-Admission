@@ -19,13 +19,23 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#f5f6fa]">
+        {/* Inject padding-top BEFORE render to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.addEventListener('DOMContentLoaded', function(){
+            var el = document.getElementById('main-content');
+            if (el) { el.style.paddingTop = window.innerWidth < 1024 ? '56px' : '0px'; }
+          });
+          window.addEventListener('resize', function(){
+            var el = document.getElementById('main-content');
+            if (el) { el.style.paddingTop = window.innerWidth < 1024 ? '56px' : '0px'; }
+          });
+        `}} />
         <div className="flex min-h-screen">
           <Sidebar />
-          {/*
-            On mobile: pt-14 offsets the fixed top bar (56px = 3.5rem).
-            On lg+: no offset needed — sidebar is sticky inline, no top bar shown.
-          */}
-          <main className="flex-1 min-h-screen overflow-x-hidden pt-14 lg:pt-0">
+          <main
+            id="main-content"
+            className="flex-1 min-h-screen overflow-x-hidden"
+          >
             {children}
           </main>
         </div>

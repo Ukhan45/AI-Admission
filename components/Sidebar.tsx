@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Home, User, FileText, History, BarChart, Globe,
   GraduationCap, BookOpen, MessageCircle, FolderCheck,
@@ -37,6 +37,15 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  // Detect desktop vs mobile — replaces Tailwind lg: classes
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check(); // run on mount
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -91,25 +100,26 @@ export default function Sidebar() {
           <p style={{ fontSize: 10, fontWeight: 700, color: '#5a7ec4', margin: 0, marginTop: 3, letterSpacing: '0.03em' }}>by Ariesian Tech</p>
         </div>
         {/* Close button — mobile only */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            border: '1.5px solid #E1F5EE',
-            background: '#F5FDFB',
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
-          className="lg:hidden"
-          aria-label="Close sidebar"
-        >
-          <X size={16} color="#5F5E5A" />
-        </button>
+        {!isDesktop && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: '1.5px solid #E1F5EE',
+              background: '#F5FDFB',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+            aria-label="Close sidebar"
+          >
+            <X size={16} color="#5F5E5A" />
+          </button>
+        )}
       </div>
 
       {/* ── Nav ── */}
@@ -254,14 +264,11 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ── Mobile top bar (visible only on small screens) ── */}
-      <div
-        className="lg:hidden"
-        style={{
+      {/* ── Mobile top bar — only on mobile (< 1024px) ── */}
+      {!isDesktop && (
+        <div style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
+          top: 0, left: 0, right: 0,
           zIndex: 40,
           background: '#fff',
           borderBottom: '1.5px solid #E1F5EE',
@@ -271,43 +278,41 @@ export default function Sidebar() {
           padding: '10px 16px',
           height: 56,
           fontFamily: "'Nunito', sans-serif",
-        }}
-      >
-        {/* Hamburger */}
-        <button
-          onClick={() => setMobileOpen(true)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 9,
-            border: '1.5px solid #E1F5EE', background: '#F5FDFB', cursor: 'pointer',
-          }}
-          aria-label="Open menu"
-        >
-          <Menu size={18} color="#1D9E75" />
-        </button>
+        }}>
+          {/* Hamburger */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: 9,
+              border: '1.5px solid #E1F5EE', background: '#F5FDFB', cursor: 'pointer',
+            }}
+            aria-label="Open menu"
+          >
+            <Menu size={18} color="#1D9E75" />
+          </button>
 
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo.png" alt="UniQuest" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-          <p style={{ fontSize: 15, fontWeight: 900, color: '#1a4fa0', margin: 0 }}>UniQuest AI</p>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/logo.png" alt="UniQuest" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+            <p style={{ fontSize: 15, fontWeight: 900, color: '#1a4fa0', margin: 0 }}>UniQuest AI</p>
+          </div>
+
+          {/* Spacer to keep logo centred */}
+          <div style={{ width: 36 }} />
         </div>
+      )}
 
-        {/* Placeholder so logo stays centred */}
-        <div style={{ width: 36 }} />
-      </div>
-
-      {/* ── Desktop sidebar (sticky, always visible ≥ lg) ── */}
-      <div
-        className="hidden lg:block"
-        style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}
-      >
-        {sidebarContent}
-      </div>
+      {/* ── Desktop sidebar — sticky, always visible on ≥ 1024px ── */}
+      {isDesktop && (
+        <div style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+          {sidebarContent}
+        </div>
+      )}
 
       {/* ── Mobile overlay backdrop ── */}
-      {mobileOpen && (
+      {!isDesktop && mobileOpen && (
         <div
-          className="lg:hidden"
           onClick={() => setMobileOpen(false)}
           style={{
             position: 'fixed', inset: 0, zIndex: 49,
@@ -318,22 +323,19 @@ export default function Sidebar() {
       )}
 
       {/* ── Mobile drawer ── */}
-      <div
-        className="lg:hidden"
-        style={{
+      {!isDesktop && (
+        <div style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          bottom: 0,
+          top: 0, left: 0, bottom: 0,
           zIndex: 50,
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           width: 280,
           overflowY: 'auto',
-        }}
-      >
-        {sidebarContent}
-      </div>
+        }}>
+          {sidebarContent}
+        </div>
+      )}
     </>
   );
 }
