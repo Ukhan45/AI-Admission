@@ -14,7 +14,8 @@ import {
   User,
   Menu,
   X,
-  GraduationCap
+  GraduationCap,
+  BookOpen
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -51,19 +52,18 @@ export default function Sidebar() {
       console.error('Logout error:', error);
     }
   };
-
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/profile', label: 'Profile', icon: User },
-    { href: '/sop-generator', label: 'SOP Generator', icon: FileText },
-    { href: '/sop-history', label: 'SOP History', icon: History },
-    { href: '/profile-analyzer', label: 'Profile Analyzer', icon: BarChart },
-    { href: '/university-finder', label: 'Universities', icon: Globe },
-    { href: '/scholarship-finder', label: 'Scholarships', icon: GraduationCap },
-    { href: '/chatbot', label: 'AI Chat', icon: MessageCircle },
-    { href: '/document-checker', label: 'Document Checker', icon: FolderCheck }
-  ];
-
+const navItems = [
+  { href: '/dashboard',        label: 'Dashboard',        icon: Home         },
+  { href: '/profile',          label: 'Profile',          icon: User         },
+  { href: '/sop-generator',    label: 'SOP Generator',    icon: FileText     },
+  { href: '/sop-history',      label: 'SOP History',      icon: History      },
+  { href: '/profile-analyzer', label: 'Profile Analyzer', icon: BarChart     },
+  { href: '/university-finder',label: 'Universities',     icon: Globe        },
+  { href: '/scholarship-finder',label: 'Scholarships',    icon: GraduationCap},
+  { href: '/abroad-guide',     label: 'Abroad Guide',     icon: BookOpen     },
+  { href: '/chatbot',          label: 'AI Chat',          icon: MessageCircle},
+  { href: '/document-checker', label: 'Document Checker', icon: FolderCheck  },
+];
   if (AUTH_PAGES.includes(pathname)) return null;
 
   const initials = userEmail ? userEmail[0].toUpperCase() : '?';
