@@ -1,6 +1,15 @@
 // app/layout.tsx
 import './globals.css';
 import Sidebar from '../components/Sidebar';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'UniQuest AI',
+  description: 'Study Abroad AI by Ariesian Tech',
+  icons: {
+    icon: '/logo.png',
+  },
+};
 
 export default function RootLayout({
   children,
