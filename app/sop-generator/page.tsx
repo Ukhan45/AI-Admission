@@ -16,7 +16,7 @@ export default function SopGenerator() {
     achievements:     '',
     experience:       '',
     researchInterest: '',
-    whyUniversity:    '',   // NEW — most impactful optional field
+    whyUniversity:    '',
   });
 
   const [result,           setResult]           = useState('');
@@ -27,7 +27,6 @@ export default function SopGenerator() {
   const [showUpgrade,      setShowUpgrade]      = useState(false);
   const [copied,           setCopied]           = useState(false);
 
-  // Word count for generated SOP
   const wordCount = useMemo(() => {
     if (!result) return 0;
     return result.trim().split(/\s+/).filter(Boolean).length;
@@ -90,7 +89,6 @@ export default function SopGenerator() {
         setCreditsRemaining(data.credits_remaining);
         setSuccessMessage('Your SOP has been generated successfully!');
         incrementStat('sopsGenerated');
-        // Scroll to result smoothly
         setTimeout(() => {
           document.getElementById('sop-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -108,7 +106,7 @@ export default function SopGenerator() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  /* ── Shared styles ─────────────────────────────────────────────────────── */
+  /* ── Shared styles ── */
   const inputCls = `w-full bg-white border border-gray-200 text-gray-800 placeholder-gray-300
     px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-[#2d9e7a] focus:ring-2
     focus:ring-[#2d9e7a]/10 transition mt-1.5`;
@@ -122,63 +120,63 @@ export default function SopGenerator() {
       className="min-h-screen bg-[#f5f5f0]"
       style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}
     >
-      {/* ── Page Header ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 px-6 py-5">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      {/* ── Page Header ── */}
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 sm:py-5">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <span className="inline-flex items-center gap-1.5 bg-[#f0faf6] border border-[#b6e8d4] text-[#2d9e7a] text-[11px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#f5a623] inline-block" />
               AI Tools
             </span>
-            <h1 className="text-2xl font-bold text-gray-900">SOP Generator</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">SOP Generator</h1>
             <p className="text-sm text-gray-400 mt-0.5">
               Create a compelling Statement of Purpose for your university application.
             </p>
           </div>
 
           {creditsRemaining !== null && !showUpgrade && (
-            <div className="shrink-0 flex items-center gap-1.5 bg-[#fff8ed] border border-[#f5a623]/30 text-[#c47d0a] text-xs font-bold px-4 py-2 rounded-full">
+            <div className="self-start sm:self-auto shrink-0 flex items-center gap-1.5 bg-[#fff8ed] border border-[#f5a623]/30 text-[#c47d0a] text-xs font-bold px-4 py-2 rounded-full">
               ✨ {creditsRemaining} generation{creditsRemaining !== 1 ? 's' : ''} left
             </div>
           )}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-6 space-y-5">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-5">
 
-        {/* ── Success banner ───────────────────────────────────────────────── */}
+        {/* ── Success banner ── */}
         {successMessage && (
-          <div className="flex items-center justify-between gap-4 bg-[#f0faf6] border border-[#b6e8d4] text-[#1a7a5e] text-sm rounded-xl px-5 py-3.5 shadow-sm">
+          <div className="flex items-center justify-between gap-4 bg-[#f0faf6] border border-[#b6e8d4] text-[#1a7a5e] text-sm rounded-xl px-4 sm:px-5 py-3.5 shadow-sm">
             <div className="flex items-center gap-2 font-medium">
               <span>✅</span> {successMessage}
             </div>
             <button
               onClick={() => setSuccessMessage('')}
-              className="text-[#2d9e7a] hover:text-[#1a7a5e] transition text-xs font-bold"
+              className="text-[#2d9e7a] hover:text-[#1a7a5e] transition text-xs font-bold shrink-0"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {/* ── Form Card ───────────────────────────────────────────────────── */}
+        {/* ── Form Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
           {/* Card header */}
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
             <p className="text-[11px] font-bold text-[#2d9e7a] uppercase tracking-widest">Step 1</p>
-            <h2 className="text-lg font-bold text-gray-900 mt-0.5">Your Details</h2>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-0.5">Your Details</h2>
             <p className="text-xs text-gray-400 mt-0.5">
               The more specific you are, the better your SOP will be. Avoid vague answers.
             </p>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-6">
 
-            {/* ── Section A: Core Info ─────────────────────────────────────── */}
+            {/* ── Section A: Core Info ── */}
             <div>
               <p className={sectionCls}>A — Core Information</p>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
 
                 {/* Left */}
                 <div className="space-y-4">
@@ -192,6 +190,7 @@ export default function SopGenerator() {
                       onChange={handleChange}
                       placeholder="e.g. Aisha Khan"
                       className={inputCls}
+                      autoComplete="name"
                     />
                   </div>
 
@@ -219,6 +218,7 @@ export default function SopGenerator() {
                       onChange={handleChange}
                       placeholder="e.g. 3.8 / 4.0"
                       className={inputCls}
+                      inputMode="decimal"
                     />
                   </div>
                 </div>
@@ -256,10 +256,10 @@ export default function SopGenerator() {
               </div>
             </div>
 
-            {/* ── Section B: Background ────────────────────────────────────── */}
+            {/* ── Section B: Background ── */}
             <div>
               <p className={sectionCls}>B — Background & Experience</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
 
                 <div>
                   <label className={labelCls}>Key Projects & Achievements</label>
@@ -289,10 +289,10 @@ export default function SopGenerator() {
               </div>
             </div>
 
-            {/* ── Section C: Goals & University Fit ───────────────────────── */}
+            {/* ── Section C: Goals & University Fit ── */}
             <div>
               <p className={sectionCls}>C — Goals, Interests & University Fit</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
 
                 <div>
                   <label className={labelCls}>Career Goals</label>
@@ -321,8 +321,8 @@ export default function SopGenerator() {
                 </div>
               </div>
 
-              {/* Why this university — full width, highlighted as critical */}
-              <div className="mt-5">
+              {/* Why this university */}
+              <div className="mt-4 sm:mt-5">
                 <div className="flex items-center justify-between mb-1">
                   <label className={labelCls}>
                     Why This University?{' '}
@@ -336,16 +336,13 @@ export default function SopGenerator() {
                   value={form.whyUniversity}
                   onChange={handleChange}
                   rows={4}
-                  placeholder={
-                    `e.g. I chose Romanian-American University because its MS Cyber Security program has a strong focus on AI-driven threat detection, which aligns with my interest in ML-based security systems. I also noticed that Prof. [Name] leads research on network intrusion detection — an area I want to explore further. The program's industry partnerships with firms like [Company] would give me practical exposure alongside my academic work.`
-                  }
+                  placeholder="e.g. I chose Romanian-American University because its MS Cyber Security program has a strong focus on AI-driven threat detection, which aligns with my interest in ML-based security systems. I also noticed that Prof. [Name] leads research on network intrusion detection — an area I want to explore further. The program's industry partnerships with firms like [Company] would give me practical exposure alongside my academic work."
                   className={`${inputCls} resize-none`}
                 />
 
-                {/* Warning if left empty */}
                 {!form.whyUniversity.trim() ? (
                   <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                    <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+                    <span className="text-amber-500 text-sm mt-0.5 shrink-0">⚠️</span>
                     <div>
                       <p className="text-[11px] font-bold text-amber-700">
                         Leaving this blank is the #1 reason SOPs sound fake
@@ -366,9 +363,9 @@ export default function SopGenerator() {
               </div>
             </div>
 
-            {/* ── Quality tip ──────────────────────────────────────────────── */}
+            {/* ── Quality tip ── */}
             <div className="flex items-start gap-3 bg-[#f0faf6] border border-[#b6e8d4] rounded-xl px-4 py-3.5">
-              <span className="text-lg mt-0.5">💡</span>
+              <span className="text-lg mt-0.5 shrink-0">💡</span>
               <div>
                 <p className="text-xs font-bold text-[#1a7a5e]">Three fields that transform your SOP</p>
                 <p className="text-[11px] text-[#2d9e7a] mt-0.5 leading-4">
@@ -381,17 +378,17 @@ export default function SopGenerator() {
               </div>
             </div>
 
-            {/* ── Error ────────────────────────────────────────────────────── */}
+            {/* ── Error ── */}
             {error && !showUpgrade && (
               <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-                <span>⚠️</span> {error}
+                <span className="shrink-0">⚠️</span> {error}
               </div>
             )}
 
-            {/* ── Upgrade banner ───────────────────────────────────────────── */}
+            {/* ── Upgrade banner ── */}
             {showUpgrade && (
               <div className="rounded-xl border border-[#1a7a5e]/20 bg-[#1a3d2e] p-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <p className="font-bold text-white text-sm flex items-center gap-1.5">
                       <span>⚡</span> You've used all your free generations
@@ -402,7 +399,7 @@ export default function SopGenerator() {
                   </div>
                   <Link
                     href="/checkout"
-                    className="shrink-0 bg-[#f5a623] hover:bg-[#e0951a] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-sm whitespace-nowrap"
+                    className="self-start sm:self-auto shrink-0 bg-[#f5a623] hover:bg-[#e0951a] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-sm whitespace-nowrap"
                   >
                     Upgrade →
                   </Link>
@@ -410,7 +407,7 @@ export default function SopGenerator() {
               </div>
             )}
 
-            {/* ── Generate button ──────────────────────────────────────────── */}
+            {/* ── Generate button ── */}
             <button
               onClick={generateSop}
               disabled={loading || showUpgrade || !requiredFilled}
@@ -436,17 +433,16 @@ export default function SopGenerator() {
           </div>
         </div>
 
-        {/* ── Result Card ─────────────────────────────────────────────────── */}
+        {/* ── Result Card ── */}
         {result && (
           <div
             id="sop-result"
             className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
           >
-            {/* Card header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold text-[#2d9e7a] uppercase tracking-widest">Step 2</p>
-                <h2 className="text-lg font-bold text-gray-900 mt-0.5">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-0.5">
                   Generated Statement of Purpose
                 </h2>
               </div>
@@ -467,18 +463,15 @@ export default function SopGenerator() {
               </div>
             </div>
 
-            {/* SOP body */}
-            <div className="p-6">
-              <div className="bg-[#f9f9f7] border border-gray-100 rounded-xl p-6">
+            <div className="p-4 sm:p-6">
+              <div className="bg-[#f9f9f7] border border-gray-100 rounded-xl p-4 sm:p-6">
                 <p className="text-gray-700 text-sm leading-8 whitespace-pre-wrap">
                   {result}
                 </p>
               </div>
 
-              {/* Footer row */}
-              <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-4">
-                  {/* Word count badge */}
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <span className={`text-xs font-bold ${wordCountColor}`}>
                     {wordCount} words
                     {wordCount >= 580 && wordCount <= 680 && ' ✓ ideal length'}
@@ -490,7 +483,7 @@ export default function SopGenerator() {
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="text-xs font-bold text-[#2d9e7a] hover:text-[#1a7a5e] transition"
+                  className="text-xs font-bold text-[#2d9e7a] hover:text-[#1a7a5e] transition self-start sm:self-auto"
                 >
                   {copied ? 'Copied ✅' : 'Copy to clipboard →'}
                 </button>
@@ -499,7 +492,7 @@ export default function SopGenerator() {
           </div>
         )}
 
-        {/* ── Info cards ──────────────────────────────────────────────────── */}
+        {/* ── Info cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {

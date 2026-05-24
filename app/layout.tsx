@@ -21,7 +21,11 @@ export default function RootLayout({
       <body className="bg-[#f5f6fa]">
         <div className="flex min-h-screen">
           <Sidebar />
-          <main className="flex-1 min-h-screen overflow-x-hidden">
+          {/*
+            On mobile: pt-14 offsets the fixed top bar (56px = 3.5rem).
+            On lg+: no offset needed — sidebar is sticky inline, no top bar shown.
+          */}
+          <main className="flex-1 min-h-screen overflow-x-hidden pt-14 lg:pt-0">
             {children}
           </main>
         </div>

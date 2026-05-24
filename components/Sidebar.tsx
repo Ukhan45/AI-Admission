@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
+import { useState, useEffect } from 'react';
 import {
   Home, User, FileText, History, BarChart, Globe,
   GraduationCap, BookOpen, MessageCircle, FolderCheck,
-  LogOut, ChevronRight, Compass,
+  LogOut, ChevronRight, Compass, Menu, X,
 } from 'lucide-react';
 
 const navItems = [
@@ -35,6 +36,22 @@ const groups = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -46,7 +63,7 @@ export default function Sidebar() {
     window.location.reload();
   };
 
-  return (
+  const sidebarContent = (
     <aside style={{
       width: 280,
       minHeight: '100vh',
@@ -55,20 +72,44 @@ export default function Sidebar() {
       display: 'flex',
       flexDirection: 'column',
       fontFamily: "'Nunito', sans-serif",
-      position: 'sticky',
-      top: 0,
-      height: '100vh',
+      height: '100%',
       overflowY: 'auto',
       flexShrink: 0,
     }}>
 
       {/* ── Logo ── */}
-      <div style={{ padding: '16px 20px', borderBottom: '1.5px solid #E1F5EE', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{
+        padding: '16px 20px',
+        borderBottom: '1.5px solid #E1F5EE',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}>
         <img src="/logo.png" alt="UniQuest" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 17, fontWeight: 900, color: '#1a4fa0', margin: 0, lineHeight: 1.2 }}>UniQuest AI</p>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#5a7ec4', margin: 0, marginTop: 3, letterSpacing: '0.03em' }}>by Ariesian Tech</p>
         </div>
+        {/* Close button — mobile only */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: '1.5px solid #E1F5EE',
+            background: '#F5FDFB',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+          className="lg:hidden"
+          aria-label="Close sidebar"
+        >
+          <X size={16} color="#5F5E5A" />
+        </button>
       </div>
 
       {/* ── Nav ── */}
@@ -77,7 +118,11 @@ export default function Sidebar() {
           const groupItems = navItems.filter(n => group.items.includes(n.href));
           return (
             <div key={group.label} style={{ marginBottom: 8 }}>
-              <p style={{ fontSize: 10, fontWeight: 800, color: '#B4B2A9', textTransform: 'uppercase', letterSpacing: '0.09em', padding: '6px 8px 4px', margin: 0 }}>
+              <p style={{
+                fontSize: 10, fontWeight: 800, color: '#B4B2A9',
+                textTransform: 'uppercase', letterSpacing: '0.09em',
+                padding: '6px 8px 4px', margin: 0,
+              }}>
                 {group.label}
               </p>
               {groupItems.map((item) => {
@@ -101,7 +146,10 @@ export default function Sidebar() {
                     onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5F5E5A'; } }}
                   >
                     {active && (
-                      <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, borderRadius: '0 3px 3px 0', background: '#1D9E75' }} />
+                      <div style={{
+                        position: 'absolute', left: 0, top: '20%', bottom: '20%',
+                        width: 3, borderRadius: '0 3px 3px 0', background: '#1D9E75',
+                      }} />
                     )}
                     <div style={{
                       width: 30, height: 30, borderRadius: 8,
@@ -122,7 +170,11 @@ export default function Sidebar() {
 
         {/* ── Help group ── */}
         <div style={{ marginBottom: 8 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: '#B4B2A9', textTransform: 'uppercase', letterSpacing: '0.09em', padding: '6px 8px 4px', margin: 0 }}>
+          <p style={{
+            fontSize: 10, fontWeight: 800, color: '#B4B2A9',
+            textTransform: 'uppercase', letterSpacing: '0.09em',
+            padding: '6px 8px 4px', margin: 0,
+          }}>
             Help
           </p>
           <button
@@ -138,7 +190,11 @@ export default function Sidebar() {
             onMouseEnter={e => { e.currentTarget.style.background = '#F5FDFB'; e.currentTarget.style.color = '#085041'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5F5E5A'; }}
           >
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#F5FDFB', border: '1.5px solid #E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8, background: '#F5FDFB',
+              border: '1.5px solid #E1F5EE', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', flexShrink: 0,
+            }}>
               <Compass size={14} color="#888780" />
             </div>
             Take a Tour
@@ -148,8 +204,6 @@ export default function Sidebar() {
 
       {/* ── Footer ── */}
       <div style={{ padding: '12px', borderTop: '1.5px solid #E1F5EE' }}>
-
-        {/* Sign out */}
         <button
           onClick={handleSignOut}
           style={{
@@ -163,13 +217,16 @@ export default function Sidebar() {
           onMouseEnter={e => { e.currentTarget.style.background = '#FFF0F0'; e.currentTarget.style.color = '#E24B4A'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#B4B2A9'; }}
         >
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: '#FFF5F5', border: '1.5px solid #FFD9D9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, background: '#FFF5F5',
+            border: '1.5px solid #FFD9D9', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', flexShrink: 0,
+          }}>
             <LogOut size={14} color="#E24B4A" />
           </div>
           Sign Out
         </button>
 
-        {/* Sign In / Sign Up links — shown when not logged in */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
           <Link href="/login"
             style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
@@ -188,11 +245,95 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Version tag */}
         <p style={{ fontSize: 10, color: '#D3D1C7', textAlign: 'center', margin: '10px 0 0', fontWeight: 600 }}>
           UniQuest v1.0 · Built for Pakistan 🇵🇰
         </p>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* ── Mobile top bar (visible only on small screens) ── */}
+      <div
+        className="lg:hidden"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          background: '#fff',
+          borderBottom: '1.5px solid #E1F5EE',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 16px',
+          height: 56,
+          fontFamily: "'Nunito', sans-serif",
+        }}
+      >
+        {/* Hamburger */}
+        <button
+          onClick={() => setMobileOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 36, height: 36, borderRadius: 9,
+            border: '1.5px solid #E1F5EE', background: '#F5FDFB', cursor: 'pointer',
+          }}
+          aria-label="Open menu"
+        >
+          <Menu size={18} color="#1D9E75" />
+        </button>
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/logo.png" alt="UniQuest" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+          <p style={{ fontSize: 15, fontWeight: 900, color: '#1a4fa0', margin: 0 }}>UniQuest AI</p>
+        </div>
+
+        {/* Placeholder so logo stays centred */}
+        <div style={{ width: 36 }} />
+      </div>
+
+      {/* ── Desktop sidebar (sticky, always visible ≥ lg) ── */}
+      <div
+        className="hidden lg:block"
+        style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}
+      >
+        {sidebarContent}
+      </div>
+
+      {/* ── Mobile overlay backdrop ── */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 49,
+            background: 'rgba(0,0,0,0.35)',
+            backdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+
+      {/* ── Mobile drawer ── */}
+      <div
+        className="lg:hidden"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          zIndex: 50,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          width: 280,
+          overflowY: 'auto',
+        }}
+      >
+        {sidebarContent}
+      </div>
+    </>
   );
 }

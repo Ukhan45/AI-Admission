@@ -41,7 +41,6 @@ function sortResults(results: University[], sort: string): University[] {
   return arr;
 }
 
-// UniQuest AI theme: chance badge styles
 const chanceCfg = {
   High:   {
     badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -60,7 +59,6 @@ const chanceCfg = {
   },
 };
 
-// Shared input / label classes — UniQuest AI style
 const inputCls = `
   w-full bg-white border border-gray-200 text-gray-800 placeholder-gray-400
   px-3.5 py-2.5 rounded-xl text-sm
@@ -127,9 +125,8 @@ export default function Universities() {
       }}
     >
       {/* ── Page header ── */}
-      <div className="bg-white border-b border-gray-100 px-6 py-5">
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 sm:py-5">
         <div className="max-w-5xl mx-auto">
-          {/* pill label — same style as "YOUR DASHBOARD" / "ADMISSIONS TOOLS" */}
           <span
             className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest
               px-3 py-1 rounded-full border mb-3"
@@ -143,28 +140,28 @@ export default function Universities() {
             University Search
           </span>
 
-          <h1 className="text-2xl font-bold text-gray-900">University Finder</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">University Finder</h1>
           <p className="text-sm text-gray-400 mt-0.5">
             Search real universities based on your profile, budget, and preferences.
           </p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
 
         {/* ── Filter card ── */}
         <div
-          className="rounded-2xl bg-white border border-gray-100 p-5 md:p-6 mb-5"
+          className="rounded-2xl bg-white border border-gray-100 p-4 sm:p-6 mb-5"
           style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
         >
           <h2
-            className="text-[11px] font-bold uppercase tracking-widest mb-5"
+            className="text-[11px] font-bold uppercase tracking-widest mb-4 sm:mb-5"
             style={{ color: '#1a5c38' }}
           >
             Search Filters
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 
             {/* Degree */}
             <div>
@@ -200,7 +197,7 @@ export default function Universities() {
             <div>
               <label className={labelCls}>Monthly Budget (USD)</label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium pointer-events-none">
                   $
                 </span>
                 <input
@@ -209,6 +206,7 @@ export default function Universities() {
                   onChange={handleChange}
                   placeholder="e.g. 1000"
                   className={`${inputCls} pl-8`}
+                  inputMode="numeric"
                 />
               </div>
               <p className={hintCls}>Leave blank to see all options</p>
@@ -223,6 +221,7 @@ export default function Universities() {
                 onChange={handleChange}
                 placeholder='e.g. 7.0  or  No IELTS'
                 className={inputCls}
+                inputMode="decimal"
               />
               <p className={hintCls}>Type "No IELTS" if not taken</p>
             </div>
@@ -236,6 +235,7 @@ export default function Universities() {
                 onChange={handleChange}
                 placeholder="e.g. 3.5 / 4.0 or 75%"
                 className={inputCls}
+                inputMode="decimal"
               />
               <p className={hintCls}>Helps estimate admission chance</p>
             </div>
@@ -289,15 +289,15 @@ export default function Universities() {
           {/* Error */}
           {error && (
             <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-              <span>⚠️</span> {error}
+              <span className="shrink-0">⚠️</span> {error}
             </div>
           )}
 
-          {/* Search button — green CTA like dashboard */}
+          {/* Search button */}
           <button
             onClick={search}
             disabled={loading}
-            className="mt-5 w-full text-white font-bold py-3.5 rounded-xl transition
+            className="mt-4 sm:mt-5 w-full text-white font-bold py-3.5 rounded-xl transition
               flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: loading ? '#2ecc71' : '#1a5c38' }}
             onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#155e32'; }}
@@ -335,12 +335,12 @@ export default function Universities() {
         {results.length > 0 && (
           <div>
             {/* Summary bar */}
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <p className="text-gray-500 text-sm">
                   <span className="text-gray-900 font-bold">{results.length}</span> universities found
                 </p>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {highCount > 0 && (
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {highCount} High
@@ -382,18 +382,18 @@ export default function Universities() {
                 return (
                   <div
                     key={i}
-                    className={`rounded-2xl bg-white border border-gray-100 border-l-4 ${cfg.card} p-5 transition hover:shadow-sm`}
+                    className={`rounded-2xl bg-white border border-gray-100 border-l-4 ${cfg.card} p-4 sm:p-5 transition hover:shadow-sm`}
                     style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
                   >
                     {/* Card header */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <h3 className="font-bold text-gray-900 text-base">{uni.name}</h3>
+                    <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                          <h3 className="font-bold text-gray-900 text-sm sm:text-base">{uni.name}</h3>
                           <span
                             className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} shrink-0`} />
                             {uni.admissionChance} Chance
                           </span>
                         </div>
@@ -411,20 +411,16 @@ export default function Universities() {
                             borderColor: '#b6e8ca',
                             background: '#f0faf4',
                           }}
-                          onMouseEnter={e => {
-                            (e.currentTarget as HTMLAnchorElement).style.background = '#dcf5e7';
-                          }}
-                          onMouseLeave={e => {
-                            (e.currentTarget as HTMLAnchorElement).style.background = '#f0faf4';
-                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#dcf5e7'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#f0faf4'; }}
                         >
                           Visit →
                         </a>
                       )}
                     </div>
 
-                    {/* Info chips */}
-                    <div className="grid grid-cols-3 gap-2 mb-3">
+                    {/* Info chips — 1 col on mobile, 3 on sm+ */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       {[
                         { label: 'Tuition',       value: uni.tuition       },
                         { label: 'Language',       value: uni.language      },
@@ -432,11 +428,11 @@ export default function Universities() {
                       ].map(({ label, value }) => (
                         <div
                           key={label}
-                          className="rounded-xl px-3 py-2.5 border"
+                          className="rounded-xl px-3 py-2 sm:py-2.5 border flex sm:block items-center gap-2 sm:gap-0"
                           style={{ background: '#f7f8f3', borderColor: '#e8ede6' }}
                         >
                           <p
-                            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                            className="text-[10px] font-bold uppercase tracking-widest sm:mb-1 shrink-0"
                             style={{ color: '#1a5c38' }}
                           >
                             {label}
