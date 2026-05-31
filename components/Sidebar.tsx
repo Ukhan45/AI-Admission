@@ -3,10 +3,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Home, User, FileText, History, BarChart, Globe,
   GraduationCap, BookOpen, MessageCircle, FolderCheck,
@@ -38,13 +38,22 @@ export default function Sidebar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Detect desktop vs mobile — replaces Tailwind lg: classes
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 1024);
-    check(); // run on mount
+    check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Track login state
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+    return () => unsub();
   }, []);
 
   // Close sidebar on route change (mobile)
@@ -238,21 +247,25 @@ export default function Sidebar() {
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
-          <Link href="/login"
-            style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-            onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-          >
-            Sign In
-          </Link>
-          <span style={{ color: '#D3D1C7', fontSize: 13 }}>·</span>
-          <Link href="/signup"
-            style={{ fontSize: 13, fontWeight: 700, color: '#085041', textDecoration: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-            onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-          >
-            Sign Up
-          </Link>
+          {!isLoggedIn && (
+            <>
+              <Link href="/login"
+                style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+              >
+                Sign In
+              </Link>
+              <span style={{ color: '#D3D1C7', fontSize: 13 }}>·</span>
+              <Link href="/signup"
+                style={{ fontSize: 13, fontWeight: 700, color: '#085041', textDecoration: 'none' }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         <p style={{ fontSize: 10, color: '#D3D1C7', textAlign: 'center', margin: '10px 0 0', fontWeight: 600 }}>
