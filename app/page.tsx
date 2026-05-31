@@ -13,7 +13,6 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    // Load AdmitAI fonts
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bricolage+Grotesque:wght@500;600;700&display=swap';
@@ -160,7 +159,6 @@ export default function LandingPage() {
             <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9FE1CB" stopOpacity="0.4"/><stop offset="100%" stopColor="#E1F5EE" stopOpacity="0"/></linearGradient>
             <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#AFA9EC" stopOpacity="0.35"/><stop offset="100%" stopColor="#EEEDFE" stopOpacity="0"/></linearGradient>
           </defs>
-          {/* Left skyline */}
           <rect x="0" y="360" width="55" height="260" fill="url(#bg1)" rx="3"/>
           <rect x="20" y="320" width="32" height="300" fill="url(#bg1)" rx="3"/>
           <rect x="60" y="380" width="42" height="240" fill="url(#bg1)" rx="3"/>
@@ -169,18 +167,15 @@ export default function LandingPage() {
           <rect x="24" y="340" width="8" height="6" fill="#1D9E75" opacity="0.25" rx="1"/>
           <rect x="24" y="362" width="8" height="6" fill="#EF9F27" opacity="0.3" rx="1"/>
           <rect x="94" y="328" width="10" height="7" fill="#1D9E75" opacity="0.2" rx="1"/>
-          {/* Right skyline */}
           <rect x="1020" y="330" width="58" height="290" fill="url(#bg2)" rx="3"/>
           <rect x="1065" y="295" width="44" height="325" fill="url(#bg2)" rx="3"/>
           <rect x="1100" y="355" width="68" height="265" fill="url(#bg2)" rx="3"/>
           <rect x="1118" y="278" width="32" height="342" fill="url(#bg2)" rx="3"/>
           <rect x="1072" y="316" width="9" height="7" fill="#7F77DD" opacity="0.3" rx="1"/>
           <rect x="1072" y="338" width="9" height="7" fill="#EF9F27" opacity="0.25" rx="1"/>
-          {/* Airplane trail */}
           <line x1="820" y1="70" x2="1060" y2="38" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="7 5" opacity="0.3"/>
           <ellipse cx="822" cy="71" rx="9" ry="6" fill="#1D9E75" opacity="0.45"/>
           <polygon points="812,71 822,65 822,77" fill="#0F6E56" opacity="0.55"/>
-          {/* Left floating card — acceptance */}
           <g transform="translate(36,175)" opacity="0.7">
             <rect width="126" height="84" rx="14" fill="white" stroke="#9FE1CB" strokeWidth="1.5"/>
             <rect x="12" y="14" width="64" height="8" rx="4" fill="#1D9E75" opacity="0.55"/>
@@ -190,7 +185,6 @@ export default function LandingPage() {
             <circle cx="104" cy="64" r="11" fill="#E1F5EE"/>
             <text x="104" y="68" textAnchor="middle" fontSize="12" fill="#0F6E56" fontWeight="700">✓</text>
           </g>
-          {/* Right floating card — visa */}
           <g transform="translate(1020,180)" opacity="0.65">
             <rect width="116" height="78" rx="14" fill="white" stroke="#FAC775" strokeWidth="1.5"/>
             <rect x="10" y="12" width="52" height="8" rx="4" fill="#EF9F27" opacity="0.65"/>
@@ -199,21 +193,26 @@ export default function LandingPage() {
             <rect x="66" y="50" width="40" height="18" rx="9" fill="#FAEEDA" stroke="#EF9F27" strokeWidth="1"/>
             <text x="86" y="63" textAnchor="middle" fontSize="10" fill="#854F0B" fontWeight="800">VISA</text>
           </g>
-          {/* Graduation cap */}
           <g transform="translate(920,72)" opacity="0.18">
             <rect x="0" y="16" width="52" height="7" rx="2" fill="#085041"/>
             <polygon points="26,0 52,16 26,24 0,16" fill="#085041"/>
             <line x1="46" y1="16" x2="52" y2="40" stroke="#085041" strokeWidth="2"/>
             <circle cx="52" cy="42" r="5" fill="#EF9F27"/>
           </g>
-          {/* Globe hint bottom */}
           <circle cx="600" cy="640" r="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.12"/>
           <ellipse cx="600" cy="640" rx="44" ry="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.09"/>
           <line x1="510" y1="640" x2="690" y2="640" stroke="#1D9E75" strokeWidth="0.8" opacity="0.1"/>
         </svg>
 
         {/* Hero content */}
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: 1200, margin: '0 auto', padding: '72px 28px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
+        <div style={{
+          position: 'relative', zIndex: 2, maxWidth: 1200, margin: '0 auto',
+          padding: '72px 28px 80px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
+          gap: 40,
+          alignItems: 'center',
+        }}>
 
           {/* Left: text */}
           <div>
@@ -221,7 +220,7 @@ export default function LandingPage() {
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', display: 'inline-block', animation: 'pulse 1.6s ease infinite' }} />
               AI-Powered University Admission Platform
             </div>
-            <h1 style={{ ...heading, fontSize: 52, fontWeight: 700, lineHeight: 1.12, color: '#085041', margin: '0 0 20px' }}>
+            <h1 className="hero-h1" style={{ ...heading, fontWeight: 700, lineHeight: 1.12, color: '#085041', margin: '0 0 20px' }}>
               Get Admitted{' '}
               <span style={{ background: 'linear-gradient(100deg,#1D9E75 30%,#EF9F27 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Smarter</span>{' '}
               with AI
@@ -260,8 +259,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right: dashboard preview card */}
-          <div style={{ position: 'relative' }}>
+          {/* Right: dashboard preview card — hidden on mobile */}
+          <div className="hero-card" style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', inset: -16, borderRadius: 28, background: 'rgba(29,158,117,0.08)', filter: 'blur(24px)' }} />
             <div style={{
               position: 'relative', borderRadius: 24, border: '1.5px solid #9FE1CB',
@@ -309,7 +308,12 @@ export default function LandingPage() {
 
       {/* ── STATS BAR ── */}
       <section style={{ background: 'linear-gradient(90deg,#085041,#1D9E75)', padding: '28px 28px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, textAlign: 'center' }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: 16, textAlign: 'center',
+        }}>
           {[['10,000+','Students Helped'],['50+','Countries Supported'],['98%','Satisfaction Rate'],['500+','Universities Listed']].map(([val,label]) => (
             <div key={label}>
               <p style={{ ...heading, fontSize: 30, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>{val}</p>
@@ -321,7 +325,12 @@ export default function LandingPage() {
 
       {/* ── PROBLEM & SOLUTION ── */}
       <section style={{ background: '#FFFBF5', padding: '72px 28px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+          gap: 20,
+        }}>
 
           {/* Problem */}
           <div style={{ borderRadius: 24, border: '1.5px solid #F7C1C1', background: '#fff', padding: 40 }}>
@@ -368,7 +377,7 @@ export default function LandingPage() {
             <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Everything You Need for University Admissions</h2>
             <p style={{ fontSize: 15, color: '#888780', maxWidth: 480, margin: '0 auto' }}>All the AI tools you need to apply to universities with confidence — in one platform.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 300px),1fr))', gap: 18 }}>
             {features.map((f) => (
               <div key={f.title} style={{
                 borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
@@ -394,9 +403,13 @@ export default function LandingPage() {
             <span style={{ display: 'inline-block', background: '#FAEEDA', color: '#854F0B', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>How It Works</span>
             <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Simple, Fast, Intelligent</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, position: 'relative' }}>
-            {/* Connector */}
-            <div style={{ position: 'absolute', top: 48, left: '18%', right: '18%', height: 2, background: 'linear-gradient(90deg,#9FE1CB,#FAC775)', borderRadius: 2, zIndex: 0 }} />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
+            gap: 20, position: 'relative',
+          }}>
+            {/* Connector line — desktop only */}
+            <div className="steps-connector" style={{ position: 'absolute', top: 48, left: '18%', right: '18%', height: 2, background: 'linear-gradient(90deg,#9FE1CB,#FAC775)', borderRadius: 2, zIndex: 0 }} />
             {steps.map((step, i) => (
               <div key={step.title} style={{
                 position: 'relative', zIndex: 1, borderRadius: 22, border: '1.5px solid #E1F5EE',
@@ -424,7 +437,11 @@ export default function LandingPage() {
             <span style={{ display: 'inline-block', background: '#EEEDFE', color: '#3C3489', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Testimonials</span>
             <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Students Love Using UniQuest AI</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+            gap: 18,
+          }}>
             {[
               { review: 'The SOP generator saved me hours of work and helped me structure my application professionally.', name: 'Ahmed R.', country: 'Pakistan', initials: 'AR', bg: '#E1F5EE', color: '#0F6E56' },
               { review: 'The university recommendations were surprisingly accurate for my profile and budget.', name: 'Sarah M.', country: 'Egypt', initials: 'SM', bg: '#FAEEDA', color: '#854F0B' },
@@ -460,7 +477,11 @@ export default function LandingPage() {
             <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 8px' }}>Start Free, Upgrade Anytime</h2>
             <p style={{ fontSize: 14, color: '#888780' }}>No hidden fees. Cancel anytime.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
+            gap: 20,
+          }}>
 
             {/* Free */}
             <div style={{ borderRadius: 24, border: '1.5px solid #E1F5EE', background: '#fff', padding: 40 }}>
@@ -609,16 +630,22 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Global keyframes */}
+      {/* Global keyframes + responsive styles */}
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.65)} }
         @keyframes orbdrift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(18px,-12px) scale(1.05)} 66%{transform:translate(-12px,10px) scale(.96)} }
+
+        .hero-h1 { font-size: 52px; }
+
         @media(max-width:768px){
-          .hide-mobile{display:none!important}
-          .show-mobile{display:flex!important}
+          .hide-mobile { display:none!important }
+          .show-mobile { display:flex!important }
+          .hero-h1 { font-size: 36px!important }
+          .hero-card { display: none!important }
+          .steps-connector { display: none!important }
         }
         @media(min-width:769px){
-          .show-mobile{display:none!important}
+          .show-mobile { display:none!important }
         }
       `}</style>
     </div>
