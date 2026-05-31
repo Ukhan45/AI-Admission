@@ -1,6 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+
 const PRO_CHECKOUT_URL = 'https://aiadmission.lemonsqueezy.com/checkout/buy/18d0eab9-3aee-4ea5-9d7f-f1b5643dff21';
+
+// Lemon Squeezy customer portal — users log in with their email to manage/cancel
+const CUSTOMER_PORTAL_URL = 'https://app.lemonsqueezy.com/my-orders';
+
 const FREE_FEATURES = [
   '3 SOP Generations per month',
   '2 Profile Analyses per month',
@@ -20,17 +29,123 @@ const PRO_FEATURES = [
 ];
 
 export default function Checkout() {
+  const [isPro, setIsPro]         = useState(false);
+  const [loading, setLoading]     = useState(true);
+  const [showCancel, setShowCancel] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          setIsPro(snap.data().plan === 'pro');
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
+    <div className="max-w-4xl mx-auto px-4 py-8">
+
+      {/* ── Header ── */}
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isPro ? 'Your Subscription' : 'Simple, Transparent Pricing'}
+        </h1>
         <p className="text-gray-500 mt-2 text-sm">
-          Start free. Upgrade when you are ready. Cancel anytime.
+          {isPro
+            ? 'You are on the Pro plan. Manage or cancel your subscription below.'
+            : 'Start free. Upgrade when you are ready. Cancel anytime.'}
         </p>
       </div>
 
-      {/* Plans */}
+      {/* ── Pro user: active plan card ── */}
+      {isPro && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-br from-[#04342C] to-[#1D9E75] rounded-2xl p-7 text-white shadow-lg">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <span className="bg-[#EF9F27] text-[#412402] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  ⚡ Active Pro Plan
+                </span>
+                <h2 className="text-2xl font-bold mt-3">PKR 800 / month</h2>
+                <p className="text-green-200 text-sm mt-1">All features unlocked · Renews monthly</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <a
+                  href={CUSTOMER_PORTAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white text-[#085041] font-bold text-sm px-5 py-2.5 rounded-xl text-center hover:bg-green-50 transition"
+                >
+                  Manage Subscription →
+                </a>
+                <button
+                  onClick={() => setShowCancel(true)}
+                  className="text-green-200 hover:text-white text-xs font-medium text-center transition underline underline-offset-2"
+                >
+                  Cancel subscription
+                </button>
+              </div>
+            </div>
+
+            {/* Pro features list */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PRO_FEATURES.map((f) => (
+                <div key={f} className="flex items-center gap-2 text-sm text-green-100">
+                  <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] shrink-0">✓</span>
+                  {f}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cancel confirmation modal */}
+          {showCancel && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-xl p-7 max-w-md w-full">
+                <h3 className="text-lg font-bold text-gray-900">Cancel your subscription?</h3>
+                <p className="text-gray-500 text-sm mt-2 leading-6">
+                  You will keep Pro access until the end of your current billing period.
+                  After that your account will revert to the Free plan.
+                </p>
+                <div className="mt-6 flex flex-col gap-3">
+                  <a
+                    href={CUSTOMER_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-3 rounded-xl text-center transition"
+                    onClick={() => setShowCancel(false)}
+                  >
+                    Yes, cancel my subscription →
+                  </a>
+                  <button
+                    onClick={() => setShowCancel(false)}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm py-3 rounded-xl transition"
+                  >
+                    Keep my Pro plan
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400 text-center mt-4">
+                  You will be taken to the Lemon Squeezy portal to complete cancellation.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Plans grid ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Free Plan */}
@@ -53,8 +168,12 @@ export default function Checkout() {
             ))}
           </ul>
 
-          <div className="bg-gray-50 border border-gray-200 text-gray-500 font-semibold text-sm py-3 rounded-xl text-center">
-            Current Plan
+          <div className={`border font-semibold text-sm py-3 rounded-xl text-center ${
+            !isPro
+              ? 'bg-gray-50 border-gray-200 text-gray-500'
+              : 'bg-white border-gray-200 text-gray-400'
+          }`}>
+            {!isPro ? 'Current Plan' : 'Free Plan'}
           </div>
         </div>
 
@@ -67,13 +186,13 @@ export default function Checkout() {
             </span>
           </div>
 
-          {/* Glow effect */}
+          {/* Glow */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-400 rounded-full opacity-30 blur-2xl" />
 
           <div className="mb-5 relative">
             <span className="text-xs font-semibold uppercase tracking-wider text-orange-100">Pro</span>
             <div className="mt-2 flex items-end gap-1">
-              <span className="text-4xl font-bold text-white">pkr 800</span>
+              <span className="text-4xl font-bold text-white">PKR 800</span>
               <span className="text-orange-100 text-sm mb-1">/month</span>
             </div>
             <p className="text-sm text-orange-100 mt-1">Everything you need to get admitted</p>
@@ -88,19 +207,29 @@ export default function Checkout() {
             ))}
           </ul>
 
-          <a
-            href={PRO_CHECKOUT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative bg-white text-orange-600 hover:bg-orange-50 font-bold text-sm py-3.5 rounded-xl text-center transition block"
-          >
-            Start 7-Day Free Trial →
-          </a>
-          <p className="text-blue-200 text-[11px] text-center mt-2">No credit card required for trial</p>
+          {isPro ? (
+            <div className="relative bg-white/20 text-white font-bold text-sm py-3.5 rounded-xl text-center">
+              ✅ You are on Pro
+            </div>
+          ) : (
+            <>
+              <a
+                href={PRO_CHECKOUT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative bg-white text-orange-600 hover:bg-orange-50 font-bold text-sm py-3.5 rounded-xl text-center transition block"
+              >
+                Start 7-Day Free Trial →
+              </a>
+              <p className="text-orange-200 text-[11px] text-center mt-2">
+                No credit card required for trial
+              </p>
+            </>
+          )}
         </div>
       </div>
 
-      {/* FAQ */}
+      {/* ── FAQ ── */}
       <div className="mt-12">
         <h2 className="text-lg font-bold text-gray-900 mb-5 text-center">Frequently Asked Questions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -119,7 +248,7 @@ export default function Checkout() {
             },
             {
               q: 'What happens when I hit free limits?',
-              a: 'You\'ll be prompted to upgrade. Your existing data is never deleted.',
+              a: "You'll be prompted to upgrade. Your existing data is never deleted.",
             },
           ].map((item) => (
             <div key={item.q} className="bg-white rounded-xl border border-gray-100 p-5">
@@ -130,12 +259,13 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/* Trust bar */}
+      {/* ── Trust bar ── */}
       <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
         <span className="text-xs text-gray-400 flex items-center gap-1.5">🔒 Secure checkout via Lemon Squeezy</span>
         <span className="text-xs text-gray-400 flex items-center gap-1.5">💳 All major cards accepted</span>
         <span className="text-xs text-gray-400 flex items-center gap-1.5">↩️ Cancel anytime</span>
       </div>
+
     </div>
   );
 }
