@@ -112,7 +112,6 @@ function CardHeader({ label, title, right }: { label: string; title: string; rig
   );
 }
 
-// ── Cancel confirmation modal ──
 function CancelModal({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -203,14 +202,14 @@ export default function Dashboard() {
       <div style={{ minHeight: '100vh', background: '#FFFBF5', ...base }}>
 
         {/* ── PAGE HEADER ── */}
-        <div style={{ background: '#fff', borderBottom: '1.5px solid #E1F5EE', padding: '20px 28px' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#fff', borderBottom: '1.5px solid #E1F5EE', padding: '20px 20px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E1F5EE', borderRadius: 50, padding: '4px 12px', marginBottom: 8 }}>
                 <span style={{ color: '#EF9F27', fontSize: 16, lineHeight: 1 }}>◉</span>
                 <span style={{ fontSize: 12, fontWeight: 800, color: '#0F6E56', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Your Dashboard</span>
               </div>
-              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 26, fontWeight: 700, color: '#085041', margin: 0, lineHeight: 1.2 }}>
+              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 700, color: '#085041', margin: 0, lineHeight: 1.2 }}>
                 Welcome back 👋
               </h1>
               <p style={{ fontSize: 13, color: '#888780', marginTop: 4, fontWeight: 600 }}>
@@ -218,7 +217,7 @@ export default function Dashboard() {
               </p>
             </div>
             {profile && !isPro && (
-              <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '11px 22px', borderRadius: 50, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.25)' }}
+              <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '11px 22px', borderRadius: 50, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.25)', whiteSpace: 'nowrap' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
                 onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
               >
@@ -228,30 +227,32 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* ── STAT CARDS ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {/* 2 cols on mobile, 4 cols on desktop */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }} className="stat-grid">
             {statCards.map((c) => (
               <Link href={c.href} key={c.label} style={{ textDecoration: 'none' }}>
-                <div style={{ background: '#fff', borderRadius: 20, border: `1.5px solid ${c.border}`, padding: 22, cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 2px 12px rgba(29,158,117,0.06)' }}
+                <div style={{ background: '#fff', borderRadius: 20, border: `1.5px solid ${c.border}`, padding: 18, cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 2px 12px rgba(29,158,117,0.06)' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 10px 28px rgba(29,158,117,0.13)`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(29,158,117,0.06)'; }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{c.icon}</div>
-                    <svg width="16" height="16" fill="none" stroke={c.accent} viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{c.icon}</div>
+                    <svg width="14" height="14" fill="none" stroke={c.accent} viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </div>
-                  <p style={{ fontSize: 32, fontWeight: 900, color: '#085041', margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif" }}>{c.value}</p>
-                  <p style={{ fontSize: 13, color: '#888780', marginTop: 4, fontWeight: 600 }}>{c.label}</p>
+                  <p style={{ fontSize: 28, fontWeight: 900, color: '#085041', margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif" }}>{c.value}</p>
+                  <p style={{ fontSize: 12, color: '#888780', marginTop: 4, fontWeight: 600 }}>{c.label}</p>
                 </div>
               </Link>
             ))}
           </div>
 
           {/* ── PROFILE SCORE + PLAN ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 16 }}>
-            <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', minHeight: 240, background: 'linear-gradient(145deg, #04342C 0%, #085041 50%, #1D9E75 100%)' }}>
+          {/* Stacks to single column on mobile */}
+          <div className="score-plan-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+            <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', minHeight: 220, background: 'linear-gradient(145deg, #04342C 0%, #085041 50%, #1D9E75 100%)' }}>
               <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(239,159,39,0.15)' }} />
               <div style={{ position: 'absolute', bottom: -30, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
               <div style={{ position: 'absolute', top: 18, left: 18 }}>
@@ -274,35 +275,25 @@ export default function Dashboard() {
                 title="Usage Overview"
                 right={
                   isPro ? (
-                    // ── Pro: badge + manage/cancel buttons ──
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB' }}>
                         ⚡ Pro
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <a
-                          href={CUSTOMER_PORTAL_URL}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <a href={CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer"
                           style={{ fontSize: 11, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
                           onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                           onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
-                        >
-                          Manage →
-                        </a>
+                        >Manage →</a>
                         <span style={{ color: '#D3D1C7', fontSize: 11 }}>·</span>
-                        <button
-                          onClick={() => setShowCancelModal(true)}
+                        <button onClick={() => setShowCancelModal(true)}
                           style={{ fontSize: 11, fontWeight: 700, color: '#E24B4A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                           onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                           onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
-                        >
-                          Cancel
-                        </button>
+                        >Cancel</button>
                       </div>
                     </div>
                   ) : (
-                    // ── Free: plain badge ──
                     <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#F1EFE8', color: '#5F5E5A', border: '1.5px solid #D3D1C7' }}>
                       Free Plan
                     </span>
@@ -318,34 +309,23 @@ export default function Dashboard() {
                   </>
                 )}
                 {isPro ? (
-                  // ── Pro: manage subscription button at bottom of card ──
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <a
-                      href={CUSTOMER_PORTAL_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <a href={CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer"
                       style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E1F5EE', color: '#085041', fontWeight: 800, fontSize: 13, padding: '11px 0', borderRadius: 12, textDecoration: 'none', border: '1.5px solid #9FE1CB' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#C8EFE0')}
                       onMouseLeave={e => (e.currentTarget.style.background = '#E1F5EE')}
-                    >
-                      🔧 Manage Subscription
-                    </a>
-                    <button
-                      onClick={() => setShowCancelModal(true)}
+                    >🔧 Manage Subscription</a>
+                    <button onClick={() => setShowCancelModal(true)}
                       style={{ padding: '11px 16px', borderRadius: 12, border: '1.5px solid #FFD9D9', background: '#FFF5F5', color: '#E24B4A', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFE8E8'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFF5F5'; }}
-                    >
-                      Cancel
-                    </button>
+                    >Cancel</button>
                   </div>
                 ) : (
                   <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '13px 0', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.2)', marginTop: 4 }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
-                  >
-                    🚀 Upgrade — Unlock Everything
-                  </Link>
+                  >🚀 Upgrade — Unlock Everything</Link>
                 )}
               </div>
             </Card>
@@ -354,20 +334,20 @@ export default function Dashboard() {
           {/* ── QUICK ACTIONS ── */}
           <Card>
             <CardHeader label="Explore Tools" title="Quick Actions" />
-            <div style={{ padding: 24 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 16 }}>
+            <div style={{ padding: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }} className="actions-grid">
                 {quickActions.map((a) => (
                   <Link href={a.href} key={a.label} style={{ textDecoration: 'none' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10, cursor: 'pointer' }}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, cursor: 'pointer' }}
                       onMouseEnter={e => { const ic = (e.currentTarget as HTMLDivElement).querySelector('.qa-icon') as HTMLDivElement; if (ic) { ic.style.borderColor = '#1D9E75'; ic.style.background = '#E1F5EE'; ic.style.transform = 'translateY(-3px)'; } }}
                       onMouseLeave={e => { const ic = (e.currentTarget as HTMLDivElement).querySelector('.qa-icon') as HTMLDivElement; if (ic) { ic.style.borderColor = '#9FE1CB'; ic.style.background = '#F5FDFB'; ic.style.transform = 'translateY(0)'; } }}
                     >
-                      <div className="qa-icon" style={{ width: 64, height: 64, borderRadius: '50%', background: '#F5FDFB', border: '2px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, transition: 'all 0.18s' }}>
+                      <div className="qa-icon" style={{ width: 56, height: 56, borderRadius: '50%', background: '#F5FDFB', border: '2px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, transition: 'all 0.18s' }}>
                         {a.icon}
                       </div>
                       <div>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#085041', margin: 0 }}>{a.label}</p>
-                        <p style={{ fontSize: 11, color: '#888780', marginTop: 2 }}>{a.desc}</p>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: '#085041', margin: 0 }}>{a.label}</p>
+                        <p style={{ fontSize: 10, color: '#888780', marginTop: 2 }}>{a.desc}</p>
                       </div>
                     </div>
                   </Link>
@@ -377,7 +357,8 @@ export default function Dashboard() {
           </Card>
 
           {/* ── ACTIVITY + RECENT GENERATIONS ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {/* Stacks to single column on mobile */}
+          <div className="activity-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
             <Card>
               <CardHeader label="Stats" title="Your Activity" />
               <div style={{ padding: 24 }}>
@@ -423,18 +404,18 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   recentGenerations.map((gen) => (
-                    <div key={gen.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px', borderBottom: '1px solid #F0EDE6', transition: 'background 0.15s' }}
+                    <div key={gen.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid #F0EDE6', transition: 'background 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#FFFBF5')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E1F5EE', border: '1.5px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: '#E1F5EE', border: '1.5px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                         {gen.type === 'sop' ? '📝' : gen.type === 'cv' ? '📄' : '✉️'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 13, fontWeight: 700, color: '#085041', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gen.type.toUpperCase()} — {gen.university || 'N/A'}</p>
                         <p style={{ fontSize: 11, color: '#888780', marginTop: 3 }}>{new Date(gen.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB', flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB', flexShrink: 0 }}>
                         {gen.type.toUpperCase()}
                       </span>
                     </div>
@@ -446,18 +427,19 @@ export default function Dashboard() {
 
           {/* ── UPGRADE BANNER (free users only) ── */}
           {profile && !isPro && (
-            <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', minHeight: 130, background: 'linear-gradient(120deg, #04342C 0%, #085041 55%, #1D9E75 100%)' }}>
+            <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', background: 'linear-gradient(120deg, #04342C 0%, #085041 55%, #1D9E75 100%)' }}>
               <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(239,159,39,0.2)' }} />
               <div style={{ position: 'absolute', bottom: -40, left: '35%', width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 32px' }}>
+              {/* Stacks on mobile, row on desktop */}
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 24px' }} className="upgrade-inner">
                 <div>
                   <div style={{ display: 'inline-block', background: '#EF9F27', color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Limited Time Offer</div>
-                  <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>Unlock Pro — PKR 800/month</h3>
+                  <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>Unlock Pro — PKR 800/month</h3>
                   <p style={{ color: '#9FE1CB', fontSize: 13, marginTop: 6, fontWeight: 600 }}>Unlimited SOPs, analyses, AI chat & more. 7-day free trial.</p>
                 </div>
-                <Link href="/checkout" style={{ flexShrink: 0, marginLeft: 24, background: '#EF9F27', color: '#412402', fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 20px rgba(239,159,39,0.35)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#EF9F27'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#EF9F27', color: '#412402', fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 20px rgba(239,159,39,0.35)', alignSelf: 'flex-start' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#EF9F27'; }}
                 >
                   Upgrade Now →
                 </Link>
@@ -467,6 +449,16 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 640px) {
+          .stat-grid { grid-template-columns: repeat(4, 1fr) !important; }
+          .score-plan-grid { grid-template-columns: 2fr 3fr !important; }
+          .actions-grid { grid-template-columns: repeat(6, 1fr) !important; }
+          .activity-grid { grid-template-columns: 1fr 1fr !important; }
+          .upgrade-inner { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 28px 32px !important; }
+        }
+      `}</style>
     </>
   );
 }
