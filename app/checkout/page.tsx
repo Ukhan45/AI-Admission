@@ -1,7 +1,6 @@
 'use client';
 
-const PRO_CHECKOUT_URL = 'https://aiadmission.lemonsqueezy.com/checkout/buy/5535bb57-c9d6-4a91-aab7-e58279177c6c';
-
+const PRO_CHECKOUT_URL = 'https://aiadmission.lemonsqueezy.com/checkout/buy/18d0eab9-3aee-4ea5-9d7f-f1b5643dff21';
 const FREE_FEATURES = [
   '3 SOP Generations per month',
   '2 Profile Analyses per month',
