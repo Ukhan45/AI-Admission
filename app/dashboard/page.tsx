@@ -7,7 +7,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
-import OnboardingTour from '@/components/OnboardingTour'; // ← NEW
+import OnboardingTour from '@/components/OnboardingTour';
+
+const CUSTOMER_PORTAL_URL = 'https://app.lemonsqueezy.com/my-orders';
 
 const quickActions = [
   { label: 'Generate SOP',      href: '/sop-generator',      icon: '📝', desc: 'AI-powered SOP drafts' },
@@ -110,10 +112,50 @@ function CardHeader({ label, title, right }: { label: string; title: string; rig
   );
 }
 
+// ── Cancel confirmation modal ──
+function CancelModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 28, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#FFF0F0', border: '1.5px solid #FFD9D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>
+          ⚠️
+        </div>
+        <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 8px' }}>
+          Cancel your subscription?
+        </h3>
+        <p style={{ fontSize: 13, color: '#5F5E5A', lineHeight: 1.6, margin: '0 0 24px' }}>
+          You will keep Pro access until the end of your billing period. After that your account reverts to the Free plan.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <a
+            href={CUSTOMER_PORTAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            style={{ display: 'block', background: '#E24B4A', color: '#fff', fontWeight: 800, fontSize: 14, padding: '13px 0', borderRadius: 12, textDecoration: 'none', textAlign: 'center' }}
+          >
+            Yes, cancel my subscription →
+          </a>
+          <button
+            onClick={onClose}
+            style={{ background: '#F1EFE8', color: '#5F5E5A', fontWeight: 700, fontSize: 14, padding: '13px 0', borderRadius: 12, border: 'none', cursor: 'pointer' }}
+          >
+            Keep my Pro plan
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: '#B4B2A9', textAlign: 'center', marginTop: 12 }}>
+          You will be taken to the Lemon Squeezy portal to complete cancellation.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({ sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentGenerations, setRecentGenerations] = useState<Generation[]>([]);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -155,8 +197,8 @@ export default function Dashboard() {
 
   return (
     <>
-      {/* ── ONBOARDING TOUR — shows automatically for new users ── */}
       <OnboardingTour />
+      {showCancelModal && <CancelModal onClose={() => setShowCancelModal(false)} />}
 
       <div style={{ minHeight: '100vh', background: '#FFFBF5', ...base }}>
 
@@ -225,12 +267,48 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
+
             <Card>
-              <CardHeader label="Your Plan" title="Usage Overview" right={
-                <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: isPro ? '#E1F5EE' : '#F1EFE8', color: isPro ? '#0F6E56' : '#5F5E5A', border: `1.5px solid ${isPro ? '#9FE1CB' : '#D3D1C7'}` }}>
-                  {isPro ? '⚡ Pro' : 'Free Plan'}
-                </span>
-              } />
+              <CardHeader
+                label="Your Plan"
+                title="Usage Overview"
+                right={
+                  isPro ? (
+                    // ── Pro: badge + manage/cancel buttons ──
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB' }}>
+                        ⚡ Pro
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <a
+                          href={CUSTOMER_PORTAL_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: 11, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
+                          onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+                          onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+                        >
+                          Manage →
+                        </a>
+                        <span style={{ color: '#D3D1C7', fontSize: 11 }}>·</span>
+                        <button
+                          onClick={() => setShowCancelModal(true)}
+                          style={{ fontSize: 11, fontWeight: 700, color: '#E24B4A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+                          onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // ── Free: plain badge ──
+                    <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#F1EFE8', color: '#5F5E5A', border: '1.5px solid #D3D1C7' }}>
+                      Free Plan
+                    </span>
+                  )
+                }
+              />
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {profile && (
                   <>
@@ -239,7 +317,29 @@ export default function Dashboard() {
                     <LimitBar label="AI Chat Messages" emoji="💬" used={profile.chat_used}     limit={FREE_LIMITS.chat}     isPro={isPro} />
                   </>
                 )}
-                {!isPro && (
+                {isPro ? (
+                  // ── Pro: manage subscription button at bottom of card ──
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <a
+                      href={CUSTOMER_PORTAL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E1F5EE', color: '#085041', fontWeight: 800, fontSize: 13, padding: '11px 0', borderRadius: 12, textDecoration: 'none', border: '1.5px solid #9FE1CB' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#C8EFE0')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#E1F5EE')}
+                    >
+                      🔧 Manage Subscription
+                    </a>
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      style={{ padding: '11px 16px', borderRadius: 12, border: '1.5px solid #FFD9D9', background: '#FFF5F5', color: '#E24B4A', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFE8E8'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFF5F5'; }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
                   <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '13px 0', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.2)', marginTop: 4 }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
@@ -344,7 +444,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* ── UPGRADE BANNER ── */}
+          {/* ── UPGRADE BANNER (free users only) ── */}
           {profile && !isPro && (
             <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', minHeight: 130, background: 'linear-gradient(120deg, #04342C 0%, #085041 55%, #1D9E75 100%)' }}>
               <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(239,159,39,0.2)' }} />
