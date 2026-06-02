@@ -8,7 +8,7 @@ export default function TermsAndConditions() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-[#1D9E75] flex items-center justify-center font-bold text-base text-white">AI</div>
-            <span className="font-bold text-base text-[#2C2C2A]">AI Admission</span>
+            <span className="font-bold text-base text-[#2C2C2A]">UniQuest AI</span>
           </Link>
           <Link href="/signup" className="rounded-xl bg-[#1D9E75] px-4 py-2 text-sm font-medium text-white hover:bg-[#0F6E56] transition">
             Get Started
@@ -20,19 +20,19 @@ export default function TermsAndConditions() {
         <div className="mb-10">
           <p className="text-sm text-[#1D9E75] uppercase tracking-widest">Legal</p>
           <h1 className="mt-3 text-4xl font-bold text-[#085041]">Terms & Conditions</h1>
-          <p className="mt-3 text-[#5F5E5A] text-sm">Last updated: May 2026 · Effective immediately</p>
+          <p className="mt-3 text-[#5F5E5A] text-sm">Last updated: June 2026 · Effective immediately</p>
         </div>
 
         <div className="space-y-10 text-gray-700 text-sm leading-7">
 
           <section>
             <h2 className="text-xl font-semibold text-[#085041] mb-3">1. Acceptance of Terms</h2>
-            <p className="text-[#5F5E5A]">By accessing or using AI Admission (&quot;the Platform&quot;), operated by Ariesian Tech, you agree to be bound by these Terms and Conditions (&quot;Terms&quot;). If you do not agree to these Terms, please do not use the Platform. These Terms apply to all visitors, users, and others who access or use the Platform.</p>
+            <p className="text-[#5F5E5A]">By accessing or using UniQuest AI (&quot;the Platform&quot;), operated by Ariesian Tech, you agree to be bound by these Terms and Conditions (&quot;Terms&quot;). If you do not agree to these Terms, please do not use the Platform. These Terms apply to all visitors, users, and others who access or use the Platform.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-[#085041] mb-3">2. Description of Service</h2>
-            <p className="text-[#5F5E5A] mb-3">AI Admission is an AI-powered university admission assistance platform that provides the following services:</p>
+            <p className="text-[#5F5E5A] mb-3">UniQuest AI is an AI-powered university admission assistance platform that provides the following services:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>AI-generated Statements of Purpose (SOPs) based on user-provided information</li>
               <li>Academic profile analysis and admission scoring</li>
@@ -142,7 +142,7 @@ export default function TermsAndConditions() {
             <div className="mt-3 rounded-2xl border border-[#DDEDE8] bg-white p-5">
               <p className="font-semibold text-[#085041]">Ariesian Tech</p>
               <p className="mt-1">Email: <a href="mailto:ariesiantech.officiall@gmail.com" className="text-[#1D9E75] hover:text-[#0F6E56]">ariesiantech.officiall@gmail.com</a></p>
-              <p className="mt-1">Platform: AI Admission</p>
+              <p className="mt-1">Platform: UniQuest AI</p>
             </div>
           </section>
 
