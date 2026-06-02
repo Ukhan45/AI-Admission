@@ -27,13 +27,14 @@ export default function LandingPage() {
 
   if (checking) return null;
 
+  // ── CHANGE 1: Added href to each feature for "Learn more →" links ──
   const features = [
-    { title: 'AI SOP Generator', description: 'Generate professional Statements of Purpose tailored to your academic background and goals.', icon: '📝' },
-    { title: 'Profile Analyzer', description: 'Analyze your academic profile and receive AI-powered admission insights and scoring.', icon: '📊' },
-    { title: 'University Finder', description: 'Discover universities based on your GPA, budget, country preference, and interests.', icon: '🎓' },
-    { title: 'Document Checker', description: 'Verify your application documents before submission and reduce costly mistakes.', icon: '📂' },
-    { title: 'AI Assistant', description: 'Ask questions about admissions, scholarships, visas, and applications anytime.', icon: '🤖' },
-    { title: 'Centralized Dashboard', description: 'Manage all your admission tasks, SOPs, universities, and progress in one place.', icon: '🚀' },
+    { title: 'AI SOP Generator', description: 'Generate professional Statements of Purpose tailored to your academic background and goals.', icon: '📝', href: '/sop-generator' },
+    { title: 'Profile Analyzer', description: 'Analyze your academic profile and receive AI-powered admission insights and scoring.', icon: '📊', href: '/profile-analyzer' },
+    { title: 'University Finder', description: 'Discover universities based on your GPA, budget, country preference, and interests.', icon: '🎓', href: '/university-finder' },
+    { title: 'Document Checker', description: 'Verify your application documents before submission and reduce costly mistakes.', icon: '📂', href: '/document-checker' },
+    { title: 'AI Assistant', description: 'Ask questions about admissions, scholarships, visas, and applications anytime.', icon: '🤖', href: '/chatbot' },
+    { title: 'Centralized Dashboard', description: 'Manage all your admission tasks, SOPs, universities, and progress in one place.', icon: '🚀', href: '/dashboard' },
   ];
 
   const steps = [
@@ -306,7 +307,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── STATS BAR ── */}
+      {/* ── STATS BAR ──
+           CHANGE 2: Replaced fake vanity metrics with honest, verifiable claims.
+           Update these values to match your real data before launch.
+      ── */}
       <section style={{ background: 'linear-gradient(90deg,#085041,#1D9E75)', padding: '28px 28px' }}>
         <div style={{
           maxWidth: 1200, margin: '0 auto',
@@ -314,7 +318,12 @@ export default function LandingPage() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
           gap: 16, textAlign: 'center',
         }}>
-          {[['10,000+','Students Helped'],['50+','Countries Supported'],['98%','Satisfaction Rate'],['500+','Universities Listed']].map(([val,label]) => (
+          {[
+            ['500+','Universities in Database'],
+            ['50+','Countries Supported'],
+            ['AI-Powered','SOP Generation'],
+            ['Free','To Get Started'],
+          ].map(([val,label]) => (
             <div key={label}>
               <p style={{ ...heading, fontSize: 30, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>{val}</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, margin: 0 }}>{label}</p>
@@ -379,18 +388,22 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 300px),1fr))', gap: 18 }}>
             {features.map((f) => (
-              <div key={f.title} style={{
-                borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
-                transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s', cursor: 'default',
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#9FE1CB'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.1)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#E1F5EE'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
-              >
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18 }}>{f.icon}</div>
-                <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: '0 0 14px' }}>{f.description}</p>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75' }}>Learn more →</span>
-              </div>
+              // ── CHANGE 3: Wrapped each card in a Link so the whole card + "Learn more →" are clickable ──
+              <Link key={f.title} href={f.href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div style={{
+                  borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
+                  transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s', cursor: 'pointer',
+                  height: '100%',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#9FE1CB'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.1)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#E1F5EE'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
+                >
+                  <div style={{ width: 52, height: 52, borderRadius: 16, background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18 }}>{f.icon}</div>
+                  <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{f.title}</h3>
+                  <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: '0 0 14px' }}>{f.description}</p>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75' }}>Learn more →</span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -572,19 +585,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
+      {/* ── FINAL CTA ──
+           CHANGE 4: Removed "Join 10,000+ Students" fake claim from CTA badge.
+           Replaced with honest positioning copy.
+      ── */}
       <section style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#04342C 0%,#085041 50%,#1D9E75 100%)', padding: '80px 28px' }}>
         <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(239,159,39,0.15)' }} />
         <div style={{ position: 'absolute', bottom: -40, left: '30%', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
           <span style={{ display: 'inline-block', background: 'rgba(239,159,39,0.2)', border: '1.5px solid rgba(239,159,39,0.4)', borderRadius: 50, padding: '6px 16px', fontSize: 13, fontWeight: 700, color: '#FAC775', marginBottom: 24 }}>
-            🎓 Join 10,000+ Students
+            🎓 Built for Pakistani Students
           </span>
           <h2 style={{ ...heading, fontSize: 42, fontWeight: 700, color: '#fff', margin: '0 0 20px', lineHeight: 1.15 }}>
             Start Your Admission Journey with AI
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.75, marginBottom: 36, maxWidth: 500, margin: '0 auto 36px' }}>
-            Join students using UniQuest AI to prepare stronger university applications faster and smarter.
+            Use UniQuest AI to prepare stronger university applications faster and smarter.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/signup" style={{
@@ -608,7 +624,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* ── FOOTER ──
+           NOTE: /privacy, /terms, and /contact routes must exist.
+           Create minimal pages for each before launch to avoid 404s.
+      ── */}
       <footer style={{ background: '#04342C', borderTop: '1.5px solid rgba(255,255,255,0.08)', padding: '32px 28px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

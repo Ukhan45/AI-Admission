@@ -62,7 +62,7 @@ export default function Login() {
       <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-10 w-full max-w-md">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#085041]">Welcome Back</h1>
-          <p className="text-[#5F5E5A] text-sm mt-1">Sign in to your AI Admission account</p>
+          <p className="text-[#5F5E5A] text-sm mt-1">Sign in to your UniQuest AI account</p>
         </div>
 
         <div className="space-y-4">
