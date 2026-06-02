@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-[#1D9E75] flex items-center justify-center font-bold text-base text-white">AI</div>
-            <span className="font-bold text-base text-[#2C2C2A]">AI Admission</span>
+            <span className="font-bold text-base text-[#2C2C2A]">UniQuest AI</span>
           </Link>
           <Link href="/signup" className="rounded-xl bg-[#1D9E75] px-4 py-2 text-sm font-medium text-white hover:bg-[#0F6E56] transition">
             Get Started
@@ -20,14 +20,14 @@ export default function PrivacyPolicy() {
         <div className="mb-10">
           <p className="text-sm text-[#1D9E75] uppercase tracking-widest">Legal</p>
           <h1 className="mt-3 text-4xl font-bold text-[#085041]">Privacy Policy</h1>
-          <p className="mt-3 text-[#5F5E5A] text-sm">Last updated: May 2026 · Effective immediately</p>
+          <p className="mt-3 text-[#5F5E5A] text-sm">Last updated: June 2026 · Effective immediately</p>
         </div>
 
         <div className="space-y-10 text-gray-700 text-sm leading-7">
 
           <section>
             <h2 className="text-xl font-semibold text-[#085041] mb-3">1. Introduction</h2>
-            <p className="text-[#5F5E5A]">Welcome to AI Admission (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), a product developed and operated by Ariesian Tech. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our platform at ai-admission-eta.vercel.app and use our services. Please read this policy carefully. If you disagree with its terms, please discontinue use of our platform.</p>
+            <p className="text-[#5F5E5A]">Welcome to UniQuest AI (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), a product developed and operated by Ariesian Tech. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our platform at ai-admission-eta.vercel.app and use our services. Please read this policy carefully. If you disagree with its terms, please discontinue use of our platform.</p>
           </section>
 
           <section>
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
               <li>With your explicit consent</li>
               <li>To service providers who assist in operating our platform (listed above)</li>
               <li>When required by law or to comply with legal process</li>
-              <li>To protect the rights, property, or safety of AI Admission, our users, or the public</li>
+              <li>To protect the rights, property, or safety of UniQuest AI, our users, or the public</li>
             </ul>
           </section>
 
@@ -131,7 +131,7 @@ export default function PrivacyPolicy() {
             <div className="mt-3 rounded-2xl border border-[#DDEDE8] bg-white p-5">
               <p className="font-semibold text-[#085041]">Ariesian Tech</p>
               <p className="mt-1">Email: <a href="mailto:ariesiantech.officiall@gmail.com" className="text-[#1D9E75] hover:text-[#0F6E56]">ariesiantech.officiall@gmail.com</a></p>
-              <p className="mt-1">Platform: AI Admission</p>
+              <p className="mt-1">Platform: UniQuest AI</p>
             </div>
           </section>
 
