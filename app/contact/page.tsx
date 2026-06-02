@@ -8,7 +8,7 @@ export default function ContactPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-[#1D9E75] flex items-center justify-center font-bold text-base text-white">AI</div>
-            <span className="font-bold text-base text-[#2C2C2A]">AI Admission</span>
+            <span className="font-bold text-base text-[#2C2C2A]">UniQuest AI</span>
           </Link>
           <Link href="/signup" className="rounded-xl bg-[#1D9E75] px-4 py-2 text-sm font-medium text-white hover:bg-[#0F6E56] transition">
             Get Started
@@ -74,7 +74,7 @@ export default function ContactPage() {
         {/* CTA */}
         <div className="text-center rounded-3xl border border-[#DDEDE8] bg-white p-8 sm:p-10">
           <h2 className="text-2xl font-bold mb-3 text-[#085041]">Ready to Get Started?</h2>
-          <p className="text-[#5F5E5A] text-sm mb-6">Join students using AI Admission to prepare stronger university applications.</p>
+          <p className="text-[#5F5E5A] text-sm mb-6">Join students using UniQuest AI to prepare stronger university applications.</p>
           <Link
             href="/signup"
             className="inline-flex rounded-2xl bg-[#1D9E75] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0F6E56] transition"
