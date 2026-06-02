@@ -12,7 +12,6 @@ const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
 type ProfileRecord = { plan: string; sop_used: number; analyzer_used: number; chat_used: number };
 type Generation    = { id: string; type: string; university: string | null; created_at: string };
 
-// ── Theme tokens ──────────────────────────────────────────────────────────────
 const T = {
   bg:         '#FFFBF5',
   border:     '#E1F5EE',
@@ -64,15 +63,11 @@ function RadialProgress({ score }: { score: number }) {
   );
 }
 
-// ── Shared card shell ────────────────────────────────────────────────────────
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{
-      background: '#fff', borderRadius: 22,
-      border: `1.5px solid ${T.border}`,
-      boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
-      overflow: 'hidden', ...style,
-    }}>{children}</div>
+    <div style={{ background: '#fff', borderRadius: 22, border: `1.5px solid ${T.border}`, boxShadow: '0 2px 16px rgba(29,158,117,0.06)', overflow: 'hidden', ...style }}>
+      {children}
+    </div>
   );
 }
 
@@ -88,7 +83,6 @@ function CardHeader({ label, title, right }: { label: string; title?: string; ri
   );
 }
 
-// ── Limit bar ────────────────────────────────────────────────────────────────
 function LimitBar({ label, emoji, used, limit, isPro }: {
   label: string; emoji: string; used: number; limit: number; isPro: boolean;
 }) {
@@ -96,7 +90,6 @@ function LimitBar({ label, emoji, used, limit, isPro }: {
   const left      = limit - used;
   const exhausted = !isPro && left <= 0;
   const warn      = !isPro && pct >= 70 && !exhausted;
-
   return (
     <div style={{ background: T.tealLight, border: `1.5px solid #C0EDDE`, borderRadius: 14, padding: '14px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -110,12 +103,7 @@ function LimitBar({ label, emoji, used, limit, isPro }: {
       {!isPro && (
         <>
           <div style={{ height: 7, background: 'rgba(255,255,255,0.6)', borderRadius: 999, overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{
-              height: '100%', borderRadius: 999,
-              width: `${pct}%`,
-              background: exhausted ? '#E24B4A' : warn ? T.amber : T.teal,
-              transition: 'width 0.8s cubic-bezier(.4,0,.2,1)',
-            }} />
+            <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: exhausted ? '#E24B4A' : warn ? T.amber : T.teal, transition: 'width 0.8s cubic-bezier(.4,0,.2,1)' }} />
           </div>
           <p style={{ fontSize: 11, color: exhausted ? '#E24B4A' : T.muted, fontFamily: T.fontBase }}>
             {exhausted ? '⚠️ Limit reached — upgrade to continue' : `${left} remaining`}
@@ -127,7 +115,6 @@ function LimitBar({ label, emoji, used, limit, isPro }: {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const [stats,   setStats]   = useState<Stats>({ sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '' });
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
@@ -137,12 +124,10 @@ export default function ProfilePage() {
   const [error,   setError]   = useState<string | null>(null);
 
   useEffect(() => {
-    // Load AdmitAI fonts
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bricolage+Grotesque:wght@500;600;700&display=swap';
     document.head.appendChild(link);
-
     setStats(getStats());
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) { setEmail(user.email ?? null); loadProfile(user.uid); }
@@ -184,33 +169,24 @@ export default function ProfilePage() {
     <div style={{ minHeight: '100vh', background: T.bg, ...s }}>
 
       {/* ── PAGE HEADER ── */}
-      <div style={{ background: '#fff', borderBottom: `1.5px solid ${T.border}`, padding: '20px 28px' }}>
+      <div style={{ background: '#fff', borderBottom: `1.5px solid ${T.border}`, padding: '20px 16px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: T.tealLight, borderRadius: 50, padding: '4px 12px', marginBottom: 8 }}>
               <span style={{ color: T.amber, fontSize: 14 }}>◉</span>
               <span style={{ fontSize: 11, fontWeight: 800, color: T.teal, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Account</span>
             </div>
-            <h1 style={{ fontFamily: T.fontHead, fontSize: 26, fontWeight: 700, color: T.tealDark, margin: '0 0 4px' }}>My Profile</h1>
+            <h1 style={{ fontFamily: T.fontHead, fontSize: 24, fontWeight: 700, color: T.tealDark, margin: '0 0 4px' }}>My Profile</h1>
             <p style={{ fontSize: 13, color: T.muted, fontWeight: 600, margin: 0 }}>Your account, plan limits, and activity in one place.</p>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {!isPro && (
-              <Link href="/checkout" style={{
-                background: T.teal, color: '#fff', fontWeight: 800, fontSize: 14,
-                padding: '10px 20px', borderRadius: 50, textDecoration: 'none',
-                boxShadow: '0 4px 14px rgba(29,158,117,0.25)',
-                transition: 'background 0.15s',
-              }}
+              <Link href="/checkout" style={{ background: T.teal, color: '#fff', fontWeight: 800, fontSize: 14, padding: '10px 20px', borderRadius: 50, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.25)', transition: 'background 0.15s', whiteSpace: 'nowrap' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
                 onMouseLeave={e => (e.currentTarget.style.background = T.teal)}
               >Upgrade to Pro →</Link>
             )}
-            <Link href="/dashboard" style={{
-              border: `1.5px solid ${T.border}`, color: T.textSub, fontWeight: 700, fontSize: 14,
-              padding: '10px 18px', borderRadius: 50, textDecoration: 'none', background: '#fff',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
+            <Link href="/dashboard" style={{ border: `1.5px solid ${T.border}`, color: T.textSub, fontWeight: 700, fontSize: 14, padding: '10px 18px', borderRadius: 50, textDecoration: 'none', background: '#fff', transition: 'border-color 0.15s, color 0.15s', whiteSpace: 'nowrap' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#9FE1CB'; e.currentTarget.style.color = T.teal; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSub; }}
             >Dashboard</Link>
@@ -218,14 +194,12 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* ── LOADING ── */}
         {loading && (
           <Card>
-            <div style={{ padding: 48, textAlign: 'center', color: T.muted, fontSize: 14, fontWeight: 600 }}>
-              Loading profile…
-            </div>
+            <div style={{ padding: 48, textAlign: 'center', color: T.muted, fontSize: 14, fontWeight: 600 }}>Loading profile…</div>
           </Card>
         )}
 
@@ -247,7 +221,6 @@ export default function ProfilePage() {
         {/* ── MAIN CONTENT ── */}
         {!loading && email && (
           <>
-            {/* Error */}
             {error && (
               <div style={{ background: '#FEF2F2', border: '1.5px solid #F7C1C1', color: '#B91C1C', fontSize: 13, fontWeight: 600, borderRadius: 14, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 ⚠️ {error}
@@ -255,39 +228,26 @@ export default function ProfilePage() {
             )}
 
             {/* ── ROW 1: Account info + Profile Score ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18 }}>
+            {/* Stacks on mobile, side-by-side on sm+ */}
+            <div className="profile-row1" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 18 }}>
 
               {/* Account card */}
               <Card>
                 <CardHeader label="Account Info" />
                 <div style={{ padding: 24 }}>
-                  {/* User identity */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                    <div style={{
-                      width: 62, height: 62, borderRadius: 18, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${T.tealDark}, ${T.teal})`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: 24, fontWeight: 800, fontFamily: T.fontHead,
-                      boxShadow: '0 4px 16px rgba(29,158,117,0.25)',
-                    }}>
+                    <div style={{ width: 62, height: 62, borderRadius: 18, flexShrink: 0, background: `linear-gradient(135deg, ${T.tealDark}, ${T.teal})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, fontWeight: 800, fontFamily: T.fontHead, boxShadow: '0 4px 16px rgba(29,158,117,0.25)' }}>
                       {email.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontFamily: T.fontHead, fontSize: 15, fontWeight: 700, color: T.tealDark, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 50,
-                        background: isPro ? T.tealLight : '#F1EFE8',
-                        color: isPro ? T.teal : T.muted,
-                        border: `1.5px solid ${isPro ? '#9FE1CB' : '#D3D1C7'}`,
-                      }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 50, background: isPro ? T.tealLight : '#F1EFE8', color: isPro ? T.teal : T.muted, border: `1.5px solid ${isPro ? '#9FE1CB' : '#D3D1C7'}` }}>
                         {isPro ? '⚡ Pro Plan' : 'Free Plan'}
                       </span>
                     </div>
                   </div>
-
-                  {/* Info grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {/* Info grid — 1 col on mobile, 2 col on sm+ */}
+                  <div className="info-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                     {[
                       { label: 'Plan Status', value: isPro ? 'Pro — Unlimited' : 'Free Plan', sub: isPro ? 'Full access to all tools.' : 'Limited monthly usage.' },
                       { label: 'Last Active',  value: lastActive, sub: 'Based on tool usage.' },
@@ -303,20 +263,11 @@ export default function ProfilePage() {
               </Card>
 
               {/* Profile Score card */}
-              <div style={{
-                borderRadius: 22, overflow: 'hidden', position: 'relative', minHeight: 240,
-                background: `linear-gradient(145deg, ${T.tealDeep} 0%, ${T.tealDark} 50%, ${T.teal} 100%)`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                textAlign: 'center',
-              }}>
-                {/* Decorative orbs */}
+              <div style={{ borderRadius: 22, overflow: 'hidden', position: 'relative', minHeight: 220, background: `linear-gradient(145deg, ${T.tealDeep} 0%, ${T.tealDark} 50%, ${T.teal} 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                 <div style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: '50%', background: 'rgba(239,159,39,0.15)' }} />
                 <div style={{ position: 'absolute', bottom: -20, left: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-                {/* Badge */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                  <span style={{ background: T.amber, color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    Profile Score
-                  </span>
+                  <span style={{ background: T.amber, color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Profile Score</span>
                 </div>
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '56px 20px 24px' }}>
                   <RadialProgress score={score} />
@@ -331,13 +282,12 @@ export default function ProfilePage() {
             </div>
 
             {/* ── ROW 2: Feature Limits + Recent Activity ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+            {/* Stacks on mobile, side-by-side on sm+ */}
+            <div className="profile-row2" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 18 }}>
 
               {/* Feature Limits */}
               <Card>
-                <CardHeader
-                  label="Usage"
-                  title="Feature Limits"
+                <CardHeader label="Usage" title="Feature Limits"
                   right={!isPro && (
                     <Link href="/checkout" style={{ fontSize: 12, fontWeight: 800, color: T.teal, textDecoration: 'none' }}>Upgrade →</Link>
                   )}
@@ -347,13 +297,7 @@ export default function ProfilePage() {
                   <LimitBar label="Profile Analyses" emoji="📊" used={profile?.analyzer_used ?? 0} limit={FREE_LIMITS.analyzer} isPro={isPro} />
                   <LimitBar label="AI Chat Messages" emoji="💬" used={profile?.chat_used ?? 0}     limit={FREE_LIMITS.chat}     isPro={isPro} />
                   {!isPro && (
-                    <Link href="/checkout" style={{
-                      display: 'block', textAlign: 'center', padding: '13px',
-                      borderRadius: 14, background: T.teal, color: '#fff',
-                      fontWeight: 800, fontSize: 14, textDecoration: 'none',
-                      boxShadow: '0 4px 14px rgba(29,158,117,0.2)', marginTop: 4,
-                      transition: 'background 0.15s',
-                    }}
+                    <Link href="/checkout" style={{ display: 'block', textAlign: 'center', padding: '13px', borderRadius: 14, background: T.teal, color: '#fff', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.2)', marginTop: 4, transition: 'background 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
                       onMouseLeave={e => (e.currentTarget.style.background = T.teal)}
                     >🚀 Upgrade — Unlock Everything</Link>
@@ -368,17 +312,12 @@ export default function ProfilePage() {
                   <div style={{ textAlign: 'center', padding: '48px 24px' }}>
                     <div style={{ width: 56, height: 56, borderRadius: '50%', background: T.tealLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 12px' }}>📄</div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: T.textSub, margin: '0 0 8px' }}>No activity yet</p>
-                    <Link href="/sop-generator" style={{ fontSize: 12, fontWeight: 700, color: T.teal, textDecoration: 'none' }}>
-                      Generate your first SOP →
-                    </Link>
+                    <Link href="/sop-generator" style={{ fontSize: 12, fontWeight: 700, color: T.teal, textDecoration: 'none' }}>Generate your first SOP →</Link>
                   </div>
                 ) : (
                   <div>
                     {recent.map((item) => (
-                      <div key={item.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 14, padding: '14px 22px',
-                        borderBottom: `1px solid ${T.border}`, transition: 'background 0.15s',
-                      }}
+                      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${T.border}`, transition: 'background 0.15s' }}
                         onMouseEnter={e => (e.currentTarget.style.background = T.bg)}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
@@ -405,10 +344,11 @@ export default function ProfilePage() {
             </div>
 
             {/* ── ROW 3: Quick Links ── */}
+            {/* 2 cols on mobile, 4 cols on sm+ */}
             <Card>
               <CardHeader label="Explore" title="Quick Links" />
-              <div style={{ padding: 24 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+              <div style={{ padding: 20 }}>
+                <div className="quicklinks-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                   {[
                     { label: 'Generate SOP',      icon: '📝', href: '/sop-generator'    },
                     { label: 'Analyze Profile',   icon: '📊', href: '/profile-analyzer' },
@@ -420,12 +360,7 @@ export default function ProfilePage() {
                         onMouseEnter={e => { const ic = (e.currentTarget as HTMLDivElement).querySelector('.ql-icon') as HTMLDivElement; if (ic) { ic.style.borderColor = T.teal; ic.style.background = T.tealLight; ic.style.transform = 'translateY(-3px)'; } }}
                         onMouseLeave={e => { const ic = (e.currentTarget as HTMLDivElement).querySelector('.ql-icon') as HTMLDivElement; if (ic) { ic.style.borderColor = '#9FE1CB'; ic.style.background = '#F5FDFB'; ic.style.transform = 'translateY(0)'; } }}
                       >
-                        <div className="ql-icon" style={{
-                          width: 56, height: 56, borderRadius: '50%',
-                          background: '#F5FDFB', border: `2px solid #9FE1CB`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                          transition: 'all 0.18s',
-                        }}>{icon}</div>
+                        <div className="ql-icon" style={{ width: 56, height: 56, borderRadius: '50%', background: '#F5FDFB', border: `2px solid #9FE1CB`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, transition: 'all 0.18s' }}>{icon}</div>
                         <p style={{ fontSize: 13, fontWeight: 700, color: T.tealDark, margin: 0 }}>{label}</p>
                       </div>
                     </Link>
@@ -436,30 +371,19 @@ export default function ProfilePage() {
 
             {/* ── UPGRADE BANNER ── */}
             {!isPro && (
-              <div style={{
-                borderRadius: 22, overflow: 'hidden', position: 'relative', minHeight: 120,
-                background: `linear-gradient(120deg, ${T.tealDeep} 0%, ${T.tealDark} 55%, ${T.teal} 100%)`,
-              }}>
+              <div style={{ borderRadius: 22, overflow: 'hidden', position: 'relative', background: `linear-gradient(120deg, ${T.tealDeep} 0%, ${T.tealDark} 55%, ${T.teal} 100%)` }}>
                 <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(239,159,39,0.18)' }} />
                 <div style={{ position: 'absolute', bottom: -30, left: '40%', width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, padding: '28px 32px' }}>
+                {/* Stacks on mobile, row on sm+ */}
+                <div className="upgrade-inner" style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 20px' }}>
                   <div>
-                    <div style={{ display: 'inline-block', background: T.amber, color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                      Unlock Full Access
-                    </div>
-                    <h3 style={{ fontFamily: T.fontHead, fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 6px', lineHeight: 1.2 }}>
-                      Upgrade to Pro — PKR 800/month
-                    </h3>
+                    <div style={{ display: 'inline-block', background: T.amber, color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Unlock Full Access</div>
+                    <h3 style={{ fontFamily: T.fontHead, fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 6px', lineHeight: 1.2 }}>Upgrade to Pro — PKR 800/month</h3>
                     <p style={{ fontSize: 13, color: '#9FE1CB', fontWeight: 600, margin: 0 }}>Unlimited SOPs, analyses, AI chat & more. 7-day free trial.</p>
                   </div>
-                  <Link href="/checkout" style={{
-                    flexShrink: 0, background: T.amber, color: '#412402',
-                    fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14,
-                    textDecoration: 'none', boxShadow: '0 4px 18px rgba(239,159,39,0.35)',
-                    whiteSpace: 'nowrap', transition: 'background 0.15s, transform 0.15s',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = T.amber; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: T.amber, color: '#412402', fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 18px rgba(239,159,39,0.35)', whiteSpace: 'nowrap', alignSelf: 'flex-start', transition: 'background 0.15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = T.amber; }}
                   >Upgrade Now →</Link>
                 </div>
               </div>
@@ -467,6 +391,21 @@ export default function ProfilePage() {
           </>
         )}
       </div>
+
+      <style>{`
+        @media (min-width: 640px) {
+          .profile-row1 { grid-template-columns: 2fr 1fr !important; }
+          .profile-row2 { grid-template-columns: 1fr 1fr !important; }
+          .info-grid    { grid-template-columns: 1fr 1fr !important; }
+          .quicklinks-grid { grid-template-columns: repeat(4, 1fr) !important; }
+          .upgrade-inner {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 28px 32px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
