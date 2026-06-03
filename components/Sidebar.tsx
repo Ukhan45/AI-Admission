@@ -122,10 +122,10 @@ export default function Sidebar() {
 
   const sidebarContent = (
     <aside style={{
-      width: 280, minHeight: '100vh', background: '#fff',
+      width: 280, background: '#fff',
       borderRight: '1.5px solid #E1F5EE', display: 'flex',
       flexDirection: 'column', fontFamily: "'Nunito', sans-serif",
-      height: '100%', overflowY: 'auto', flexShrink: 0,
+      height: '100vh', overflowY: 'auto', flexShrink: 0,
     }}>
 
       {/* Logo */}
