@@ -281,7 +281,7 @@ export default function Signup() {
       <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-10 w-full max-w-md">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#085041]">Create Account</h1>
-          <p className="text-[#5F5E5A] text-sm mt-1">Join AI Admission to track your journey</p>
+          <p className="text-[#5F5E5A] text-sm mt-1">Join UniQuest AI to track your journey</p>
         </div>
 
         <div className="space-y-4">
