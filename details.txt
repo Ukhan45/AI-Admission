@@ -1,7 +1,7 @@
 AI Admission System — Project Status
 Stack: Next.js 14, Firebase, Groq/LLaMA, Tailwind CSS
 Live: ai-admission-eta.vercel.app | Repo: Ukhan45/AI-Admission
-Payments: Lemon Squeezy — PKR 800/month Pro plan
+Pricing: All platform tools are free with no usage limits or payment method required
 
 ✅ Completed
 Auth Fixes
@@ -25,7 +25,7 @@ Middleware updated to allow these as public routes
 
 TypeScript / Build Fixes
 
-lib/credits.ts type error fixed (.select('*') + as any cast)
+Legacy payment and credit-limit helpers removed; platform tools are free and unlimited
 Build passing on Vercel ✅
 
 Mobile Responsiveness
@@ -44,7 +44,6 @@ Mobile Responsiveness — Dashboard done, remaining pages:
 /profile-analyzer
 /university-finder
 /chatbot
-/checkout
 /sop-history
 
 

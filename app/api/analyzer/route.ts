@@ -1,13 +1,11 @@
 import Groq from 'groq-sdk';
 import { getAuth } from 'firebase-admin/auth';
+import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase-admin';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const FREE_ANALYZER_LIMIT = 2;
-
-
-async function getUserAndCheckCredits(token: string) {
+async function getUserAndTrackUsage(token: string) {
   try {
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
@@ -17,20 +15,11 @@ async function getUserAndCheckCredits(token: string) {
       return { allowed: false, reason: 'profile_not_found' };
     }
 
-    const profile = userDoc.data();
-    const isPro = profile?.plan === 'pro';
-    const analyzerUsed: number = profile?.analyzer_used ?? 0;
-    const limit = isPro ? 999999 : FREE_ANALYZER_LIMIT;
-
-    if (analyzerUsed >= limit) {
-      return { allowed: false, reason: 'limit_reached', plan: profile?.plan };
-    }
-
     await adminDb.collection('users').doc(userId).update({
-      analyzer_used: analyzerUsed + 1,
+      analyzer_used: FieldValue.increment(1),
     });
 
-    return { allowed: true, plan: profile?.plan, userId };
+    return { allowed: true, userId };
   } catch (error) {
     console.error('Auth error:', error);
     return { allowed: false, reason: 'not_authenticated' };
@@ -45,12 +34,9 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.substring(7);
-    const credit = await getUserAndCheckCredits(token);
-    if (!credit.allowed) {
-      return Response.json({
-        error: credit.reason === 'limit_reached' ? 'limit_reached' : 'unauthorized',
-        plan: credit.plan,
-      }, { status: credit.reason === 'limit_reached' ? 402 : 401 });
+    const user = await getUserAndTrackUsage(token);
+    if (!user.allowed) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
     const data = await req.json();

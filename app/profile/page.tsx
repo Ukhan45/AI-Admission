@@ -7,9 +7,8 @@ import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebas
 import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
 
-const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
 
-type ProfileRecord = { plan: string; sop_used: number; analyzer_used: number; chat_used: number };
+type ProfileRecord = { sop_used: number; analyzer_used: number; chat_used: number };
 type Generation    = { id: string; type: string; university: string | null; created_at: string };
 
 const T = {
@@ -83,34 +82,20 @@ function CardHeader({ label, title, right }: { label: string; title?: string; ri
   );
 }
 
-function LimitBar({ label, emoji, used, limit, isPro }: {
-  label: string; emoji: string; used: number; limit: number; isPro: boolean;
+function UsageCount({ label, emoji, used }: {
+  label: string; emoji: string; used: number;
 }) {
-  const pct       = isPro ? 0 : Math.min((used / limit) * 100, 100);
-  const left      = limit - used;
-  const exhausted = !isPro && left <= 0;
-  const warn      = !isPro && pct >= 70 && !exhausted;
   return (
     <div style={{ background: T.tealLight, border: `1.5px solid #C0EDDE`, borderRadius: 14, padding: '14px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontFamily: T.fontBase, fontSize: 13, fontWeight: 600, color: T.textSub, display: 'flex', alignItems: 'center', gap: 7 }}>
           <span>{emoji}</span>{label}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 800, fontFamily: T.fontBase, color: exhausted ? '#E24B4A' : isPro ? T.teal : T.tealDark }}>
-          {isPro ? '∞ Unlimited' : `${used} / ${limit}`}
+        <span style={{ fontSize: 12, fontWeight: 800, fontFamily: T.fontBase, color: T.teal }}>
+          {used} used
         </span>
       </div>
-      {!isPro && (
-        <>
-          <div style={{ height: 7, background: 'rgba(255,255,255,0.6)', borderRadius: 999, overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: exhausted ? '#E24B4A' : warn ? T.amber : T.teal, transition: 'width 0.8s cubic-bezier(.4,0,.2,1)' }} />
-          </div>
-          <p style={{ fontSize: 11, color: exhausted ? '#E24B4A' : T.muted, fontFamily: T.fontBase }}>
-            {exhausted ? '⚠️ Limit reached — upgrade to continue' : `${left} remaining`}
-          </p>
-        </>
-      )}
-      {isPro && <p style={{ fontSize: 11, color: T.muted, fontFamily: T.fontBase }}>Unlimited access on Pro</p>}
+      <p style={{ fontSize: 11, color: T.muted, fontFamily: T.fontBase }}>Unlimited free usage</p>
     </div>
   );
 }
@@ -141,7 +126,7 @@ export default function ProfilePage() {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const d = userDoc.data();
-        setProfile({ plan: d.plan, sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0 });
+        setProfile({ sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0 });
       }
       const q = query(collection(db, 'generations'), where('user_id', '==', userId), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
@@ -158,7 +143,6 @@ export default function ProfilePage() {
   };
 
   const score      = profileScore(stats);
-  const isPro      = profile?.plan === 'pro';
   const lastActive = stats.lastActive ? formatLastActive(stats.lastActive) : 'No activity yet';
   const genTypeLabel = (t: string) =>
     t === 'sop' ? 'SOP Generation' : t === 'cv' ? 'CV Generation' : t === 'lor' ? 'LOR Generation' : 'Generation';
@@ -177,15 +161,9 @@ export default function ProfilePage() {
               <span style={{ fontSize: 11, fontWeight: 800, color: T.teal, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Account</span>
             </div>
             <h1 style={{ fontFamily: T.fontHead, fontSize: 24, fontWeight: 700, color: T.tealDark, margin: '0 0 4px' }}>My Profile</h1>
-            <p style={{ fontSize: 13, color: T.muted, fontWeight: 600, margin: 0 }}>Your account, plan limits, and activity in one place.</p>
+            <p style={{ fontSize: 13, color: T.muted, fontWeight: 600, margin: 0 }}>Your account, free access, and activity in one place.</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            {!isPro && (
-              <Link href="/checkout" style={{ background: T.teal, color: '#fff', fontWeight: 800, fontSize: 14, padding: '10px 20px', borderRadius: 50, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.25)', transition: 'background 0.15s', whiteSpace: 'nowrap' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-                onMouseLeave={e => (e.currentTarget.style.background = T.teal)}
-              >Upgrade to Pro →</Link>
-            )}
             <Link href="/dashboard" style={{ border: `1.5px solid ${T.border}`, color: T.textSub, fontWeight: 700, fontSize: 14, padding: '10px 18px', borderRadius: 50, textDecoration: 'none', background: '#fff', transition: 'border-color 0.15s, color 0.15s', whiteSpace: 'nowrap' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#9FE1CB'; e.currentTarget.style.color = T.teal; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSub; }}
@@ -241,15 +219,15 @@ export default function ProfilePage() {
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontFamily: T.fontHead, fontSize: 15, fontWeight: 700, color: T.tealDark, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 50, background: isPro ? T.tealLight : '#F1EFE8', color: isPro ? T.teal : T.muted, border: `1.5px solid ${isPro ? '#9FE1CB' : '#D3D1C7'}` }}>
-                        {isPro ? '⚡ Pro Plan' : 'Free Plan'}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 50, background: T.tealLight, color: T.teal, border: `1.5px solid #9FE1CB` }}>
+                        Free Account
                       </span>
                     </div>
                   </div>
                   {/* Info grid — 1 col on mobile, 2 col on sm+ */}
                   <div className="info-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                     {[
-                      { label: 'Plan Status', value: isPro ? 'Pro — Unlimited' : 'Free Plan', sub: isPro ? 'Full access to all tools.' : 'Limited monthly usage.' },
+                      { label: 'Access', value: 'Free — Unlimited', sub: 'All tools are available at no cost.' },
                       { label: 'Last Active',  value: lastActive, sub: 'Based on tool usage.' },
                     ].map(({ label, value, sub }) => (
                       <div key={label} style={{ background: T.tealLight, border: `1.5px solid #C0EDDE`, borderRadius: 14, padding: 16 }}>
@@ -281,27 +259,17 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* ── ROW 2: Feature Limits + Recent Activity ── */}
+            {/* ── ROW 2: Usage + Recent Activity ── */}
             {/* Stacks on mobile, side-by-side on sm+ */}
             <div className="profile-row2" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 18 }}>
 
-              {/* Feature Limits */}
+              {/* Usage */}
               <Card>
-                <CardHeader label="Usage" title="Feature Limits"
-                  right={!isPro && (
-                    <Link href="/checkout" style={{ fontSize: 12, fontWeight: 800, color: T.teal, textDecoration: 'none' }}>Upgrade →</Link>
-                  )}
-                />
+                <CardHeader label="Free access" title="Unlimited Usage" />
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <LimitBar label="SOP Generations"  emoji="📝" used={profile?.sop_used ?? 0}      limit={FREE_LIMITS.sop}      isPro={isPro} />
-                  <LimitBar label="Profile Analyses" emoji="📊" used={profile?.analyzer_used ?? 0} limit={FREE_LIMITS.analyzer} isPro={isPro} />
-                  <LimitBar label="AI Chat Messages" emoji="💬" used={profile?.chat_used ?? 0}     limit={FREE_LIMITS.chat}     isPro={isPro} />
-                  {!isPro && (
-                    <Link href="/checkout" style={{ display: 'block', textAlign: 'center', padding: '13px', borderRadius: 14, background: T.teal, color: '#fff', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.2)', marginTop: 4, transition: 'background 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-                      onMouseLeave={e => (e.currentTarget.style.background = T.teal)}
-                    >🚀 Upgrade — Unlock Everything</Link>
-                  )}
+                  <UsageCount label="SOP Generations"  emoji="📝" used={profile?.sop_used ?? 0} />
+                  <UsageCount label="Profile Analyses" emoji="📊" used={profile?.analyzer_used ?? 0} />
+                  <UsageCount label="AI Chat Messages" emoji="💬" used={profile?.chat_used ?? 0} />
                 </div>
               </Card>
 
@@ -369,25 +337,7 @@ export default function ProfilePage() {
               </div>
             </Card>
 
-            {/* ── UPGRADE BANNER ── */}
-            {!isPro && (
-              <div style={{ borderRadius: 22, overflow: 'hidden', position: 'relative', background: `linear-gradient(120deg, ${T.tealDeep} 0%, ${T.tealDark} 55%, ${T.teal} 100%)` }}>
-                <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(239,159,39,0.18)' }} />
-                <div style={{ position: 'absolute', bottom: -30, left: '40%', width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-                {/* Stacks on mobile, row on sm+ */}
-                <div className="upgrade-inner" style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 20px' }}>
-                  <div>
-                    <div style={{ display: 'inline-block', background: T.amber, color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Unlock Full Access</div>
-                    <h3 style={{ fontFamily: T.fontHead, fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 6px', lineHeight: 1.2 }}>Upgrade to Pro — PKR 800/month</h3>
-                    <p style={{ fontSize: 13, color: '#9FE1CB', fontWeight: 600, margin: 0 }}>Unlimited SOPs, analyses, AI chat & more. 7-day free trial.</p>
-                  </div>
-                  <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: T.amber, color: '#412402', fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 18px rgba(239,159,39,0.35)', whiteSpace: 'nowrap', alignSelf: 'flex-start', transition: 'background 0.15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = T.amber; }}
-                  >Upgrade Now →</Link>
-                </div>
-              </div>
-            )}
+
           </>
         )}
       </div>

@@ -23,7 +23,7 @@ type Step = 'form' | 'otp' | 'success';
 
 export default function Signup() {
   const [step, setStep] = useState<Step>('form');
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', role: 'student' });
   const [otp, setOtp] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -150,7 +150,7 @@ export default function Signup() {
         uid: user.uid,
         fullName: form.name,
         email: form.email,
-        credits: 0,
+        role: form.role,
         createdAt: serverTimestamp(),
       });
 
@@ -199,7 +199,7 @@ export default function Signup() {
             Welcome, <span className="font-semibold text-gray-700">{form.name}</span>!
             Your email has been verified and your account is ready.
           </p>
-          <Link href="/dashboard"
+          <Link href={form.role === 'consultant' ? '/consultant' : '/dashboard'}
             className="w-full inline-block bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition text-center">
             Go to Dashboard
           </Link>
@@ -285,6 +285,20 @@ export default function Signup() {
         </div>
 
         <div className="space-y-4">
+          <div className="flex flex-col gap-1.5 mb-2">
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">I am joining as a:</label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={`border rounded-2xl p-3 flex items-center justify-center gap-2 cursor-pointer transition ${form.role === 'student' ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]' : 'border-gray-200 bg-white text-gray-500 hover:border-[#1D9E75]'}`}>
+                <input type="radio" name="role" value="student" checked={form.role === 'student'} onChange={handleChange} className="hidden" />
+                <span className="font-semibold text-sm">Student</span>
+              </label>
+              <label className={`border rounded-2xl p-3 flex items-center justify-center gap-2 cursor-pointer transition ${form.role === 'consultant' ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]' : 'border-gray-200 bg-white text-gray-500 hover:border-[#1D9E75]'}`}>
+                <input type="radio" name="role" value="consultant" checked={form.role === 'consultant'} onChange={handleChange} className="hidden" />
+                <span className="font-semibold text-sm">Consultant</span>
+              </label>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Full Name</label>
             <input name="name" value={form.name} onChange={handleChange}

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { incrementStat } from '@/lib/stats';
 import { auth } from '@/lib/firebase';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -37,32 +36,10 @@ const INITIAL_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
-function UpgradeBanner() {
-  return (
-    <div className="mt-4 rounded-3xl bg-gradient-to-r from-[#0c8f6f] to-[#28b487] p-5 text-white shadow-lg">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-lg font-bold">🚀 Upgrade to Pro</p>
-          <p className="text-sm text-emerald-100 mt-1">
-            Unlock unlimited AI chats, premium university insights, SOP generation, and more.
-          </p>
-        </div>
-        <Link
-          href="/checkout"
-          className="bg-white text-[#0c8f6f] font-semibold px-5 py-3 rounded-2xl hover:scale-105 transition text-center whitespace-nowrap"
-        >
-          Upgrade — PKR 800/mo
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 export default function Chatbot() {
   const [messages, setMessages]     = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput]           = useState('');
   const [loading, setLoading]       = useState(false);
-  const [limitReached, setLimitReached] = useState(false);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,7 +57,7 @@ export default function Chatbot() {
 
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || loading || limitReached) return;
+    if (!content || loading) return;
 
     const userMsg: Message = { role: 'user', content, timestamp: new Date() };
     const updated = [...messages, userMsg];
@@ -113,16 +90,6 @@ export default function Chatbot() {
 
       const data = await res.json();
 
-      if (res.status === 402 && data.error === 'limit_reached') {
-        setLimitReached(true);
-        setMessages([...updated, {
-          role: 'assistant',
-          content: "You've reached your free message limit. Upgrade to Pro to continue chatting 🚀",
-          timestamp: new Date(),
-        }]);
-        return;
-      }
-
       if (!res.ok) throw new Error('Failed');
 
       setMessages([...updated, {
@@ -153,7 +120,6 @@ export default function Chatbot() {
   const clearChat = () => {
     setMessages([{ ...INITIAL_MESSAGE, timestamp: new Date() }]);
     setInput('');
-    setLimitReached(false);
   };
 
   const showStarters = messages.length === 1;
@@ -196,7 +162,7 @@ export default function Chatbot() {
             <button
               key={chip.label}
               onClick={() => send(chip.prompt)}
-              disabled={loading || limitReached}
+              disabled={loading}
               className="bg-white border border-[#d7e7de] hover:bg-[#0c8f6f] hover:text-white hover:border-[#0c8f6f] px-3 py-2 sm:px-4 rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-sm disabled:opacity-40"
             >
               {chip.label}
@@ -270,8 +236,7 @@ export default function Chatbot() {
           </div>
 
           {/* Input area */}
-          {!limitReached && (
-            <div className="border-t border-[#eef2ef] bg-white p-4 sm:p-5">
+          <div className="border-t border-[#eef2ef] bg-white p-4 sm:p-5">
               <div className="flex items-end gap-2 sm:gap-3">
                 <div className="flex-1">
                   <textarea
@@ -304,12 +269,8 @@ export default function Chatbot() {
                   {input.length}/1000
                 </p>
               </div>
-            </div>
-          )}
+          </div>
         </div>
-
-        {/* Upgrade banner */}
-        {limitReached && <UpgradeBanner />}
       </div>
     </div>
   );

@@ -54,7 +54,6 @@ export default function ContactPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               { icon: '🔑', title: 'Account Issues', desc: 'Login problems, password reset, account deletion' },
-              { icon: '💳', title: 'Billing & Payments', desc: 'Subscription questions, payment issues, refund requests' },
               { icon: '🤖', title: 'AI Tool Support', desc: 'SOP generation issues, profile analyzer, chatbot problems' },
               { icon: '💡', title: 'Feature Requests', desc: 'Suggest new features or improvements to the platform' },
               { icon: '🐛', title: 'Bug Reports', desc: 'Report technical issues or unexpected behavior' },

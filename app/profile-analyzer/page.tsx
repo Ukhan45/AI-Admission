@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { incrementStat } from '@/lib/stats';
 import { auth } from '@/lib/firebase';
-import Link from 'next/link';
 
 type University = {
   name: string;
@@ -85,7 +84,6 @@ export default function ProfileAnalyzer() {
   const [result, setResult]             = useState<AnalysisResult | null>(null);
   const [error, setError]               = useState('');
   const [loading, setLoading]           = useState(false);
-  const [limitReached, setLimitReached] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -110,7 +108,6 @@ export default function ProfileAnalyzer() {
       });
       const data = await res.json();
 
-      if (res.status === 402) { setLimitReached(true); return; }
       if (!res.ok) { setError(data.error || 'Analysis failed. Please try again.'); return; }
 
       setResult(data.result);
@@ -139,34 +136,8 @@ export default function ProfileAnalyzer() {
 
       <div className="max-w-5xl mx-auto px-6 py-6">
 
-        {/* ── Upgrade banner — UniQuest dark green "Unlock Pro" style ── */}
-        {limitReached && (
-          <div className="bg-[#1a3d2e] rounded-2xl p-5 mb-6 border border-[#1a7a5e]/20">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-bold text-white flex items-center gap-1.5">
-                  <span>⚡</span> You've reached your free analysis limit
-                </p>
-                <p className="text-[#7ecfac] text-sm mt-1">Upgrade to Pro for unlimited analyses and all features.</p>
-                <ul className="mt-2 space-y-1">
-                  {['Unlimited Profile Analyses', 'Unlimited SOP Generations', 'Unlimited AI Chat'].map(f => (
-                    <li key={f} className="text-xs text-[#7ecfac] flex items-center gap-1.5">
-                      <span className="text-[#2d9e7a]">✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Link href="/checkout"
-                className="shrink-0 bg-[#f5a623] hover:bg-[#e0951a] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition whitespace-nowrap">
-                Upgrade →
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* ── Form Card ── */}
-        {!limitReached && (
-          <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-6">
+        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-6">
 
             {/* Card header */}
             <div className="px-6 py-4 border-b border-gray-100">
@@ -266,7 +237,6 @@ export default function ProfileAnalyzer() {
               </button>
             </div>
           </div>
-        )}
 
         {/* ── Results ── */}
         {result && (

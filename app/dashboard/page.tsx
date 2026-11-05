@@ -3,13 +3,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
 import OnboardingTour from '@/components/OnboardingTour';
-
-const CUSTOMER_PORTAL_URL = 'https://app.lemonsqueezy.com/my-orders';
 
 const quickActions = [
   { label: 'Generate SOP',      href: '/sop-generator',      icon: '📝', desc: 'AI-powered SOP drafts' },
@@ -40,9 +39,7 @@ function formatLastActive(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-const FREE_LIMITS = { sop: 3, analyzer: 2, chat: 10 };
-
-type Profile = { plan: string; sop_used: number; analyzer_used: number; chat_used: number };
+type Profile = { sop_used: number; analyzer_used: number; chat_used: number; consultantNotes?: string; };
 type Generation = { id: string; type: string; university: string; created_at: string };
 
 function RadialProgress({ score }: { score: number }) {
@@ -61,33 +58,17 @@ function RadialProgress({ score }: { score: number }) {
   );
 }
 
-function LimitBar({ label, emoji, used, limit, isPro }: {
-  label: string; emoji: string; used: number; limit: number; isPro: boolean;
+function UsageCount({ label, emoji, used }: {
+  label: string; emoji: string; used: number;
 }) {
-  const pct = isPro ? 0 : Math.min((used / limit) * 100, 100);
-  const left = limit - used;
-  const exhausted = !isPro && left <= 0;
-  const warn = !isPro && pct >= 70 && !exhausted;
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span style={{ fontSize: 13, color: '#5F5E5A', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'Nunito, sans-serif', fontWeight: 600 }}>
-          <span>{emoji}</span>{label}
-        </span>
-        <span style={{ fontSize: 12, fontWeight: 800, fontFamily: 'Nunito, sans-serif', color: exhausted ? '#E24B4A' : isPro ? '#1D9E75' : '#2C2C2A' }}>
-          {isPro ? '∞' : `${used} / ${limit}`}
-        </span>
-      </div>
-      {!isPro && (
-        <>
-          <div style={{ height: 7, background: '#E1F5EE', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: exhausted ? '#E24B4A' : warn ? '#EF9F27' : '#1D9E75', transition: 'width 0.8s cubic-bezier(.4,0,.2,1)' }} />
-          </div>
-          <p style={{ fontSize: 11, color: exhausted ? '#E24B4A' : '#888780', fontFamily: 'Nunito, sans-serif' }}>
-            {exhausted ? '⚠️ Limit reached' : `${left} remaining`}
-          </p>
-        </>
-      )}
+    <div className="flex items-center justify-between">
+      <span style={{ fontSize: 13, color: '#5F5E5A', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'Nunito, sans-serif', fontWeight: 600 }}>
+        <span>{emoji}</span>{label}
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 800, fontFamily: 'Nunito, sans-serif', color: '#1D9E75' }}>
+        {used} used
+      </span>
     </div>
   );
 }
@@ -112,49 +93,13 @@ function CardHeader({ label, title, right }: { label: string; title: string; rig
   );
 }
 
-function CancelModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 20, padding: 28, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#FFF0F0', border: '1.5px solid #FFD9D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>
-          ⚠️
-        </div>
-        <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 8px' }}>
-          Cancel your subscription?
-        </h3>
-        <p style={{ fontSize: 13, color: '#5F5E5A', lineHeight: 1.6, margin: '0 0 24px' }}>
-          You will keep Pro access until the end of your billing period. After that your account reverts to the Free plan.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <a
-            href={CUSTOMER_PORTAL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClose}
-            style={{ display: 'block', background: '#E24B4A', color: '#fff', fontWeight: 800, fontSize: 14, padding: '13px 0', borderRadius: 12, textDecoration: 'none', textAlign: 'center' }}
-          >
-            Yes, cancel my subscription →
-          </a>
-          <button
-            onClick={onClose}
-            style={{ background: '#F1EFE8', color: '#5F5E5A', fontWeight: 700, fontSize: 14, padding: '13px 0', borderRadius: 12, border: 'none', cursor: 'pointer' }}
-          >
-            Keep my Pro plan
-          </button>
-        </div>
-        <p style={{ fontSize: 11, color: '#B4B2A9', textAlign: 'center', marginTop: 12 }}>
-          You will be taken to the Lemon Squeezy portal to complete cancellation.
-        </p>
-      </div>
-    </div>
-  );
-}
+
 
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats>({ sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentGenerations, setRecentGenerations] = useState<Generation[]>([]);
-  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -171,7 +116,15 @@ export default function Dashboard() {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const d = userDoc.data();
-        setProfile({ plan: d.plan, sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0 });
+        if (d.role === 'consultant') {
+          router.push('/consultant');
+          return;
+        }
+        if (d.role === 'admin') {
+          router.push('/admin');
+          return;
+        }
+        setProfile({ sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0, consultantNotes: d.consultantNotes });
       }
       const q = query(collection(db, 'generations'), where('user_id', '==', userId), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
@@ -182,7 +135,6 @@ export default function Dashboard() {
   };
 
   const score = profileScore(stats);
-  const isPro = profile?.plan === 'pro';
   const totalActions = stats.sopsGenerated + stats.universitiesSearched + stats.profilesAnalyzed + stats.chatMessages;
 
   const statCards = [
@@ -197,7 +149,6 @@ export default function Dashboard() {
   return (
     <>
       <OnboardingTour />
-      {showCancelModal && <CancelModal onClose={() => setShowCancelModal(false)} />}
 
       <div style={{ minHeight: '100vh', background: '#FFFBF5', ...base }}>
 
@@ -216,14 +167,6 @@ export default function Dashboard() {
                 Last active: <span style={{ color: '#1D9E75' }}>{formatLastActive(stats.lastActive)}</span>
               </p>
             </div>
-            {profile && !isPro && (
-              <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '11px 22px', borderRadius: 50, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.25)', whiteSpace: 'nowrap' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
-              >
-                ⚡ Upgrade to Pro
-              </Link>
-            )}
           </div>
         </div>
 
@@ -271,61 +214,21 @@ export default function Dashboard() {
 
             <Card>
               <CardHeader
-                label="Your Plan"
-                title="Usage Overview"
+                label="Free access"
+                title="Unlimited Usage"
                 right={
-                  isPro ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB' }}>
-                        ⚡ Pro
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <a href={CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: 11, fontWeight: 700, color: '#1D9E75', textDecoration: 'none' }}
-                          onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
-                          onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
-                        >Manage →</a>
-                        <span style={{ color: '#D3D1C7', fontSize: 11 }}>·</span>
-                        <button onClick={() => setShowCancelModal(true)}
-                          style={{ fontSize: 11, fontWeight: 700, color: '#E24B4A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                          onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
-                          onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
-                        >Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#F1EFE8', color: '#5F5E5A', border: '1.5px solid #D3D1C7' }}>
-                      Free Plan
-                    </span>
-                  )
+                  <span style={{ fontSize: 12, fontWeight: 800, padding: '6px 14px', borderRadius: 50, background: '#E1F5EE', color: '#0F6E56', border: '1.5px solid #9FE1CB' }}>
+                    Free · Unlimited
+                  </span>
                 }
               />
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {profile && (
                   <>
-                    <LimitBar label="SOP Generations"  emoji="📝" used={profile.sop_used}      limit={FREE_LIMITS.sop}      isPro={isPro} />
-                    <LimitBar label="Profile Analyses" emoji="📊" used={profile.analyzer_used} limit={FREE_LIMITS.analyzer} isPro={isPro} />
-                    <LimitBar label="AI Chat Messages" emoji="💬" used={profile.chat_used}     limit={FREE_LIMITS.chat}     isPro={isPro} />
+                    <UsageCount label="SOP Generations"  emoji="📝" used={profile.sop_used} />
+                    <UsageCount label="Profile Analyses" emoji="📊" used={profile.analyzer_used} />
+                    <UsageCount label="AI Chat Messages" emoji="💬" used={profile.chat_used} />
                   </>
-                )}
-                {isPro ? (
-                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <a href={CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E1F5EE', color: '#085041', fontWeight: 800, fontSize: 13, padding: '11px 0', borderRadius: 12, textDecoration: 'none', border: '1.5px solid #9FE1CB' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#C8EFE0')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '#E1F5EE')}
-                    >🔧 Manage Subscription</a>
-                    <button onClick={() => setShowCancelModal(true)}
-                      style={{ padding: '11px 16px', borderRadius: 12, border: '1.5px solid #FFD9D9', background: '#FFF5F5', color: '#E24B4A', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFE8E8'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFF5F5'; }}
-                    >Cancel</button>
-                  </div>
-                ) : (
-                  <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14, padding: '13px 0', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.2)', marginTop: 4 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
-                  >🚀 Upgrade — Unlock Everything</Link>
                 )}
               </div>
             </Card>
@@ -355,6 +258,20 @@ export default function Dashboard() {
               </div>
             </div>
           </Card>
+
+          {/* ── CONSULTANT FEEDBACK ── */}
+          {profile?.consultantNotes && (
+            <Card>
+              <CardHeader label="From your Consultant" title="Consultant Feedback" right={<span className="text-xl">💬</span>} />
+              <div style={{ padding: 24 }}>
+                <div style={{ padding: 16, background: '#FFF9EC', border: '1px solid #FDE9A2', borderRadius: 12 }}>
+                  <p style={{ color: '#854F0B', fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', margin: 0 }}>
+                    {profile.consultantNotes}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* ── ACTIVITY + RECENT GENERATIONS ── */}
           {/* Stacks to single column on mobile */}
@@ -425,27 +342,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* ── UPGRADE BANNER (free users only) ── */}
-          {profile && !isPro && (
-            <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', background: 'linear-gradient(120deg, #04342C 0%, #085041 55%, #1D9E75 100%)' }}>
-              <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(239,159,39,0.2)' }} />
-              <div style={{ position: 'absolute', bottom: -40, left: '35%', width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-              {/* Stacks on mobile, row on desktop */}
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 24px' }} className="upgrade-inner">
-                <div>
-                  <div style={{ display: 'inline-block', background: '#EF9F27', color: '#412402', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 50, marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Limited Time Offer</div>
-                  <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>Unlock Pro — PKR 800/month</h3>
-                  <p style={{ color: '#9FE1CB', fontSize: 13, marginTop: 6, fontWeight: 600 }}>Unlimited SOPs, analyses, AI chat & more. 7-day free trial.</p>
-                </div>
-                <Link href="/checkout" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#EF9F27', color: '#412402', fontWeight: 800, fontSize: 14, padding: '13px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 4px 20px rgba(239,159,39,0.35)', alignSelf: 'flex-start' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#EF9F27'; }}
-                >
-                  Upgrade Now →
-                </Link>
-              </div>
-            </div>
-          )}
+
 
         </div>
       </div>

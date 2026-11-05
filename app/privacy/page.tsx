@@ -38,7 +38,6 @@ export default function PrivacyPolicy() {
               <li>Account information: email address and password when you register</li>
               <li>Profile data: academic details such as CGPA, degree, field of study, country preference, and budget</li>
               <li>Generated content: Statements of Purpose (SOPs) you generate using our platform</li>
-              <li>Payment information: processed securely through Lemon Squeezy; we do not store card details</li>
               <li>Communications: messages you send via our contact form or support channels</li>
             </ul>
             <h3 className="text-base font-semibold text-[#085041] mb-2">2.2 Information Collected Automatically</h3>
@@ -55,7 +54,6 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-5 space-y-2">
               <li>Provide, operate, and improve our AI-powered admission tools</li>
               <li>Personalize your experience and generate relevant university recommendations</li>
-              <li>Process payments and manage your subscription plan</li>
               <li>Send you account-related notifications and service updates</li>
               <li>Respond to your inquiries and provide customer support</li>
               <li>Monitor and analyze usage patterns to improve platform performance</li>
@@ -66,7 +64,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-semibold text-[#085041] mb-3">4. Data Storage and Security</h2>
             <p className="text-[#5F5E5A] mb-3">Your data is stored securely using Firebase (Google Cloud), a trusted cloud platform with industry-standard encryption and security compliance (SOC 2, ISO 27001). We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
-            <p>Authentication is handled through Firebase Auth with encrypted session tokens. Passwords are never stored in plain text and are managed securely by Google&#39;s infrastructure. Payment processing is handled entirely by Lemon Squeezy under PCI-DSS compliance.</p>
+            <p>Authentication is handled through Firebase Auth with encrypted session tokens. Passwords are never stored in plain text and are managed securely by Google&#39;s infrastructure.</p>
           </section>
 
           <section>
@@ -75,7 +73,6 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-5 space-y-2">
               <li><strong className="text-[#085041]">Firebase (Google Cloud)</strong> — database and authentication</li>
               <li><strong className="text-[#085041]">Groq AI (LLaMA)</strong> — AI language model for generating SOPs and analysis</li>
-              <li><strong className="text-[#085041]">Lemon Squeezy</strong> — payment processing and subscription management</li>
               <li><strong className="text-[#085041]">Vercel</strong> — platform hosting and deployment</li>
             </ul>
             <p className="mt-3">Each of these services has their own privacy policies governing data use. We encourage you to review them.</p>

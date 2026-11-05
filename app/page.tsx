@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { Menu, X, ArrowRight, Sparkles, GraduationCap, FileText, CheckCircle2, Globe, TrendingUp, Search, MessageSquare, Briefcase } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function LandingPage() {
   useEffect(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bricolage+Grotesque:wght@500;600;700&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap';
     document.head.appendChild(link);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -27,279 +28,145 @@ export default function LandingPage() {
 
   if (checking) return null;
 
-  // ── CHANGE 1: Added href to each feature for "Learn more →" links ──
   const features = [
-    { title: 'AI SOP Generator', description: 'Generate professional Statements of Purpose tailored to your academic background and goals.', icon: '📝', href: '/sop-generator' },
-    { title: 'Profile Analyzer', description: 'Analyze your academic profile and receive AI-powered admission insights and scoring.', icon: '📊', href: '/profile-analyzer' },
-    { title: 'University Finder', description: 'Discover universities based on your GPA, budget, country preference, and interests.', icon: '🎓', href: '/university-finder' },
-    { title: 'Document Checker', description: 'Verify your application documents before submission and reduce costly mistakes.', icon: '📂', href: '/document-checker' },
-    { title: 'AI Assistant', description: 'Ask questions about admissions, scholarships, visas, and applications anytime.', icon: '🤖', href: '/chatbot' },
-    { title: 'Centralized Dashboard', description: 'Manage all your admission tasks, SOPs, universities, and progress in one place.', icon: '🚀', href: '/dashboard' },
+    { title: 'AI SOP Generator', description: 'Craft compelling Statements of Purpose tailored specifically to your profile and target universities.', icon: <FileText className="w-6 h-6 text-emerald-600" />, href: '/sop-generator' },
+    { title: 'Profile Analyzer', description: 'Get a brutal, data-driven analysis of your chances for admission and identify exact areas for improvement.', icon: <TrendingUp className="w-6 h-6 text-amber-600" />, href: '/profile-analyzer' },
+    { title: 'University Finder', description: 'Discover universities abroad perfectly matched to your GPA, budget, and specific field of interest.', icon: <Search className="w-6 h-6 text-emerald-600" />, href: '/university-finder' },
+    { title: 'Document Checker', description: 'Ensure your transcripts and required documents meet international standards before submission.', icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, href: '/document-checker' },
+    { title: 'AI Consultant', description: 'Chat with our AI to get instant answers about visas, scholarships, and admission procedures.', icon: <MessageSquare className="w-6 h-6 text-amber-600" />, href: '/chatbot' },
+    { title: 'Scholarship Finder', description: 'Find funding opportunities specifically for international and Pakistani students studying abroad.', icon: <GraduationCap className="w-6 h-6 text-emerald-600" />, href: '/scholarship-finder' },
   ];
 
   const steps = [
-    { title: 'Create Your Profile', description: 'Add your academic details, goals, and preferred study destination.', icon: '👤', color: '#E1F5EE', num: '#1D9E75' },
-    { title: 'Use AI Tools', description: 'Generate SOPs, analyze your profile, and discover universities instantly.', icon: '⚡', color: '#FAEEDA', num: '#EF9F27' },
-    { title: 'Apply Smarter', description: 'Prepare stronger applications with AI-powered guidance and insights.', icon: '🎯', color: '#EEEDFE', num: '#534AB7' },
+    { title: 'Build Your Profile', description: 'Enter your academic history, test scores, and goals.', icon: <GraduationCap className="w-8 h-8 text-emerald-600" />, color: 'bg-emerald-100', num: 'bg-emerald-600' },
+    { title: 'Leverage AI Tools', description: 'Generate drafts, analyze your chances, and find programs.', icon: <Sparkles className="w-8 h-8 text-amber-600" />, color: 'bg-amber-100', num: 'bg-amber-500' },
+    { title: 'Apply with Confidence', description: 'Submit powerful applications and get admitted smarter.', icon: <CheckCircle2 className="w-8 h-8 text-indigo-600" />, color: 'bg-indigo-100', num: 'bg-indigo-600' },
   ];
 
   const faqs = [
-    { q: 'Is UniQuest AI free to use?', a: 'Yes, we offer a free plan with essential features including limited SOP generation, profile analysis, university search, and AI chat.' },
-    { q: 'Which countries are supported?', a: 'Our platform supports university admissions for multiple countries including the USA, UK, Canada, Australia, Germany, and Europe.' },
-    { q: 'Can I edit generated SOPs?', a: 'Absolutely. Every SOP generated by AI can be copied, customized, and edited by the user before submission.' },
-    { q: 'How accurate is the profile analysis?', a: 'Our AI provides data-driven guidance based on your profile and university requirements, but final admission decisions depend on university committees.' },
-    { q: 'How do I upgrade to Pro?', a: 'Click "Upgrade to Pro" from your dashboard or the pricing section. We accept all major cards, Apple Pay, Google Pay, and PayPal.' },
+    { q: 'Is UniQuest AI completely free?', a: 'Yes! All features for students, including SOP generation and profile analysis, are 100% free with no hidden limits.' },
+    { q: 'Is this platform specifically for Pakistani students?', a: 'While anyone can use it, we have optimized our AI tools to understand the unique academic grading and financial constraints of students from Pakistan applying abroad.' },
+    { q: 'Can I edit the generated SOPs?', a: 'Absolutely. Every SOP generated by AI is a strong foundational draft that you should customize and personalize before your final submission.' },
+    { q: 'How accurate is the profile analysis?', a: 'Our AI provides data-driven guidance based on your profile and standard university requirements, but final admission decisions always rest with the university committees.' },
   ];
 
-  const base: React.CSSProperties = { fontFamily: "'Nunito', sans-serif" };
-  const heading: React.CSSProperties = { fontFamily: "'Bricolage Grotesque', sans-serif" };
-
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFBF5', color: '#2C2C2A', ...base }}>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-['Outfit'] selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
 
       {/* ── NAVBAR ── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(255,251,245,0.92)', backdropFilter: 'blur(12px)',
-        borderBottom: '1.5px solid #E1F5EE',
-        boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg,#085041,#1D9E75)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18 }}>
+      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm transition-all">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/30">
               U
             </div>
             <div>
-              <p style={{ ...heading, fontSize: 16, fontWeight: 700, color: '#085041', margin: 0, lineHeight: 1.2 }}>UniQuest AI</p>
-              <p style={{ fontSize: 10, color: '#888780', margin: 0 }}>by Ariesian Tech</p>
+              <p className="font-bold text-slate-900 leading-tight text-lg">UniQuest AI</p>
+              <p className="text-xs text-slate-500 font-medium">by Ariesian Tech</p>
             </div>
           </div>
 
-          {/* Desktop links */}
-          <div style={{ display: 'flex', gap: 32, fontSize: 14, fontWeight: 700, color: '#5F5E5A' }} className="hide-mobile">
-            {[['#features','Features'],['#how','How It Works'],['#pricing','Pricing'],['#faq','FAQ']].map(([href,label]) => (
-              <a key={href} href={href} style={{ textDecoration: 'none', color: 'inherit', transition: 'color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#1D9E75')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#5F5E5A')}
-              >{label}</a>
-            ))}
+          <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-slate-600">
+            <a href="#features" className="hover:text-emerald-600 transition-colors">Features</a>
+            <a href="#how" className="hover:text-emerald-600 transition-colors">How It Works</a>
+            <a href="#consultants" className="hover:text-amber-600 transition-colors">For Consultants</a>
+            <a href="#faq" className="hover:text-emerald-600 transition-colors">FAQ</a>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }} className="hide-mobile">
-            <Link href="/login" style={{
-              padding: '9px 18px', borderRadius: 50, border: '1.5px solid #9FE1CB',
-              fontSize: 14, fontWeight: 700, color: '#0F6E56', textDecoration: 'none',
-              transition: 'background 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#E1F5EE')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >Login</Link>
-            <Link href="/signup" style={{
-              padding: '9px 20px', borderRadius: 50,
-              background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14,
-              textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,158,117,0.25)',
-              transition: 'background 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
-            >Get Started →</Link>
+          <div className="hidden md:flex items-center gap-4">
+            <Link href="/login" className="px-5 py-2.5 rounded-full font-bold text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 transition-all">Login</Link>
+            <Link href="/signup" className="px-6 py-2.5 rounded-full font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:-translate-y-0.5 transition-all">
+              Get Started Free
+            </Link>
           </div>
 
-          {/* Hamburger */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            style={{ display: 'none', padding: 8, borderRadius: 10, border: '1.5px solid #9FE1CB', background: 'transparent', cursor: 'pointer' }}
-            className="show-mobile"
-          >
-            {menuOpen
-              ? <svg width="20" height="20" fill="none" stroke="#0F6E56" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              : <svg width="20" height="20" fill="none" stroke="#0F6E56" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            }
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 text-slate-600">
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
-          <div style={{ borderTop: '1.5px solid #E1F5EE', background: '#FFFBF5', padding: '12px 24px 20px' }}>
-            {[['#features','Features'],['#how','How It Works'],['#pricing','Pricing'],['#faq','FAQ']].map(([href,label]) => (
-              <a key={href} href={href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'block', padding: '10px 8px', fontSize: 14, fontWeight: 700, color: '#085041', textDecoration: 'none' }}
-              >{label}</a>
-            ))}
-            <div style={{ borderTop: '1.5px solid #E1F5EE', paddingTop: 12, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link href="/login" style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 14, border: '1.5px solid #9FE1CB', fontSize: 14, fontWeight: 700, color: '#0F6E56', textDecoration: 'none' }}>Login</Link>
-              <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 14, background: '#1D9E75', fontSize: 14, fontWeight: 800, color: '#fff', textDecoration: 'none' }}>Get Started →</Link>
-            </div>
+          <div className="md:hidden bg-white border-t border-slate-100 p-6 flex flex-col gap-4 shadow-xl">
+            <a href="#features" onClick={() => setMenuOpen(false)} className="font-bold text-slate-700 p-2">Features</a>
+            <a href="#how" onClick={() => setMenuOpen(false)} className="font-bold text-slate-700 p-2">How It Works</a>
+            <a href="#consultants" onClick={() => setMenuOpen(false)} className="font-bold text-slate-700 p-2">For Consultants</a>
+            <Link href="/login" className="w-full text-center py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700">Login</Link>
+            <Link href="/signup" className="w-full text-center py-3 rounded-xl bg-emerald-600 text-white font-bold">Get Started Free</Link>
           </div>
         )}
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ position: 'relative', overflow: 'hidden', minHeight: 620, display: 'flex', alignItems: 'center' }}>
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-slate-50 to-amber-50/30 -z-10" />
+        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-emerald-300/20 rounded-full blur-[100px] -z-10 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-amber-300/20 rounded-full blur-[120px] -z-10 animate-pulse" style={{ animationDelay: '2s' }} />
 
-        {/* Animated background layers */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #D4F0E5 0%, #FFFBF5 55%, #FAEEDA 100%)' }} />
-
-        {/* Grid overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(29,158,117,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(29,158,117,0.07) 1px,transparent 1px)',
-          backgroundSize: '44px 44px',
-        }} />
-
-        {/* Glowing orbs */}
-        <div style={{ position: 'absolute', top: -80, left: -60, width: 340, height: 340, borderRadius: '50%', background: '#1D9E75', filter: 'blur(70px)', opacity: 0.2, animation: 'orbdrift 11s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', top: -30, right: -50, width: 280, height: 280, borderRadius: '50%', background: '#EF9F27', filter: 'blur(70px)', opacity: 0.18, animation: 'orbdrift 14s 4s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: 30, left: '35%', width: 200, height: 200, borderRadius: '50%', background: '#AFA9EC', filter: 'blur(60px)', opacity: 0.18, animation: 'orbdrift 9s 2s ease-in-out infinite' }} />
-
-        {/* SVG illustrated backdrop */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9FE1CB" stopOpacity="0.4"/><stop offset="100%" stopColor="#E1F5EE" stopOpacity="0"/></linearGradient>
-            <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#AFA9EC" stopOpacity="0.35"/><stop offset="100%" stopColor="#EEEDFE" stopOpacity="0"/></linearGradient>
-          </defs>
-          <rect x="0" y="360" width="55" height="260" fill="url(#bg1)" rx="3"/>
-          <rect x="20" y="320" width="32" height="300" fill="url(#bg1)" rx="3"/>
-          <rect x="60" y="380" width="42" height="240" fill="url(#bg1)" rx="3"/>
-          <rect x="88" y="310" width="52" height="310" fill="url(#bg1)" rx="3"/>
-          <rect x="126" y="340" width="36" height="280" fill="url(#bg1)" rx="3"/>
-          <rect x="24" y="340" width="8" height="6" fill="#1D9E75" opacity="0.25" rx="1"/>
-          <rect x="24" y="362" width="8" height="6" fill="#EF9F27" opacity="0.3" rx="1"/>
-          <rect x="94" y="328" width="10" height="7" fill="#1D9E75" opacity="0.2" rx="1"/>
-          <rect x="1020" y="330" width="58" height="290" fill="url(#bg2)" rx="3"/>
-          <rect x="1065" y="295" width="44" height="325" fill="url(#bg2)" rx="3"/>
-          <rect x="1100" y="355" width="68" height="265" fill="url(#bg2)" rx="3"/>
-          <rect x="1118" y="278" width="32" height="342" fill="url(#bg2)" rx="3"/>
-          <rect x="1072" y="316" width="9" height="7" fill="#7F77DD" opacity="0.3" rx="1"/>
-          <rect x="1072" y="338" width="9" height="7" fill="#EF9F27" opacity="0.25" rx="1"/>
-          <line x1="820" y1="70" x2="1060" y2="38" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="7 5" opacity="0.3"/>
-          <ellipse cx="822" cy="71" rx="9" ry="6" fill="#1D9E75" opacity="0.45"/>
-          <polygon points="812,71 822,65 822,77" fill="#0F6E56" opacity="0.55"/>
-          <g transform="translate(36,175)" opacity="0.7">
-            <rect width="126" height="84" rx="14" fill="white" stroke="#9FE1CB" strokeWidth="1.5"/>
-            <rect x="12" y="14" width="64" height="8" rx="4" fill="#1D9E75" opacity="0.55"/>
-            <rect x="12" y="30" width="100" height="5" rx="2.5" fill="#D3D1C7"/>
-            <rect x="12" y="42" width="82" height="5" rx="2.5" fill="#D3D1C7"/>
-            <rect x="12" y="54" width="90" height="5" rx="2.5" fill="#D3D1C7"/>
-            <circle cx="104" cy="64" r="11" fill="#E1F5EE"/>
-            <text x="104" y="68" textAnchor="middle" fontSize="12" fill="#0F6E56" fontWeight="700">✓</text>
-          </g>
-          <g transform="translate(1020,180)" opacity="0.65">
-            <rect width="116" height="78" rx="14" fill="white" stroke="#FAC775" strokeWidth="1.5"/>
-            <rect x="10" y="12" width="52" height="8" rx="4" fill="#EF9F27" opacity="0.65"/>
-            <rect x="10" y="28" width="94" height="5" rx="2.5" fill="#D3D1C7"/>
-            <rect x="10" y="40" width="72" height="5" rx="2.5" fill="#D3D1C7"/>
-            <rect x="66" y="50" width="40" height="18" rx="9" fill="#FAEEDA" stroke="#EF9F27" strokeWidth="1"/>
-            <text x="86" y="63" textAnchor="middle" fontSize="10" fill="#854F0B" fontWeight="800">VISA</text>
-          </g>
-          <g transform="translate(920,72)" opacity="0.18">
-            <rect x="0" y="16" width="52" height="7" rx="2" fill="#085041"/>
-            <polygon points="26,0 52,16 26,24 0,16" fill="#085041"/>
-            <line x1="46" y1="16" x2="52" y2="40" stroke="#085041" strokeWidth="2"/>
-            <circle cx="52" cy="42" r="5" fill="#EF9F27"/>
-          </g>
-          <circle cx="600" cy="640" r="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.12"/>
-          <ellipse cx="600" cy="640" rx="44" ry="90" fill="none" stroke="#1D9E75" strokeWidth="0.8" opacity="0.09"/>
-          <line x1="510" y1="640" x2="690" y2="640" stroke="#1D9E75" strokeWidth="0.8" opacity="0.1"/>
-        </svg>
-
-        {/* Hero content */}
-        <div style={{
-          position: 'relative', zIndex: 2, maxWidth: 1200, margin: '0 auto',
-          padding: '72px 28px 80px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
-          gap: 40,
-          alignItems: 'center',
-        }}>
-
-          {/* Left: text */}
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.88)', border: '1.5px solid #9FE1CB', borderRadius: 50, padding: '7px 16px', fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 24 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', display: 'inline-block', animation: 'pulse 1.6s ease infinite' }} />
-              AI-Powered University Admission Platform
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="relative z-10 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-emerald-100 shadow-sm text-sm font-bold text-emerald-700 mb-8">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              Built specifically for Pakistani Students 🇵🇰
             </div>
-            <h1 className="hero-h1" style={{ ...heading, fontWeight: 700, lineHeight: 1.12, color: '#085041', margin: '0 0 20px' }}>
-              Get Admitted{' '}
-              <span style={{ background: 'linear-gradient(100deg,#1D9E75 30%,#EF9F27 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Smarter</span>{' '}
-              with AI
+            
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.1] mb-6 tracking-tight">
+              Get Admitted <br className="hidden md:block"/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-amber-500">
+                Smarter
+              </span> with AI
             </h1>
-            <p style={{ fontSize: 17, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 36, maxWidth: 480 }}>
-              Generate SOPs, analyze your profile, discover universities, and prepare your applications — all in one intelligent platform.
+            
+            <p className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+              Your free, all-in-one AI companion for studying abroad. Generate powerful SOPs, analyze your profile, and discover perfectly matched international universities instantly.
             </p>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 36 }}>
-              <Link href="/signup" style={{
-                padding: '15px 32px', borderRadius: 50, background: '#1D9E75', color: '#fff',
-                fontWeight: 800, fontSize: 15, textDecoration: 'none',
-                boxShadow: '0 6px 24px rgba(29,158,117,0.28)',
-                transition: 'transform 0.15s, background 0.15s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0F6E56'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#1D9E75'; e.currentTarget.style.transform = 'translateY(0)'; }}
-              >Start Free →</Link>
-              <a href="#features" style={{
-                padding: '14px 28px', borderRadius: 50, border: '2px solid #1D9E75',
-                color: '#0F6E56', fontWeight: 800, fontSize: 15, textDecoration: 'none',
-                background: 'rgba(255,255,255,0.8)', transition: 'transform 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
-              >See Features ↓</a>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10">
+              <Link href="/signup" className="w-full sm:w-auto px-8 py-4 rounded-full bg-slate-900 text-white font-bold text-lg hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 group">
+                Start for Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <a href="#features" className="w-full sm:w-auto px-8 py-4 rounded-full bg-white border-2 border-slate-200 text-slate-700 font-bold text-lg hover:border-emerald-200 hover:bg-emerald-50 transition-all duration-300 text-center">
+                Explore Tools
+              </a>
             </div>
-            {/* Floating pills */}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {[['🤖','AI Powered'],['🎓','University Matching'],['🔒','Secure Platform']].map(([icon,label]) => (
-                <span key={label} style={{
-                  background: 'rgba(255,255,255,0.85)', border: '1.5px solid #9FE1CB',
-                  borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#085041',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>{icon} {label}</span>
-              ))}
+
+            <div className="flex items-center justify-center lg:justify-start gap-6 text-sm font-bold text-slate-500">
+              <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-500"/> 100% Free</div>
+              <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-500"/> No Credit Card</div>
             </div>
           </div>
 
-          {/* Right: dashboard preview card — hidden on mobile */}
-          <div className="hero-card" style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: -16, borderRadius: 28, background: 'rgba(29,158,117,0.08)', filter: 'blur(24px)' }} />
-            <div style={{
-              position: 'relative', borderRadius: 24, border: '1.5px solid #9FE1CB',
-              background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(16px)',
-              padding: 22, boxShadow: '0 20px 60px rgba(29,158,117,0.14)',
-            }}>
-              {/* Browser bar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-                {['#F09595','#FAC775','#97C459'].map((c,i) => <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
-                <div style={{ marginLeft: 10, flex: 1, height: 24, borderRadius: 8, background: '#E1F5EE', display: 'flex', alignItems: 'center', paddingLeft: 12, fontSize: 11, color: '#888780', fontWeight: 600 }}>
-                  uniquestai.com/dashboard
-                </div>
+          {/* Hero Dashboard Preview */}
+          <div className="relative hidden lg:block perspective-1000">
+            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500 to-amber-400 rounded-3xl transform rotate-3 scale-105 opacity-20 blur-2xl"></div>
+            <div className="relative bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-6 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                <div className="ml-4 h-6 w-48 bg-slate-100 rounded-full flex items-center px-3 text-xs font-semibold text-slate-400">uniquestai.com/dashboard</div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={{ borderRadius: 16, background: 'linear-gradient(135deg,#085041,#1D9E75)', padding: 16 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#9FE1CB', margin: '0 0 6px' }}>Admission Score</p>
-                  <p style={{ ...heading, fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>87%</p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', margin: 0 }}>Strong profile for Canadian universities</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 bg-gradient-to-br from-emerald-800 to-emerald-600 rounded-2xl p-5 text-white shadow-lg">
+                  <p className="text-emerald-200 font-bold text-sm mb-1 uppercase tracking-wider">Admission Score</p>
+                  <p className="text-4xl font-black mb-1">87%</p>
+                  <p className="text-sm text-emerald-100">Strong profile for MS in Canada</p>
                 </div>
-                <div style={{ borderRadius: 16, background: '#FAEEDA', border: '1.5px solid #FAC775', padding: 16 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#854F0B', margin: '0 0 6px' }}>SOPs Generated</p>
-                  <p style={{ ...heading, fontSize: 32, fontWeight: 700, color: '#633806', margin: '0 0 4px' }}>12</p>
-                  <p style={{ fontSize: 11, color: '#888780', margin: 0 }}>AI-generated SOP drafts</p>
+                
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
+                  <Sparkles className="w-6 h-6 text-amber-500 mb-2" />
+                  <p className="text-xl font-bold text-slate-800 mb-1">SOP Ready</p>
+                  <p className="text-xs text-slate-500 font-medium">Draft generated for UofT</p>
                 </div>
-                <div style={{ borderRadius: 16, background: '#fff', border: '1.5px solid #E1F5EE', padding: 16, gridColumn: 'span 2' }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>Recommended Universities</p>
-                  {[
-                    { name: 'University of Toronto', country: 'Canada', match: 'High Match', bg: '#E1F5EE', color: '#0F6E56' },
-                    { name: 'University of Melbourne', country: 'Australia', match: 'Good Match', bg: '#FAEEDA', color: '#854F0B' },
-                  ].map((u) => (
-                    <div key={u.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderRadius: 12, background: '#FFFBF5', marginBottom: 6 }}>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#085041', margin: 0 }}>{u.name}</p>
-                        <p style={{ fontSize: 11, color: '#888780', margin: 0 }}>{u.country}</p>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 50, background: u.bg, color: u.color }}>{u.match}</span>
-                    </div>
-                  ))}
+                
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5">
+                  <Globe className="w-6 h-6 text-indigo-500 mb-2" />
+                  <p className="text-xl font-bold text-slate-800 mb-1">5 Matches</p>
+                  <p className="text-xs text-slate-500 font-medium">Universities found</p>
                 </div>
               </div>
             </div>
@@ -307,102 +174,46 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── STATS BAR ──
-           CHANGE 2: Replaced fake vanity metrics with honest, verifiable claims.
-           Update these values to match your real data before launch.
-      ── */}
-      <section style={{ background: 'linear-gradient(90deg,#085041,#1D9E75)', padding: '28px 28px' }}>
-        <div style={{
-          maxWidth: 1200, margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: 16, textAlign: 'center',
-        }}>
-          {[
-            ['500+','Universities in Database'],
-            ['50+','Countries Supported'],
-            ['AI-Powered','SOP Generation'],
-            ['Free','To Get Started'],
-          ].map(([val,label]) => (
-            <div key={label}>
-              <p style={{ ...heading, fontSize: 30, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>{val}</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, margin: 0 }}>{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PROBLEM & SOLUTION ── */}
-      <section style={{ background: '#FFFBF5', padding: '72px 28px' }}>
-        <div style={{
-          maxWidth: 1200, margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
-          gap: 20,
-        }}>
-
-          {/* Problem */}
-          <div style={{ borderRadius: 24, border: '1.5px solid #F7C1C1', background: '#fff', padding: 40 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FCEBEB', border: '1.5px solid #F7C1C1', borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#A32D2D', marginBottom: 18 }}>
-              ❌ The Problem
-            </div>
-            <h2 style={{ ...heading, fontSize: 26, fontWeight: 700, color: '#2C2C2A', margin: '0 0 20px' }}>Students Struggle with Admissions</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {['Writing SOPs is time-consuming and stressful','Finding suitable universities is confusing','Admission chances are unclear without data','Application documents often contain mistakes'].map(item => (
-                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#FCEBEB', color: '#A32D2D', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>✕</span>
-                  <span style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.6 }}>{item}</span>
-                </div>
-              ))}
-            </div>
+      {/* ── STATS BAR ── */}
+      <section className="border-y border-slate-200 bg-white py-12">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-slate-100">
+          <div>
+            <p className="text-3xl font-black text-slate-900 mb-1">100%</p>
+            <p className="text-sm font-semibold text-slate-500">Free to Use</p>
           </div>
-
-          {/* Solution */}
-          <div style={{ borderRadius: 24, border: '1.5px solid #9FE1CB', background: '#fff', padding: 40 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#E1F5EE', border: '1.5px solid #9FE1CB', borderRadius: 50, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 18 }}>
-              ✅ Our Solution
-            </div>
-            <h2 style={{ ...heading, fontSize: 26, fontWeight: 700, color: '#2C2C2A', margin: '0 0 12px' }}>AI That Guides Every Step</h2>
-            <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 20 }}>
-              UniQuest AI simplifies the entire admission journey using artificial intelligence — from SOP generation to university matching and profile analysis.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {['AI writes your SOP in minutes','Smart university matching by profile','Real-time admission score insights','Document checklist & error detection'].map(item => (
-                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>✓</span>
-                  <span style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.6 }}>{item}</span>
-                </div>
-              ))}
-            </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 mb-1">50+</p>
+            <p className="text-sm font-semibold text-slate-500">Countries Supported</p>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 mb-1">AI</p>
+            <p className="text-sm font-semibold text-slate-500">Powered Matching</p>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 mb-1">24/7</p>
+            <p className="text-sm font-semibold text-slate-500">Admissions Assistant</p>
           </div>
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: '#E1F5EE', color: '#0F6E56', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Features</span>
-            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Everything You Need for University Admissions</h2>
-            <p style={{ fontSize: 15, color: '#888780', maxWidth: 480, margin: '0 auto' }}>All the AI tools you need to apply to universities with confidence — in one platform.</p>
+      <section id="features" className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-black text-emerald-600 uppercase tracking-widest mb-3">AI Powered Toolkit</h2>
+            <h3 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">Everything you need to apply successfully.</h3>
+            <p className="text-lg text-slate-600 font-medium">Stop paying thousands for basic guidance. Use our suite of AI tools to build a world-class application on your own.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 300px),1fr))', gap: 18 }}>
-            {features.map((f) => (
-              // ── CHANGE 3: Wrapped each card in a Link so the whole card + "Learn more →" are clickable ──
-              <Link key={f.title} href={f.href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                <div style={{
-                  borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
-                  transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s', cursor: 'pointer',
-                  height: '100%',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#9FE1CB'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.1)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#E1F5EE'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
-                >
-                  <div style={{ width: 52, height: 52, borderRadius: 16, background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 18 }}>{f.icon}</div>
-                  <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{f.title}</h3>
-                  <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: '0 0 14px' }}>{f.description}</p>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1D9E75' }}>Learn more →</span>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((f, i) => (
+              <Link href={f.href} key={i} className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 transition-all duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-emerald-50 transition-colors">
+                  {f.icon}
                 </div>
+                <h4 className="text-xl font-bold text-slate-900 mb-3">{f.title}</h4>
+                <p className="text-slate-600 font-medium leading-relaxed mb-6">{f.description}</p>
+                <span className="text-emerald-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Try it now <ArrowRight className="w-4 h-4" /></span>
               </Link>
             ))}
           </div>
@@ -410,71 +221,92 @@ export default function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how" style={{ background: '#FFFBF5', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: '#FAEEDA', color: '#854F0B', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>How It Works</span>
-            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Simple, Fast, Intelligent</h2>
+      <section id="how" className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-1/3 h-full bg-emerald-50 rounded-l-full -mr-[10%] opacity-50"></div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-3">Simple Process</h2>
+            <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Your roadmap to studying abroad</h3>
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
-            gap: 20, position: 'relative',
-          }}>
-            {/* Connector line — desktop only */}
-            <div className="steps-connector" style={{ position: 'absolute', top: 48, left: '18%', right: '18%', height: 2, background: 'linear-gradient(90deg,#9FE1CB,#FAC775)', borderRadius: 2, zIndex: 0 }} />
-            {steps.map((step, i) => (
-              <div key={step.title} style={{
-                position: 'relative', zIndex: 1, borderRadius: 22, border: '1.5px solid #E1F5EE',
-                background: '#fff', padding: 32, textAlign: 'center',
-                boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
-                transition: 'transform 0.18s, box-shadow 0.18s',
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(29,158,117,0.12)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(29,158,117,0.06)'; }}
-              >
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: step.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 16px' }}>{step.icon}</div>
-                <div style={{ position: 'absolute', top: -12, right: 20, width: 28, height: 28, borderRadius: '50%', background: step.num, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>{i+1}</div>
-                <h3 style={{ ...heading, fontSize: 18, fontWeight: 700, color: '#085041', margin: '0 0 10px' }}>{step.title}</h3>
-                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.7, margin: 0 }}>{step.description}</p>
+
+          <div className="grid md:grid-cols-3 gap-12 relative">
+            {/* Desktop connecting line */}
+            <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-1 bg-gradient-to-r from-emerald-100 to-amber-100 rounded-full" />
+            
+            {steps.map((s, i) => (
+              <div key={i} className="relative z-10 flex flex-col items-center text-center group">
+                <div className={`w-24 h-24 rounded-full ${s.color} flex items-center justify-center mb-6 shadow-xl shadow-slate-200 border-4 border-white group-hover:scale-110 transition-transform duration-300`}>
+                  {s.icon}
+                </div>
+                <div className={`absolute top-0 right-1/4 translate-x-4 w-8 h-8 rounded-full ${s.num} text-white font-black flex items-center justify-center border-4 border-white shadow-md`}>
+                  {i + 1}
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 mb-3">{s.title}</h4>
+                <p className="text-slate-600 font-medium max-w-sm">{s.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: '#EEEDFE', color: '#3C3489', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Testimonials</span>
-            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Students Love Using UniQuest AI</h2>
+      {/* ── FOR CONSULTANTS ── */}
+      <section id="consultants" className="py-24 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/20 rounded-full blur-[120px]"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-sm font-bold text-amber-300 mb-8 backdrop-blur-sm">
+            <Briefcase className="w-4 h-4" /> Coming Soon
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-            gap: 18,
-          }}>
-            {[
-              { review: 'The SOP generator saved me hours of work and helped me structure my application professionally.', name: 'Ahmed R.', country: 'Pakistan', initials: 'AR', bg: '#E1F5EE', color: '#0F6E56' },
-              { review: 'The university recommendations were surprisingly accurate for my profile and budget.', name: 'Sarah M.', country: 'Egypt', initials: 'SM', bg: '#FAEEDA', color: '#854F0B' },
-              { review: 'This platform made the entire admission process much easier and less stressful.', name: 'Ali K.', country: 'Bangladesh', initials: 'AK', bg: '#EEEDFE', color: '#3C3489' },
-            ].map((t) => (
-              <div key={t.name} style={{
-                borderRadius: 22, border: '1.5px solid #E1F5EE', background: '#fff', padding: 32,
-                transition: 'transform 0.18s, box-shadow 0.18s',
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 10px 28px rgba(29,158,117,0.1)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
-              >
-                <div style={{ color: '#EF9F27', fontSize: 16, marginBottom: 14 }}>★★★★★</div>
-                <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, marginBottom: 20 }}>"{t.review}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.bg, color: t.color, fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: '#085041', margin: 0 }}>{t.name}</p>
-                    <p style={{ fontSize: 12, color: '#888780', margin: 0 }}>{t.country}</p>
-                  </div>
+          <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">Are you an Admission Consultant?</h2>
+          <p className="text-xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+            We are building a marketplace to connect verified consultants with thousands of highly qualified students actively preparing their applications on our platform.
+          </p>
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12 max-w-4xl mx-auto backdrop-blur-md">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div>
+                <p className="text-3xl font-black text-white mb-2">High Quality</p>
+                <p className="text-slate-400 font-medium">Get connected with students who have complete, analyzed profiles.</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-emerald-400 mb-2">Zero Spam</p>
+                <p className="text-slate-400 font-medium">Only receive requests from students matching your exact expertise.</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-amber-400 mb-2">Grow Business</p>
+                <p className="text-slate-400 font-medium">Expand your reach without spending on marketing.</p>
+              </div>
+            </div>
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <button className="px-8 py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-emerald-50 transition-colors">
+                Join Consultant Waitlist
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" className="py-24 bg-slate-50">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-3">Got Questions?</h2>
+            <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Frequently Asked</h3>
+          </div>
+          <div className="flex flex-col gap-4">
+            {faqs.map((faq, i) => (
+              <div key={i} className="bg-white border border-slate-200 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full text-left px-6 py-5 flex items-center justify-between font-bold text-slate-800 text-lg"
+                >
+                  {faq.q}
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 transition-transform duration-300 ${openFaq === i ? 'rotate-180 bg-emerald-100 text-emerald-600' : ''}`}>
+                    ↓
+                  </span>
+                </button>
+                <div className={`px-6 overflow-hidden transition-all duration-300 ${openFaq === i ? 'max-h-40 pb-6 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <p className="text-slate-600 font-medium leading-relaxed">{faq.a}</p>
                 </div>
               </div>
             ))}
@@ -482,191 +314,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
-      <section id="pricing" style={{ background: '#FFFBF5', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: '#FAEEDA', color: '#854F0B', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Pricing</span>
-            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: '0 0 8px' }}>Start Free, Upgrade Anytime</h2>
-            <p style={{ fontSize: 14, color: '#888780' }}>No hidden fees. Cancel anytime.</p>
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-            gap: 20,
-          }}>
-
-            {/* Free */}
-            <div style={{ borderRadius: 24, border: '1.5px solid #E1F5EE', background: '#fff', padding: 40 }}>
-              <h3 style={{ ...heading, fontSize: 22, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Free Plan</h3>
-              <p style={{ ...heading, fontSize: 38, fontWeight: 700, color: '#085041', margin: '0 0 6px' }}>PKR 0 <span style={{ fontSize: 16, fontWeight: 500, color: '#888780' }}>/month</span></p>
-              <p style={{ fontSize: 13, color: '#888780', marginBottom: 28 }}>Great for exploring the platform</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                {['3 SOP Generations','2 Profile Analyses','10 AI Chat Messages','3 Scholarship Searches','University Search'].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: 14, color: '#5F5E5A' }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href="/signup" style={{
-                display: 'block', textAlign: 'center', padding: '14px', borderRadius: 14,
-                border: '2px solid #9FE1CB', color: '#0F6E56', fontWeight: 800, fontSize: 14,
-                textDecoration: 'none', transition: 'background 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#E1F5EE')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >Get Started Free</Link>
-            </div>
-
-            {/* Pro */}
-            <div style={{ position: 'relative', borderRadius: 24, border: '2px solid #1D9E75', background: '#fff', padding: 40, boxShadow: '0 8px 40px rgba(29,158,117,0.12)' }}>
-              <div style={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', background: '#EF9F27', color: '#412402', fontSize: 12, fontWeight: 800, padding: '6px 18px', borderRadius: 50, whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(239,159,39,0.3)' }}>
-                ⭐ Most Popular
-              </div>
-              <h3 style={{ ...heading, fontSize: 22, fontWeight: 700, color: '#085041', margin: '0 0 12px' }}>Pro Plan</h3>
-              <p style={{ ...heading, fontSize: 38, fontWeight: 700, color: '#085041', margin: '0 0 6px' }}>PKR 800 <span style={{ fontSize: 16, fontWeight: 500, color: '#888780' }}>/month</span></p>
-              <p style={{ fontSize: 13, color: '#1D9E75', fontWeight: 700, marginBottom: 28 }}>7-day free trial included</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                {['Unlimited SOP Generations','Unlimited Profile Analyses','Unlimited AI Chat','Unlimited Scholarship Searches','Priority University Matching','7-day free trial'].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: 14, color: '#5F5E5A' }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href="/checkout" style={{
-                display: 'block', textAlign: 'center', padding: '14px', borderRadius: 14,
-                background: '#1D9E75', color: '#fff', fontWeight: 800, fontSize: 14,
-                textDecoration: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.25)',
-                transition: 'background 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#0F6E56')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#1D9E75')}
-              >Upgrade to Pro →</Link>
-            </div>
-          </div>
+      {/* ── FINAL CTA ── */}
+      <section className="py-24 bg-white border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8 tracking-tight">Ready to start your journey?</h2>
+          <p className="text-xl text-slate-600 mb-10 font-medium">Join thousands of students applying to top universities worldwide. No credit card required. Always free for students.</p>
+          <Link href="/signup" className="inline-block px-10 py-5 rounded-full bg-emerald-600 text-white font-black text-xl hover:bg-emerald-700 shadow-xl shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:-translate-y-1 transition-all duration-300">
+            Create Free Account Now
+          </Link>
         </div>
       </section>
 
-      {/* ── FAQ ── */}
-      <section id="faq" style={{ background: '#fff', padding: '72px 28px', borderTop: '1.5px solid #E1F5EE' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: '#E1F5EE', color: '#0F6E56', borderRadius: 50, fontSize: 12, fontWeight: 800, padding: '6px 16px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>FAQ</span>
-            <h2 style={{ ...heading, fontSize: 34, fontWeight: 700, color: '#085041', margin: 0 }}>Frequently Asked Questions</h2>
+      {/* ── FOOTER ── */}
+      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-black">U</div>
+            <span className="font-bold text-white text-lg">UniQuest AI</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {faqs.map((faq, i) => (
-              <div key={faq.q} style={{ borderRadius: 18, border: `1.5px solid ${openFaq === i ? '#9FE1CB' : '#E1F5EE'}`, background: '#fff', overflow: 'hidden', transition: 'border-color 0.2s' }}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <span style={{ ...heading, fontSize: 15, fontWeight: 700, color: '#085041', paddingRight: 16 }}>{faq.q}</span>
-                  <span style={{
-                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                    background: openFaq === i ? '#1D9E75' : '#E1F5EE',
-                    color: openFaq === i ? '#fff' : '#0F6E56',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 700, transition: 'background 0.2s, color 0.2s',
-                  }}>
-                    {openFaq === i ? '−' : '+'}
-                  </span>
-                </button>
-                {openFaq === i && (
-                  <div style={{ padding: '0 24px 20px' }}>
-                    <p style={{ fontSize: 14, color: '#5F5E5A', lineHeight: 1.75, margin: 0 }}>{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="flex gap-6 font-medium text-sm">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
           </div>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ──
-           CHANGE 4: Removed "Join 10,000+ Students" fake claim from CTA badge.
-           Replaced with honest positioning copy.
-      ── */}
-      <section style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#04342C 0%,#085041 50%,#1D9E75 100%)', padding: '80px 28px' }}>
-        <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(239,159,39,0.15)' }} />
-        <div style={{ position: 'absolute', bottom: -40, left: '30%', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: 'rgba(239,159,39,0.2)', border: '1.5px solid rgba(239,159,39,0.4)', borderRadius: 50, padding: '6px 16px', fontSize: 13, fontWeight: 700, color: '#FAC775', marginBottom: 24 }}>
-            🎓 Built for Pakistani Students
-          </span>
-          <h2 style={{ ...heading, fontSize: 42, fontWeight: 700, color: '#fff', margin: '0 0 20px', lineHeight: 1.15 }}>
-            Start Your Admission Journey with AI
-          </h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.75, marginBottom: 36, maxWidth: 500, margin: '0 auto 36px' }}>
-            Use UniQuest AI to prepare stronger university applications faster and smarter.
-          </p>
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/signup" style={{
-              padding: '16px 36px', borderRadius: 50, background: '#EF9F27', color: '#412402',
-              fontWeight: 800, fontSize: 16, textDecoration: 'none',
-              boxShadow: '0 6px 24px rgba(239,159,39,0.35)',
-              transition: 'transform 0.15s, background 0.15s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#BA7517'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#EF9F27'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >Get Started Free →</Link>
-            <a href="#features" style={{
-              padding: '15px 32px', borderRadius: 50, border: '2px solid rgba(255,255,255,0.35)',
-              color: '#fff', fontWeight: 800, fontSize: 16, textDecoration: 'none',
-              transition: 'background 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >Learn More</a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ──
-           NOTE: /privacy, /terms, and /contact routes must exist.
-           Create minimal pages for each before launch to avoid 404s.
-      ── */}
-      <footer style={{ background: '#04342C', borderTop: '1.5px solid rgba(255,255,255,0.08)', padding: '32px 28px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#1D9E75', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16 }}>U</div>
-            <div>
-              <p style={{ ...heading, fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>UniQuest AI</p>
-              <p style={{ fontSize: 11, color: '#5DCAA5', margin: 0 }}>Built by Ariesian Tech</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-            {[['Privacy Policy','/privacy'],['Terms & Conditions','/terms'],['Contact','/contact']].map(([label,href]) => (
-              <Link key={href} href={href} style={{ fontSize: 13, fontWeight: 600, color: '#9FE1CB', textDecoration: 'none', transition: 'color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#EF9F27')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#9FE1CB')}
-              >{label}</Link>
-            ))}
-          </div>
-          <p style={{ fontSize: 12, color: '#5DCAA5' }}>© 2025 UniQuest AI. All rights reserved.</p>
+          <p className="text-sm">© {new Date().getFullYear()} Ariesian Tech. All rights reserved.</p>
         </div>
       </footer>
 
-      {/* Global keyframes + responsive styles */}
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.65)} }
-        @keyframes orbdrift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(18px,-12px) scale(1.05)} 66%{transform:translate(-12px,10px) scale(.96)} }
-
-        .hero-h1 { font-size: 52px; }
-
-        @media(max-width:768px){
-          .hide-mobile { display:none!important }
-          .show-mobile { display:flex!important }
-          .hero-h1 { font-size: 36px!important }
-          .hero-card { display: none!important }
-          .steps-connector { display: none!important }
-        }
-        @media(min-width:769px){
-          .show-mobile { display:none!important }
-        }
-      `}</style>
     </div>
   );
 }

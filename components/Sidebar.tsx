@@ -4,16 +4,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useState, useEffect } from 'react';
 import {
   Home, User, FileText, History, BarChart, Globe,
   GraduationCap, BookOpen, MessageCircle, FolderCheck,
-  LogOut, ChevronRight, Compass, Menu, X, Star, Users,
+  LogOut, ChevronRight, Compass, Menu, X, Star, Users, Briefcase, ShieldAlert
 } from 'lucide-react';
 
-const navItems = [
+const allNavItems = [
+  // Student
   { href: '/dashboard',          label: 'Dashboard',        icon: Home          },
   { href: '/profile',            label: 'Profile',          icon: User          },
   { href: '/sop-generator',      label: 'SOP Generator',    icon: FileText      },
@@ -24,13 +26,10 @@ const navItems = [
   { href: '/abroad-guide',       label: 'Abroad Guide',     icon: BookOpen      },
   { href: '/chatbot',            label: 'AI Chat',          icon: MessageCircle },
   { href: '/document-checker',   label: 'Document Checker', icon: FolderCheck   },
-];
-
-const groups = [
-  { label: 'Main',      items: ['/dashboard', '/profile'] },
-  { label: 'AI Tools',  items: ['/sop-generator', '/sop-history', '/profile-analyzer'] },
-  { label: 'Discover',  items: ['/university-finder', '/scholarship-finder', '/abroad-guide'] },
-  { label: 'Assistant', items: ['/chatbot', '/document-checker'] },
+  // Consultant
+  { href: '/consultant',         label: 'Consultant Panel', icon: Briefcase     },
+  // Admin
+  { href: '/admin',              label: 'Admin Panel',      icon: ShieldAlert   },
 ];
 
 // Reusable nav link component for Help section items
@@ -90,6 +89,26 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDesktop, setIsDesktop]   = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState('student'); // default
+
+  // Determine dynamic groups based on role
+  let groups = [];
+  if (role === 'admin') {
+    groups = [
+      { label: 'Admin', items: ['/admin', '/profile'] },
+    ];
+  } else if (role === 'consultant') {
+    groups = [
+      { label: 'Consultant', items: ['/consultant', '/profile'] },
+    ];
+  } else {
+    groups = [
+      { label: 'Main',      items: ['/dashboard', '/profile'] },
+      { label: 'AI Tools',  items: ['/sop-generator', '/sop-history', '/profile-analyzer'] },
+      { label: 'Discover',  items: ['/university-finder', '/scholarship-finder', '/abroad-guide'] },
+      { label: 'Assistant', items: ['/chatbot', '/document-checker'] },
+    ];
+  }
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 1024);
@@ -99,7 +118,18 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => setIsLoggedIn(!!user));
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setIsLoggedIn(!!user);
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setRole(data.role || 'student');
+          }
+        } catch (e) { console.error('Failed to fetch role:', e); }
+      }
+    });
     return () => unsub();
   }, []);
 
@@ -145,7 +175,7 @@ export default function Sidebar() {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {groups.map((group) => {
-          const groupItems = navItems.filter(n => group.items.includes(n.href));
+          const groupItems = allNavItems.filter(n => group.items.includes(n.href));
           return (
             <div key={group.label} style={{ marginBottom: 8 }}>
               <p style={{ fontSize: 10, fontWeight: 800, color: '#B4B2A9', textTransform: 'uppercase', letterSpacing: '0.09em', padding: '6px 8px 4px', margin: 0 }}>

@@ -50,7 +50,6 @@ export default function ScholarshipFinder() {
   const [loading, setLoading]           = useState(false);
   const [results, setResults]           = useState<Scholarship[]>([]);
   const [error, setError]               = useState('');
-  const [limitReached, setLimitReached] = useState(false);
   const [searched, setSearched]         = useState(false);
 
   const [countryOfStudy, setCountryOfStudy]   = useState('');
@@ -83,7 +82,6 @@ export default function ScholarshipFinder() {
         body: JSON.stringify({ countryOfStudy, countryOfOrigin, degree, field, gpa, ielts, financialNeed }),
       });
       const data = await res.json();
-      if (res.status === 402) { setLimitReached(true); return; }
       if (res.status === 401) { setError('Session expired. Please log in again.'); return; }
       if (!res.ok) throw new Error('Search failed');
       setResults(data.scholarships || []);
@@ -158,30 +156,6 @@ export default function ScholarshipFinder() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6">
-
-        {/* Upgrade banner */}
-        {limitReached && (
-          <div
-            className="rounded-2xl p-5 mb-6"
-            style={{ background: 'linear-gradient(135deg, #1a5c38 0%, #2ecc71 100%)' }}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-bold text-white">You've used all free searches 🚀</p>
-                <p className="text-white/70 text-sm mt-1">
-                  Upgrade to Pro for unlimited scholarship searches and all features.
-                </p>
-              </div>
-              <Link
-                href="/checkout"
-                className="shrink-0 bg-white font-bold text-sm px-5 py-2.5 rounded-xl transition hover:bg-gray-50"
-                style={{ color: '#1a5c38' }}
-              >
-                Upgrade →
-              </Link>
-            </div>
-          </div>
-        )}
 
         {/* Form card */}
         <div
@@ -299,12 +273,12 @@ export default function ScholarshipFinder() {
           {/* CTA */}
           <button
             onClick={search}
-            disabled={loading || !canSearch || limitReached}
+            disabled={loading || !canSearch}
             className="mt-5 w-full text-white font-bold py-3.5 rounded-xl transition
               flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: '#1a5c38' }}
-            onMouseEnter={e => { if (!loading && canSearch && !limitReached) (e.currentTarget as HTMLButtonElement).style.background = '#155e32'; }}
-            onMouseLeave={e => { if (!loading && canSearch && !limitReached) (e.currentTarget as HTMLButtonElement).style.background = '#1a5c38'; }}
+            onMouseEnter={e => { if (!loading && canSearch) (e.currentTarget as HTMLButtonElement).style.background = '#155e32'; }}
+            onMouseLeave={e => { if (!loading && canSearch) (e.currentTarget as HTMLButtonElement).style.background = '#1a5c38'; }}
           >
             {loading ? (
               <>

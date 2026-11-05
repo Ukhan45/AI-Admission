@@ -5,9 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const FREE_SEARCH_LIMIT = 3;
-
-async function getUserAndCheckCredits(token: string) {
+async function getUserAndTrackUsage(token: string) {
   try {
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
@@ -19,19 +17,10 @@ async function getUserAndCheckCredits(token: string) {
       return { allowed: false, reason: 'profile_not_found', userId };
     }
 
-    const userData = userDoc.data();
-    const isPro = userData?.plan === 'pro';
-    const searchUsed: number = userData?.scholarship_searches_used ?? 0;
-    const limit = isPro ? 999999 : FREE_SEARCH_LIMIT;
-
-    if (searchUsed >= limit) {
-      return { allowed: false, reason: 'limit_reached', plan: userData?.plan, userId };
-    }
-
     // Increment usage
     await userDocRef.update({ scholarship_searches_used: FieldValue.increment(1) });
 
-    return { allowed: true, plan: userData?.plan, userId };
+    return { allowed: true, userId };
   } catch (error) {
     console.error('Auth error:', error);
     return { allowed: false, reason: 'unauthorized' };
@@ -47,12 +36,9 @@ export async function POST(req: Request) {
       return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    const credit = await getUserAndCheckCredits(token);
-    if (!credit.allowed) {
-      return Response.json({
-        error: credit.reason === 'limit_reached' ? 'limit_reached' : 'unauthorized',
-        plan: credit.plan,
-      }, { status: credit.reason === 'limit_reached' ? 402 : 401 });
+    const user = await getUserAndTrackUsage(token);
+    if (!user.allowed) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
     const { countryOfStudy, countryOfOrigin, degree, field, gpa, ielts, financialNeed } = await req.json();

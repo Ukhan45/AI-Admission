@@ -23,8 +23,6 @@ export default function SopGenerator() {
   const [loading,          setLoading]          = useState(false);
   const [error,            setError]            = useState('');
   const [successMessage,   setSuccessMessage]   = useState('');
-  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
-  const [showUpgrade,      setShowUpgrade]      = useState(false);
   const [copied,           setCopied]           = useState(false);
 
   const wordCount = useMemo(() => {
@@ -59,7 +57,6 @@ export default function SopGenerator() {
     setError('');
     setSuccessMessage('');
     setResult('');
-    setShowUpgrade(false);
 
     try {
       const user = auth.currentUser;
@@ -78,15 +75,9 @@ export default function SopGenerator() {
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.error === 'limit_reached') {
-          setShowUpgrade(true);
-          setError(data.message);
-        } else {
-          setError(data?.error || 'Failed to generate your SOP. Please try again.');
-        }
+        setError(data?.error || 'Failed to generate your SOP. Please try again.');
       } else {
         setResult(data.result);
-        setCreditsRemaining(data.credits_remaining);
         setSuccessMessage('Your SOP has been generated successfully!');
         incrementStat('sopsGenerated');
         setTimeout(() => {
@@ -134,11 +125,6 @@ export default function SopGenerator() {
             </p>
           </div>
 
-          {creditsRemaining !== null && !showUpgrade && (
-            <div className="self-start sm:self-auto shrink-0 flex items-center gap-1.5 bg-[#fff8ed] border border-[#f5a623]/30 text-[#c47d0a] text-xs font-bold px-4 py-2 rounded-full">
-              ✨ {creditsRemaining} generation{creditsRemaining !== 1 ? 's' : ''} left
-            </div>
-          )}
         </div>
       </div>
 
@@ -379,38 +365,16 @@ export default function SopGenerator() {
             </div>
 
             {/* ── Error ── */}
-            {error && !showUpgrade && (
+            {error && (
               <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                 <span className="shrink-0">⚠️</span> {error}
-              </div>
-            )}
-
-            {/* ── Upgrade banner ── */}
-            {showUpgrade && (
-              <div className="rounded-xl border border-[#1a7a5e]/20 bg-[#1a3d2e] p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-white text-sm flex items-center gap-1.5">
-                      <span>⚡</span> You've used all your free generations
-                    </p>
-                    <p className="text-[#7ecfac] text-xs mt-0.5">
-                      Upgrade to Pro — PKR 800/month for unlimited SOPs and all features
-                    </p>
-                  </div>
-                  <Link
-                    href="/checkout"
-                    className="self-start sm:self-auto shrink-0 bg-[#f5a623] hover:bg-[#e0951a] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-sm whitespace-nowrap"
-                  >
-                    Upgrade →
-                  </Link>
-                </div>
               </div>
             )}
 
             {/* ── Generate button ── */}
             <button
               onClick={generateSop}
-              disabled={loading || showUpgrade || !requiredFilled}
+              disabled={loading || !requiredFilled}
               className="w-full bg-[#2d9e7a] hover:bg-[#1a7a5e] disabled:opacity-40 disabled:cursor-not-allowed
                 text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-sm"
             >

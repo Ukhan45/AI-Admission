@@ -6,8 +6,6 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const FREE_SOP_LIMIT = 3;
-
 const BANNED_PHRASES = [
   'I have always been passionate',
   'ever since I was young',
@@ -96,27 +94,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    // Credit check
+    // Confirm the authenticated account exists
     const userDocRef = adminDb.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
     if (!userDoc.exists) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    const userData = userDoc.data();
-    const isPro = userData?.plan === 'pro';
-    const sopUsed: number = userData?.sop_used ?? 0;
-    const limit = isPro ? 999999 : FREE_SOP_LIMIT;
-
-    if (sopUsed >= limit) {
-      return Response.json({
-        error: 'limit_reached',
-        message: 'You have used all your free SOP generations. Please upgrade to continue.',
-        plan: userData?.plan,
-        used: sopUsed,
-        limit,
-      }, { status: 403 });
     }
 
     // Build context strings
@@ -240,10 +223,7 @@ export async function POST(req: Request) {
       createdAt:     new Date(),
     });
 
-    return Response.json({
-      result,
-      credits_remaining: Math.max(0, limit - sopUsed - 1),
-    });
+    return Response.json({ result });
 
   } catch (error) {
     console.error('SOP generation error:', error);

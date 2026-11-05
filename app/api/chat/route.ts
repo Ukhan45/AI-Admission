@@ -5,9 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const FREE_CHAT_LIMIT = 10;
-
-async function getUserAndCheckCredits(token: string) {
+async function getUserAndTrackUsage(token: string) {
   try {
     // Verify token with Firebase Admin SDK
     const decodedToken = await getAuth().verifyIdToken(token);
@@ -21,19 +19,10 @@ async function getUserAndCheckCredits(token: string) {
       return { allowed: false, reason: 'profile_not_found', userId };
     }
 
-    const userData = userDoc.data();
-    const isPro = userData?.plan === 'pro';
-    const chatUsed: number = userData?.chat_used ?? 0;
-    const limit = isPro ? 999999 : FREE_CHAT_LIMIT;
-
-    if (chatUsed >= limit) {
-      return { allowed: false, reason: 'limit_reached', plan: userData?.plan, userId };
-    }
-
     // Increment chat usage
     await userDocRef.update({ chat_used: FieldValue.increment(1) });
 
-    return { allowed: true, plan: userData?.plan, userId };
+    return { allowed: true, userId };
   } catch (error: any) {
     console.error('Auth error:', error);
     return { allowed: false, reason: 'unauthorized' };
@@ -50,12 +39,9 @@ export async function POST(req: Request) {
       return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    const credit = await getUserAndCheckCredits(token);
-    if (!credit.allowed) {
-      return Response.json({
-        error: credit.reason === 'limit_reached' ? 'limit_reached' : 'unauthorized',
-        plan: credit.plan,
-      }, { status: credit.reason === 'limit_reached' ? 402 : 401 });
+    const user = await getUserAndTrackUsage(token);
+    if (!user.allowed) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
     const { messages } = await req.json();

@@ -34,8 +34,21 @@ export default function Login() {
     setError('');
 
     try {
-      await signInWithEmailAndPassword(auth, form.email, form.password);
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, form.email, form.password);
+      
+      // Fetch user role from Firestore
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      
+      let redirectPath = '/dashboard';
+      if (userDoc.exists()) {
+        const role = userDoc.data().role;
+        if (role === 'admin') redirectPath = '/admin';
+        else if (role === 'consultant') redirectPath = '/consultant';
+      }
+      
+      router.push(redirectPath);
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {

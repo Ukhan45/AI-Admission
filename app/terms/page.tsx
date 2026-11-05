@@ -57,18 +57,8 @@ export default function TermsAndConditions() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#085041] mb-3">4. Subscription Plans and Payments</h2>
-            <h3 className="text-base font-semibold text-[#085041] mb-2">4.1 Free Plan</h3>
-            <p className="text-[#5F5E5A] mb-3">The Free Plan includes limited usage of platform features including 3 SOP generations, 2 profile analyses, and 10 AI chat messages per billing period.</p>
-            <h3 className="text-base font-semibold text-[#085041] mb-2">4.2 Pro Plan</h3>
-            <p className="mb-3">The Pro Plan is available at PKR 800 per month and provides unlimited access to all platform features. A 7-day free trial is offered with no charge until the trial ends.</p>
-            <h3 className="text-base font-semibold text-[#085041] mb-2">4.3 Billing</h3>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>Subscriptions are billed monthly through Lemon Squeezy</li>
-              <li>You may cancel your subscription at any time; access continues until the end of the billing period</li>
-              <li>We reserve the right to change pricing with 30 days&#39; notice to existing subscribers</li>
-              <li>Refunds are handled at our discretion on a case-by-case basis</li>
-            </ul>
+            <h2 className="text-xl font-semibold text-[#085041] mb-3">4. Free Access</h2>
+            <p className="text-[#5F5E5A]">All users can access the platform features at no charge and without usage limits. No subscription or payment method is required.</p>
           </section>
 
           <section>
