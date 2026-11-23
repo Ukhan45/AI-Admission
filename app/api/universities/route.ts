@@ -4,14 +4,16 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: Request) {
   try {
-    const { degree, country, budget, ielts, gpa, intake, ranking } = await req.json();
+    const { degree, country, budget, ielts, gpa, intake, ranking, level } = await req.json();
 
     if (!degree || !country) {
-      return Response.json({ error: 'Missing required fields: degree and country are required.' }, { status: 400 });
+      return Response.json({ error: 'Missing required fields: field/degree and country are required.' }, { status: 400 });
     }
 
     const cleanDegree = degree.trim();
     const cleanCountry = country.trim();
+    const studyLevel = (level || 'MS').toString().toUpperCase() === 'BS' ? 'BS' : (level || 'MS').toString().toUpperCase() === 'PHD' ? 'PHD' : 'MS';
+    const levelFullName = studyLevel === 'BS' ? "Bachelor's (Undergraduate - BS/BSc/BA/BEng)" : studyLevel === 'PHD' ? "Doctorate (PhD/DPhil)" : "Master's (Postgraduate - MS/MSc/MA/MBA)";
     const cleanBudget = budget ? `$${budget}/month` : 'Not constrained';
     const cleanIelts = ielts?.trim() || 'Not provided / English proficiency certificate';
     const cleanGpa = gpa?.trim() || 'Not specified';
@@ -19,33 +21,42 @@ export async function POST(req: Request) {
     const cleanRanking = ranking && ranking !== 'Any' ? ranking : 'Any recognized accredited institution';
 
     const systemPrompt = `You are a world-class international university admissions counselor with comprehensive, authoritative knowledge of global higher education institutions, accreditation, tuition structures, intake cycles, and admission selectivity standards.
-Your mission is to return REAL, currently accredited, highly accurate university recommendations matching the student's exact profile.
+Your mission is to return REAL, currently accredited, highly accurate university recommendations matching the student's exact profile and EXACT study level.
+
+CRITICAL LEVEL-SPECIFIC COMPLIANCE (BS vs MS):
+- TARGET STUDY LEVEL: ${levelFullName}
+- If the student is applying for BS (Undergraduate):
+  * EVERY recommended university MUST offer English-friendly or relevant ${studyLevel} Bachelor's degrees in ${cleanDegree}.
+  * List undergraduate program names (e.g. "BSc in Computer Science", "BEng Software Engineering", "Bachelor of Business Administration").
+  * Evaluate admission chance based on high school credentials (GPA/percentage ${cleanGpa}) and language score (${cleanIelts}).
+  * For Germany BS: Note if the student needs a 1-year Studienkolleg (for 12-year secondary education systems) or direct entrance.
+  * DO NOT return Master's or postgraduate programs.
+- If the student is applying for MS (Postgraduate):
+  * EVERY recommended university MUST offer graduate ${studyLevel} Master's degrees in ${cleanDegree}.
+  * List graduate program names (e.g. "MSc in Computer Science", "Master of Engineering", "MBA").
+  * Evaluate admission chance based on undergraduate CGPA (${cleanGpa}) and language score (${cleanIelts}).
+  * DO NOT return Bachelor's programs.
 
 CRITICAL ACCURACY GUIDELINES:
 1. REAL UNIVERSITIES & WEBSITES ONLY:
    - Never invent universities. Use exact official university names and their verified root domain website (e.g., "tum.de", "ethz.ch", "utoronto.ca", "ox.ac.uk", "ubc.ca", "kth.se", "polimi.it", "uni-heidelberg.de", "tudelft.nl", "monash.edu").
 2. ACCURATE TUITION RULES:
-   - Germany: Public universities have NO tuition fees (€0/year), only a nominal semester contribution of €250–€350/semester, EXCEPT in the state of Baden-Württemberg (€1,500/semester for non-EU) and recently TUM.
-   - Italy: Public universities have low tuition based on family income, typically €900–€3,500/year (often €0 with regional DSU scholarships).
+   - Germany: Public universities have NO tuition fees (€0/year) for both BS and MS (except state of Baden-Württemberg: €1,500/semester for non-EU, and recently TUM). Semester ticket is ~€250–€350/sem.
+   - Italy: Public universities tuition is typically €900–€3,500/year (often €0 with regional DSU scholarships for both BS and MS).
    - France: Public universities standard non-EU fees are ~€2,770/year for Bachelor's and ~€3,770/year for Master's.
-   - Norway: Public universities introduced non-EU tuition in 2023 (~NOK 130,000–220,000/year).
+   - Norway: Public universities non-EU tuition is ~NOK 130,000–220,000/year.
    - Sweden: Non-EU tuition is approximately SEK 90,000–180,000/year.
-   - UK / USA / Canada / Australia: Tuition is typically $15,000–$45,000/year depending on program tier.
+   - UK / USA / Canada / Australia: Tuition is typically $15,000–$45,000/year.
 3. RIGOROUS ADMISSION CHANCE CALCULATION:
-   - Calculate admission chance ('High' | 'Medium' | 'Low') accurately based on:
-     a) Student's GPA (${cleanGpa}) vs University's historical entry GPA threshold.
-     b) Student's IELTS (${cleanIelts}) vs University's minimum language cutoff.
-     c) University global competitiveness and selectivity.
-   - Provide a strategic mix across the 6 universities:
-     - 2 "High" (Safe options where student's credentials comfortably exceed requirements)
-     - 2 "Medium" (Target options where student matches standard profiles)
-     - 2 "Low" (Reach/Ambitious options with high prestige or selective acceptance rates)
-4. INTAKE & RANKING RESPECT:
-   - Respect student's intake (${cleanIntake}) and ranking preference (${cleanRanking}).`;
+   - Categorize the 6 universities into an honest portfolio:
+     * 2 "High" (Safe options where student's credentials comfortably meet/exceed requirements)
+     * 2 "Medium" (Target options where student matches average accepted cohort)
+     * 2 "Low" (Reach/Ambitious options with higher prestige or selective entry)`;
 
     const userPrompt = `Generate a JSON array of exactly 6 real accredited universities for this student:
 
 STUDENT PROFILE:
+- TARGET STUDY LEVEL: ${studyLevel} (${levelFullName})
 - Field of Study: ${cleanDegree}
 - Preferred Country: ${cleanCountry}
 - Target Intake: ${cleanIntake}
@@ -54,17 +65,19 @@ STUDENT PROFILE:
 - Student IELTS / English Score: ${cleanIelts}
 - Monthly Budget (Living + Tuition): ${cleanBudget}
 
+IMPORTANT: All recommended programs must strictly be for ${studyLevel} (${studyLevel === 'BS' ? 'Undergraduate Bachelor\'s' : 'Graduate Master\'s'}).
+
 Return ONLY a valid JSON array in this exact schema, with no markdown code blocks, no preamble, and no explanation:
 [
   {
     "name": "Full Official University Name",
     "country": "Country",
     "city": "City",
-    "tuition": "Accurate tuition string (e.g. '€0 (Tuition Free - €320/sem fee)' or '$18,500/year')",
-    "language": "English / German / French / Bilingual",
-    "ieltsRequired": "e.g. 6.5 (min 6.0 in each band) or Not Required / Medium of Instruction",
-    "programs": ["Specific Degree Program 1", "Specific Degree Program 2"],
-    "admissionChance": "High",
+    "tuition": "Accurate tuition string (e.g. '€0 (Tuition Free - €300/sem fee)' or '$16,000/year')",
+    "language": "English / German / Bilingual",
+    "ieltsRequired": "e.g. 6.5 or Not Required",
+    "programs": ["Specific ${studyLevel} Program 1", "Specific ${studyLevel} Program 2"],
+    "admissionChance": "High" | "Medium" | "Low",
     "website": "official-domain.edu"
   }
 ]`;
