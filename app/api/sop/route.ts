@@ -6,6 +6,9 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
+const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
+
 const BANNED_PHRASES = [
   'I have always been passionate',
   'ever since I was young',
@@ -320,19 +323,24 @@ export async function POST(req: Request) {
         '',
         'LENGTH: 550-650 words. Highly structured, courteous, and legally precise.',
       ].join('\n');
+    } else {
+      // Unknown letter type: stop here instead of sending empty prompts to the AI
+      return Response.json({ error: 'Unsupported letter type.' }, { status: 400 });
     }
 
-    // Call Groq LLaMA 3.3 70B
+    // gpt-oss is a reasoning model: reasoning tokens count toward max_tokens,
+    // so the limit is higher and reasoning_effort is kept low.
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.35,
-      max_tokens: 2200,
+      max_tokens: 5000,
       top_p: 0.9,
-    });
+      reasoning_effort: 'low',
+    } as any);
 
     const result = response?.choices?.[0]?.message?.content?.trim();
     if (!result) {

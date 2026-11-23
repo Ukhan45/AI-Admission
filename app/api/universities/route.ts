@@ -2,6 +2,9 @@ import Groq from 'groq-sdk';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
+const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
+
 export async function POST(req: Request) {
   try {
     const { degree, country, budget, ielts, gpa, intake, ranking, level } = await req.json();
@@ -10,13 +13,13 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Missing required fields: field/degree and country are required.' }, { status: 400 });
     }
 
-    const cleanDegree = degree.trim();
-    const cleanCountry = country.trim();
+    const cleanDegree = String(degree).trim();
+    const cleanCountry = String(country).trim();
     const studyLevel = (level || 'MS').toString().toUpperCase() === 'BS' ? 'BS' : (level || 'MS').toString().toUpperCase() === 'PHD' ? 'PHD' : 'MS';
     const levelFullName = studyLevel === 'BS' ? "Bachelor's (Undergraduate - BS/BSc/BA/BEng)" : studyLevel === 'PHD' ? "Doctorate (PhD/DPhil)" : "Master's (Postgraduate - MS/MSc/MA/MBA)";
     const cleanBudget = budget ? `$${budget}/month` : 'Not constrained';
-    const cleanIelts = ielts?.trim() || 'Not provided / English proficiency certificate';
-    const cleanGpa = gpa?.trim() || 'Not specified';
+    const cleanIelts = ielts != null && String(ielts).trim() ? String(ielts).trim() : 'Not provided / English proficiency certificate';
+    const cleanGpa = gpa != null && String(gpa).trim() ? String(gpa).trim() : 'Not specified';
     const cleanIntake = intake && intake !== 'Any' ? intake : 'Next upcoming intake (Fall/Spring)';
     const cleanRanking = ranking && ranking !== 'Any' ? ranking : 'Any recognized accredited institution';
 
@@ -82,15 +85,18 @@ Return ONLY a valid JSON array in this exact schema, with no markdown code block
   }
 ]`;
 
+    // gpt-oss is a reasoning model: reasoning tokens count toward max_tokens,
+    // so the limit is higher and reasoning_effort is kept low.
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.25,
-      max_tokens: 2200,
-    });
+      max_tokens: 6000,
+      reasoning_effort: 'low',
+    } as any);
 
     const raw = response.choices?.[0]?.message?.content?.trim() || '[]';
 
@@ -103,9 +109,10 @@ Return ONLY a valid JSON array in this exact schema, with no markdown code block
       cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
     }
 
-    let universities = [];
+    let universities: any[] = [];
     try {
-      universities = JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned);
+      universities = Array.isArray(parsed) ? parsed : [];
     } catch (parseErr) {
       console.error('Failed to parse universities JSON:', raw, parseErr);
       return Response.json({ error: 'Failed to parse university recommendations. Please retry.' }, { status: 500 });

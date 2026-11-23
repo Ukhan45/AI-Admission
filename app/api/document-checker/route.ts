@@ -9,6 +9,9 @@ type DocumentUpload = {
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
+const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
+
 export async function POST(req: Request) {
   try {
     const { country, university, degree, documents } = await req.json();
@@ -73,15 +76,18 @@ Return ONLY a valid JSON array matching this exact schema:
   }
 ]`;
 
+    // gpt-oss is a reasoning model: reasoning tokens count toward max_tokens,
+    // so the limit is higher and reasoning_effort is kept low.
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.2,
-      max_tokens: 2200,
-    });
+      max_tokens: 6000,
+      reasoning_effort: 'low',
+    } as any);
 
     const raw = response.choices?.[0]?.message?.content?.trim() || '[]';
 
@@ -94,9 +100,10 @@ Return ONLY a valid JSON array matching this exact schema:
       cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
     }
 
-    let results = [];
+    let results: any[] = [];
     try {
-      results = JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned);
+      results = Array.isArray(parsed) ? parsed : [];
     } catch (parseErr) {
       console.error('Failed to parse document checker results:', raw, parseErr);
       return Response.json({ error: 'Failed to parse document verification results. Please retry.' }, { status: 500 });

@@ -5,25 +5,35 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-async function getUserAndTrackUsage(token: string) {
+// Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
+const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
+
+// Only verifies the user. Usage is counted later, after a successful search.
+async function verifyUser(token: string) {
   try {
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
 
-    const userDocRef = adminDb.collection('users').doc(userId);
-    const userDoc = await userDocRef.get();
-
+    const userDoc = await adminDb.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      return { allowed: false, reason: 'profile_not_found', userId };
+      return { allowed: false as const, reason: 'profile_not_found' };
     }
 
-    // Increment usage
-    await userDocRef.update({ scholarship_searches_used: FieldValue.increment(1) });
-
-    return { allowed: true, userId };
+    return { allowed: true as const, userId };
   } catch (error) {
     console.error('Auth error in scholarship finder:', error);
-    return { allowed: false, reason: 'unauthorized' };
+    return { allowed: false as const, reason: 'unauthorized' };
+  }
+}
+
+async function trackUsage(userId: string) {
+  try {
+    await adminDb.collection('users').doc(userId).update({
+      scholarship_searches_used: FieldValue.increment(1),
+    });
+  } catch (error) {
+    // Never fail the request just because the counter could not be updated.
+    console.error('Failed to track scholarship usage:', error);
   }
 }
 
@@ -36,7 +46,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    const user = await getUserAndTrackUsage(token);
+    const user = await verifyUser(token);
     if (!user.allowed) {
       return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
@@ -89,15 +99,18 @@ Return ONLY a valid JSON array matching this exact schema:
   }
 ]`;
 
+    // gpt-oss is a reasoning model: reasoning tokens count toward max_tokens,
+    // so the limit is higher and reasoning_effort is kept low.
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.25,
-      max_tokens: 2200,
-    });
+      max_tokens: 6000,
+      reasoning_effort: 'low',
+    } as any);
 
     const raw = response.choices?.[0]?.message?.content?.trim() || '[]';
 
@@ -110,9 +123,10 @@ Return ONLY a valid JSON array matching this exact schema:
       cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
     }
 
-    let scholarships = [];
+    let scholarships: any[] = [];
     try {
-      scholarships = JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned);
+      scholarships = Array.isArray(parsed) ? parsed : [];
     } catch (parseErr) {
       console.error('Failed to parse scholarships JSON:', raw, parseErr);
       return Response.json({ scholarships: [] });
@@ -124,6 +138,9 @@ Return ONLY a valid JSON array matching this exact schema:
       type: ['Full Funded', 'Partial', 'Merit-Based', 'Need-Based'].includes(s.type) ? s.type : 'Full Funded',
       link: (s.link || '').replace(/^https?:\/\//i, '').replace(/\/$/, ''),
     }));
+
+    // Count usage only after a successful search
+    await trackUsage(user.userId);
 
     return Response.json({ scholarships });
   } catch (error) {
