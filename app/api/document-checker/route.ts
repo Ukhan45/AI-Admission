@@ -13,54 +13,98 @@ export async function POST(req: Request) {
   try {
     const { country, university, degree, documents } = await req.json();
 
-    const documentDescriptions = ((documents || []) as DocumentUpload[]).map((doc) => {
-      const mergedText = doc.merged ? ' (merged front/back PDF)' : '';
-      const attestedText = doc.attested ? ' with required attestation stamps on the back' : '';
-      const fileNameText = doc.fileName ? ` - ${doc.fileName}` : '';
-      return `${doc.name}${mergedText}${attestedText}${fileNameText}`;
-    }).join(', ');
+    if (!country || !university || !degree) {
+      return Response.json({ error: 'Missing required parameters: country, university, and degree.' }, { status: 400 });
+    }
 
-    const prompt = `You are an international admissions document expert. A student is applying to ${university} in ${country} for a ${degree} program.
+    const documentDescriptions = ((documents || []) as DocumentUpload[])
+      .map((doc) => {
+        const mergedText = doc.merged ? ' (merged front/back scan)' : '';
+        const attestedText = doc.attested ? ' (authenticated with official attestation/apostille stamps)' : '';
+        const fileNameText = doc.fileName ? ` - ${doc.fileName}` : '';
+        return `${doc.name}${mergedText}${attestedText}${fileNameText}`;
+      })
+      .join(', ');
 
-They have uploaded these documents: ${documentDescriptions}.
+    const systemPrompt = `You are a certified international credential evaluator and senior consular document verification specialist with 16+ years of expertise.
+You have comprehensive knowledge of the exact document legalizations, apostilles, translations, and embassy requirements for international students applying to higher education in ${country} at ${university}.
 
-When a document is marked as a merged front/back PDF, assume the upload includes both sides. If the document is also noted as having required attestation stamps on the back, treat it as already attested and do not request additional HEC/MOFA or embassy stamps unless ${country} specifically requires extra legalization beyond those stamps.
+SPECIFIC COUNTRY COMPLIANCE RULES:
+- GERMANY:
+  * APS Certificate is mandatory for applicants with degrees from India, China, or Vietnam before visa or university enrollment.
+  * Secondary school and degrees require verification (e.g. IBCC/HEC/Notary/MOFA depending on source country).
+  * Uni-assist VPD (Vorprüfungsdokumentation) required for most public universities.
+  * Proof of financial resources: Blocked Account (€11,904) or official declaration of commitment (Verpflichtungserklärung).
+- ITALY:
+  * CIMEA Statement of Comparability and Verification, or formal Declaration of Value (Dichiarazione di Valore - DOV) from the Italian Embassy.
+  * Universitaly pre-enrollment summary.
+- FRANCE:
+  * Etudes en France (EEF) procedure and Campus France interview certificate.
+  * Certified French translations by a sworn translator for non-French documents.
+- UNITED KINGDOM:
+  * Tuberculosis (TB) clearance certificate from an approved clinic for designated countries.
+  * Valid Confirmation of Acceptance for Studies (CAS) from a licensed student sponsor.
+  * ATAS (Academic Technology Approval Scheme) clearance certificate for specific sensitive STEM subjects.
+- CANADA:
+  * Provincial Attestation Letter (PAL) under recent IRCC regulations.
+  * Guaranteed Investment Certificate (GIC) from an eligible Canadian financial institution.
+- UNITED STATES:
+  * Form I-20 issued by the SEVP-certified institution.
+  * SEVIS I-901 fee payment receipt and DS-160 confirmation barcode.
 
-For each document, assess its status based on ${country}'s requirements for international students applying to ${university}.
+DOCUMENT EVALUATION INSTRUCTIONS:
+1. For every uploaded document, assess whether it is complete, needs update, or requires specific attestation/apostille.
+2. If a critical mandatory document for ${country} / ${university} is absent from their uploaded list, explicitly mark it as "Missing".
+3. Provide actionable, precise instructions on how to obtain or verify each document.
+4. Return ONLY a valid JSON array matching the exact schema.`;
 
-Consider these document categories:
-ADMISSION DOCUMENTS: Academic transcripts, degree certificate, CV/resume, statement of purpose, letters of recommendation, IELTS/TOEFL scores, GRE/GMAT scores, portfolio, work experience certificates.
+    const userPrompt = `A student is applying to ${university} in ${country} for a ${degree} program.
 
-VISA DOCUMENTS: Passport, visa application form, university acceptance letter, financial proof, health insurance, accommodation proof, police clearance certificate, medical certificate, birth certificate, visa fee payment receipt.
+DOCUMENTS SUBMITTED BY STUDENT:
+${documentDescriptions || 'No documents submitted yet.'}
 
-Return ONLY a valid JSON array (no markdown, no explanation):
+Return ONLY a valid JSON array matching this exact schema:
 [
   {
-    "document": "Document Name",
+    "document": "Document Title",
     "status": "OK" | "Update Needed" | "Missing" | "Attestation Required" | "Apostille Required",
-    "message": "Specific explanation about this document for ${country}/${university}",
-    "action": "Specific action the student should take"
+    "message": "Specific legal/admissions explanation for ${country} and ${university}",
+    "action": "Exact step-by-step action the applicant must take"
   }
-]
-
-Also include any MISSING critical documents not in their list.
-Consider ${country}-specific requirements: apostille, HEC attestation, embassy attestation, notarization, translation requirements, expiry dates, document validity periods, etc.
-Be thorough and specific about ${country}'s immigration and university admission requirements.
-Return only the JSON array.`;
+]`;
 
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       temperature: 0.2,
+      max_tokens: 2200,
     });
 
-    const raw = response.choices[0].message.content || '[]';
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-    const results = JSON.parse(cleaned);
+    const raw = response.choices?.[0]?.message?.content?.trim() || '[]';
+
+    // Robust JSON extraction
+    let cleaned = raw;
+    const jsonMatch = raw.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    } else {
+      cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    }
+
+    let results = [];
+    try {
+      results = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('Failed to parse document checker results:', raw, parseErr);
+      return Response.json({ error: 'Failed to parse document verification results. Please retry.' }, { status: 500 });
+    }
 
     return Response.json({ results });
   } catch (error) {
-    console.error('Document checker error:', error);
-    return new Response('Failed to check documents', { status: 500 });
+    console.error('Document checker API error:', error);
+    return Response.json({ error: 'Document verification analysis failed. Please try again.' }, { status: 500 });
   }
 }

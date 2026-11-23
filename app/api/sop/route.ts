@@ -29,56 +29,36 @@ const BANNED_PHRASES = [
   'it goes without saying',
   'needless to say',
   'I am a quick learner',
+  'delve into',
+  'tapestry of',
+  'testament to',
+  'plethora of',
+  'in today\'s fast-paced world',
 ];
 
 function gradingContext(cgpa: string): string {
   const val = parseFloat(cgpa);
-  if (val >= 3.7) return 'placing them in the top academic tier';
-  if (val >= 3.5) return 'reflecting strong academic performance';
-  if (val >= 3.0) return 'demonstrating consistent academic effort';
-  return 'showing steady academic progress';
-}
-
-// Builds the paragraph 5 instruction as a plain string — no nested backticks
-function buildPara5(
-  whyUniversityText: string | null,
-  university: string,
-  field: string,
-  researchText: string,
-): string {
-  if (whyUniversityText) {
-    return (
-      'The student has provided the following reason for choosing this university:\n' +
-      '"' + whyUniversityText + '"\n\n' +
-      'Use this as the foundation. Expand it into 4-5 natural, flowing sentences. ' +
-      'Add context about how the program aligns with the student\'s research interest in "' + researchText + '" and their career goals. ' +
-      'Make it feel considered and personal — like the student genuinely researched this choice. ' +
-      'Do NOT invent faculty names, lab names, or specific course titles unless the student mentioned them.'
-    );
-  }
-
-  return (
-    'The student did NOT provide a reason for choosing ' + university + '.\n\n' +
-    'CRITICAL INSTRUCTION: Do NOT invent generic praise like "your university\'s excellent reputation", ' +
-    '"world-class faculty", "cutting-edge research", or "collaborative environment" — ' +
-    'admissions committees see through this immediately and it damages the application.\n\n' +
-    'Instead, write this paragraph as a clearly marked placeholder the student MUST personalise before submitting. ' +
-    'Use this structure:\n\n' +
-    '"I am drawn to ' + university + '\'s Master\'s in ' + field + ' because [STUDENT: add your specific reason here — ' +
-    'e.g. a professor\'s research area, a specific module, or an industry partnership the program has]. ' +
-    'The program\'s approach to ' + field + ' aligns with my interest in ' + researchText + '. ' +
-    'I look forward to [STUDENT: name something specific you researched about this program] and will update this section before submission."\n\n' +
-    'This paragraph must make it completely obvious to the student that it needs to be rewritten with real, researched details.'
-  );
+  if (isNaN(val)) return 'demonstrating consistent academic dedication';
+  if (val >= 3.7) return 'placing them in the top academic tier (top 5-10% of cohort)';
+  if (val >= 3.5) return 'reflecting strong upper-division academic performance';
+  if (val >= 3.0) return 'demonstrating consistent and solid academic competence';
+  return 'showing steady academic progress and perseverance';
 }
 
 export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // Validation
-    if (!data.name || !data.degree || !data.cgpa || !data.university || !data.field) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    const letterType = data.letterType || 'sop';
+    const degreeLevel = data.degreeLevel || "Master's";
+
+    // Required fields check
+    if (!data.name || !data.university || !data.field) {
+      return Response.json({ error: 'Missing required fields: Name, University, and Program are required.' }, { status: 400 });
+    }
+
+    if (letterType !== 'visa_letter' && (!data.degree || !data.cgpa)) {
+      return Response.json({ error: 'Missing academic background details: Completed Degree and CGPA are required.' }, { status: 400 });
     }
 
     // Auth
@@ -94,7 +74,6 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    // Confirm the authenticated account exists
     const userDocRef = adminDb.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -102,131 +81,283 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Build context strings
-    const hasGoals         = data.goals?.trim().length > 10;
-    const hasAchievements  = data.achievements?.trim().length > 10;
-    const hasExperience    = data.experience?.trim().length > 10;
-    const hasResearch      = data.researchInterest?.trim().length > 10;
-    const hasWhyUniversity = data.whyUniversity?.trim().length > 10;
+    // Context formatting
+    const studentName = data.name.trim();
+    const targetUni = data.university.trim();
+    const targetField = data.field.trim();
+    const completedDegree = data.degree ? data.degree.trim() : 'Higher Secondary / Bachelor\'s';
+    const cgpa = data.cgpa ? data.cgpa.trim() : '3.5';
 
-    const goalsText         = hasGoals         ? data.goals.trim()            : `Work in ${data.field} in a senior or research-oriented role after graduating`;
-    const achievementsText  = hasAchievements  ? data.achievements.trim()     : `Strong academic foundation with projects relevant to ${data.field}`;
-    const experienceText    = hasExperience    ? data.experience.trim()       : 'No work experience provided — focus on academic and project work';
-    const researchText      = hasResearch      ? data.researchInterest.trim() : `Core topics within ${data.field}`;
-    const whyUniversityText = hasWhyUniversity ? data.whyUniversity.trim()    : null;
+    const goalsText = data.goals?.trim().length > 10
+      ? data.goals.trim()
+      : `Advance into leadership and specialized technical roles in ${targetField}`;
+    
+    const achievementsText = data.achievements?.trim().length > 10
+      ? data.achievements.trim()
+      : `Demonstrated technical excellence through applied projects in ${targetField}`;
+    
+    const experienceText = data.experience?.trim().length > 10
+      ? data.experience.trim()
+      : 'Solid academic laboratory, capstone, and project-based experience';
+    
+    const researchText = data.researchInterest?.trim().length > 10
+      ? data.researchInterest.trim()
+      : `Advanced core topics and modern methodologies within ${targetField}`;
+    
+    const whyUniText = data.whyUniversity?.trim().length > 10
+      ? data.whyUniversity.trim()
+      : null;
 
-    // Build paragraph 5 instruction as a plain string (no nested backticks)
-    const para5 = buildPara5(whyUniversityText, data.university, data.field, researchText);
+    let systemPrompt = '';
+    let userPrompt = '';
+    let letterTitle = '';
 
-    // Prompts
-    const systemPrompt =
-      'You are an elite academic writing consultant who has helped over 3,000 students gain admission to top universities across Europe, North America, and Asia. ' +
-      'You specialise in writing Statements of Purpose that are deeply personal, analytically sharp, and completely free of generic filler.\n\n' +
-      'Your defining skill: you make every SOP feel like it was written by a real, thoughtful human being — ' +
-      'because admissions committees can instantly spot AI-generated or template-filled writing and reject it. ' +
-      'Every SOP you write is different. Every opening is unique. Every sentence earns its place.';
+    // ==========================================
+    // 1. STATEMENT OF PURPOSE (SOP)
+    // ==========================================
+    if (letterType === 'sop') {
+      letterTitle = `SOP - ${targetUni} (${degreeLevel} ${targetField})`;
+      systemPrompt =
+        'You are an internationally renowned academic admissions consultant with 20+ years of experience helping students gain admission to premier universities across the US, UK, Canada, Europe, and Asia. ' +
+        'You craft Statements of Purpose that are analytically rigorous, deeply authentic, and completely free of artificial generic filler. ' +
+        'Every SOP reads like an accomplished, self-aware candidate who is genuinely prepared for graduate-level research and coursework.';
 
-    const userPrompt = [
-      'Write a Statement of Purpose for the following student applying to a graduate program.',
-      '',
-      '=== STUDENT PROFILE ===',
-      'Name:                ' + data.name,
-      'Completed Degree:    ' + data.degree,
-      'CGPA:                ' + data.cgpa + '/4.0 (' + gradingContext(data.cgpa) + ')',
-      'Target University:   ' + data.university,
-      'Applying For:        Masters in ' + data.field,
-      'Career Goals:        ' + goalsText,
-      'Projects/Achiev.:    ' + achievementsText,
-      'Work Experience:     ' + experienceText,
-      'Research Interest:   ' + researchText,
-      'Why This University: ' + (whyUniversityText ?? 'NOT PROVIDED — see paragraph 5 instructions below'),
-      '',
-      '=== PARAGRAPH-BY-PARAGRAPH STRUCTURE ===',
-      '',
-      'PARAGRAPH 1 — THE HOOK (3-4 sentences)',
-      'Do NOT open with "I have always been passionate about..." or any variation.',
-      'Instead: open with a specific problem the student encountered, a moment of realisation, or an observation that changed how they thought about their field.',
-      'It must be concrete, vivid, and directly tied to why they chose ' + data.field + '.',
-      '',
-      'PARAGRAPH 2 — ACADEMIC FOUNDATION (4-5 sentences)',
-      'Describe their ' + data.degree + ' and how it prepared them for graduate study in ' + data.field + '.',
-      'Name 2 realistic, specific courses relevant to both the degree and the field.',
-      'Mention their CGPA of ' + data.cgpa + ' naturally — as evidence of discipline, not as a trophy.',
-      'Connect specific skills or knowledge gained directly to graduate-level work.',
-      '',
-      'PARAGRAPH 3 — PROJECTS & ACHIEVEMENTS (5-6 sentences)',
-      'Draw on: ' + achievementsText,
-      'For each project or achievement: (a) describe what they did, (b) state a concrete outcome or what they learned,',
-      '(c) explain how it revealed a gap or deepened their understanding.',
-      'This paragraph should make the reader think: "this person has already been doing the work."',
-      '',
-      'PARAGRAPH 4 — EXPERIENCE & SKILLS (3-4 sentences)',
-      'Draw on: ' + experienceText,
-      'Describe a specific responsibility, challenge, or skill developed.',
-      'End by showing why this background alone is not enough, and why graduate study is the logical next step.',
-      '',
-      'PARAGRAPH 5 — WHY THIS UNIVERSITY & PROGRAM (4-5 sentences)',
-      'The student is applying to ' + data.university + ' for a Masters in ' + data.field + '.',
-      '',
-      para5,
-      '',
-      'PARAGRAPH 6 — FUTURE VISION (3-4 sentences)',
-      'Describe a specific, believable career outcome.',
-      'Goals: ' + goalsText,
-      'Name an industry, a type of organisation, or a specific problem they want to work on.',
-      'Show how the Masters is the bridge between where they are and where they are going.',
-      '',
-      'PARAGRAPH 7 — CLOSING (2-3 sentences)',
-      'Confident, purposeful, and brief.',
-      'No hollow phrases like "I look forward to contributing to your esteemed institution."',
-      'Reaffirm their readiness, name one specific thing they bring to the program, and close with a forward-looking statement.',
-      '',
-      '=== STRICT RULES ===',
-      '',
-      'BANNED PHRASES — never use any of these:',
-      BANNED_PHRASES.map((p) => '  - "' + p + '"').join('\n'),
-      '',
-      'TONE: First person. Confident but not arrogant. Humble but not self-deprecating. Academic but readable.',
-      'VOICE: Sound like a smart, self-aware graduate applicant — not a motivational poster.',
-      'LENGTH: 580-680 words exactly. Count carefully.',
-      'FORMAT: Flowing prose only. No headers. No bullet points. No bold text. Seven paragraphs.',
-      'OUTPUT: Return ONLY the SOP text. No preamble, no "Here is your SOP:", no closing note.',
-    ].join('\n');
+      const para5Instruction = whyUniText
+        ? `The student provided this reason for choosing ${targetUni}:\n"${whyUniText}"\n` +
+          `Expand this into 4-5 articulate sentences integrating how the curriculum, research faculty, and institute resources align with their focus on "${researchText}". Do not fabricate course codes or professor names unless provided.`
+        : `The student did not provide specific reasons for choosing ${targetUni}.\n` +
+          `Write a polished paragraph with clear contextual brackets [e.g. Professor X\'s lab / Module Y] so the student can insert their specific research details seamlessly. Never use hollow clichés like "world-class reputation".`;
 
-    // Call Groq
+      userPrompt = [
+        `Write an exceptional Statement of Purpose for an applicant applying for a ${degreeLevel} in ${targetField} at ${targetUni}.`,
+        '',
+        '=== APPLICANT PROFILE ===',
+        `Candidate Name:       ${studentName}`,
+        `Degree Level:         ${degreeLevel}`,
+        `Current/Prior Degree: ${completedDegree}`,
+        `Academic Standing:    ${cgpa}/4.0 (${gradingContext(cgpa)})`,
+        `Target University:    ${targetUni}`,
+        `Intended Program:     ${degreeLevel} in ${targetField}`,
+        `Primary Career Goal:  ${goalsText}`,
+        `Key Projects:         ${achievementsText}`,
+        `Experience / Intern.: ${experienceText}`,
+        `Research Interests:   ${researchText}`,
+        `Why This University:  ${whyUniText ?? 'See bracketed personalization instruction'}`,
+        '',
+        '=== 7-PARAGRAPH STRUCTURE ===',
+        'PARAGRAPH 1: THE HOOK (3-4 sentences) - An intellectual challenge, concrete problem, or pivotal observation that defined their commitment to this field. No childhood clichés.',
+        `PARAGRAPH 2: ACADEMIC FOUNDATION (4-5 sentences) - How their ${completedDegree} established core theoretical and mathematical foundations. Naturally integrate their GPA of ${cgpa} as proof of academic consistency.`,
+        `PARAGRAPH 3: APPLIED PROJECTS & RESEARCH (5-6 sentences) - Draw directly from: ${achievementsText}. Emphasize technical problem, methodology, quantifiable outcome, and academic lessons learned.`,
+        `PARAGRAPH 4: PROFESSIONAL & PRACTICAL EXPERIENCE (4 sentences) - Draw from: ${experienceText}. Discuss technical problem solving, teamwork, and why graduate study is the necessary catalyst for their next level.`,
+        `PARAGRAPH 5: WHY THIS PROGRAM & UNIVERSITY (4-5 sentences) - ${para5Instruction}`,
+        `PARAGRAPH 6: CAREER TRAJECTORY (3-4 sentences) - Short-term (post-graduation 1-3 years) and long-term (5-7 years) goals directly drawing on: ${goalsText}.`,
+        'PARAGRAPH 7: CLOSING STATEMENT (2-3 sentences) - Confident, concise assertion of mutual fit and readiness to contribute to the academic community.',
+        '',
+        '=== STRICT CONSTRAINTS ===',
+        'BANNED PHRASES: Do NOT use any of the following:',
+        BANNED_PHRASES.map(p => `  - "${p}"`).join('\n'),
+        'TONE: First-person ("I"). Objective, intellectually mature, and academically rigorous.',
+        'LENGTH: 620-720 words. Flowing prose only. No headings, no bolding, no bullet points.',
+      ].join('\n');
+
+    // ==========================================
+    // 2. ACADEMIC LETTER OF RECOMMENDATION (LOR)
+    // ==========================================
+    } else if (letterType === 'lor_academic') {
+      letterTitle = `Academic LOR - ${studentName} for ${targetUni}`;
+      const recommenderName = data.recommenderName?.trim() || 'Prof. Dr. [Recommender Name]';
+      const recommenderTitle = data.recommenderTitle?.trim() || 'Professor & Head of Department';
+      const institution = data.institutionOrCompany?.trim() || 'Department of Academic Studies';
+      const relationship = data.relationship?.trim() || 'academic advisor and course instructor for 3 years';
+
+      systemPrompt =
+        'You are an esteemed university professor and department chair who writes influential, highly respected Academic Letters of Recommendation for top-tier graduate admissions committees worldwide. ' +
+        'Your letters are authoritative, specific, evidence-backed, and convey deep academic credibility.';
+
+      userPrompt = [
+        `Draft a formal, highly compelling Academic Letter of Recommendation for ${studentName} applying for a ${degreeLevel} in ${targetField} at ${targetUni}.`,
+        '',
+        '=== RECOMMENDER & CANDIDATE DETAILS ===',
+        `Recommender Name:     ${recommenderName}`,
+        `Recommender Title:    ${recommenderTitle}`,
+        `Academic Institution: ${institution}`,
+        `Relationship Context: ${relationship}`,
+        `Candidate Name:       ${studentName}`,
+        `Completed Degree:     ${completedDegree}`,
+        `Academic CGPA:        ${cgpa}/4.0 (${gradingContext(cgpa)})`,
+        `Key Projects Known:   ${achievementsText}`,
+        `Academic Aptitude:    ${researchText}`,
+        `Target Program:       ${degreeLevel} in ${targetField} at ${targetUni}`,
+        '',
+        '=== FORMAL LETTER STRUCTURE ===',
+        '1. LETTERHEAD & SALUTATION: Date, "To the Admissions Committee, [Target University]", formal opening statement expressing highest recommendation.',
+        '2. ACADEMIC CONTEXT: State how long the recommender has taught/supervised the candidate, courses taught, and rank the student (e.g. "top 3-5% of students taught during my academic tenure").',
+        '3. INTELLECTUAL CAPABILITY & COURSE PERFORMANCE: Concrete analysis of the student\'s analytical depth, engagement with complex theoretical topics, and exceptional work ethic.',
+        `4. RESEARCH / PROJECT LEADERSHIP: Detail specific achievements drawing on: "${achievementsText}". Highlight initiative, problem formulation, and independent research capability.`,
+        '5. PERSONAL ATTRIBUTES & COLLABORATION: Discuss resilience, intellectual integrity, willingness to mentor peers, and openness to constructive critique.',
+        `6. UNEQUIVOCAL ENDORSEMENT: Firm statement confirming the candidate will excel in ${targetUni}\'s rigorous ${degreeLevel} program, recommending them without reservation for admission and scholarship consideration.`,
+        `7. FORMAL SIGN-OFF: "Sincerely,", Recommender Name, Title, Institution, and Email/Phone placeholder.`,
+        '',
+        '=== STRICT RULES ===',
+        'FORMAT: Formal academic letter format. Clear paragraphing.',
+        'LENGTH: 450-550 words.',
+        'AVOID: Generic praise without concrete examples.',
+      ].join('\n');
+
+    // ==========================================
+    // 3. PROFESSIONAL LETTER OF RECOMMENDATION (LOR)
+    // ==========================================
+    } else if (letterType === 'lor_professional') {
+      letterTitle = `Professional LOR - ${studentName} for ${targetUni}`;
+      const recommenderName = data.recommenderName?.trim() || '[Manager Name]';
+      const recommenderTitle = data.recommenderTitle?.trim() || 'Senior Engineering Director / Technical Lead';
+      const company = data.institutionOrCompany?.trim() || '[Company / Organization Name]';
+      const relationship = data.relationship?.trim() || 'direct supervisor for 2 years';
+
+      systemPrompt =
+        'You are an experienced industry executive and engineering manager writing a powerful Professional Letter of Recommendation for a high-performing team member applying to graduate school. ' +
+        'Your recommendation highlights technical leadership, deliverable outcomes, initiative under pressure, and professional maturity.';
+
+      userPrompt = [
+        `Write a formal Professional Letter of Recommendation for ${studentName} applying for a ${degreeLevel} in ${targetField} at ${targetUni}.`,
+        '',
+        '=== RECOMMENDER & CANDIDATE PROFILE ===',
+        `Recommender:          ${recommenderName}, ${recommenderTitle}`,
+        `Company/Organization: ${company}`,
+        `Supervisory Context:  ${relationship}`,
+        `Candidate Name:       ${studentName}`,
+        `Relevant Work Record: ${experienceText}`,
+        `Key Deliverables:     ${achievementsText}`,
+        `Career Direction:     ${goalsText}`,
+        `Target Program:       ${degreeLevel} in ${targetField} at ${targetUni}`,
+        '',
+        '=== LETTER STRUCTURE ===',
+        '1. FORMAL SALUTATION: Date, "To the Admissions Committee, [Target University]".',
+        '2. PROFESSIONAL RELATIONSHIP: Clarify candidate\'s role, duration of employment, and initial impression.',
+        `3. TECHNICAL EXCELLENCE & DELIVERABLES: Detail specific contributions drawing on: "${achievementsText}" and "${experienceText}". Emphasize real-world problem solving, engineering execution, and metrics/outcomes.`,
+        '4. LEADERSHIP, COLLABORATION & INITIATIVE: Describe how the candidate handled ambiguity, mentored colleagues, and maintained high professional standards.',
+        `5. STRATEGIC FIT FOR GRADUATE STUDY: Explain why advancing their education in ${targetField} at ${targetUni} aligns with their professional trajectory and will prepare them for senior leadership.`,
+        '6. ENTHUSIASTIC CONCLUSION: Strong, unreserved recommendation for admission.',
+        '7. CORPORATE SIGN-OFF: Sincerely, Name, Title, Company Name.',
+        '',
+        'LENGTH: 450-550 words. Professional corporate tone.',
+      ].join('\n');
+
+    // ==========================================
+    // 4. EUROPEAN LETTER OF MOTIVATION
+    // ==========================================
+    } else if (letterType === 'motivation_letter') {
+      letterTitle = `Motivation Letter - ${targetUni} (${targetField})`;
+      systemPrompt =
+        'You are a senior European university academic advisor specializing in admissions for prestigious universities in Germany, Switzerland, the Netherlands, Sweden, France, and Italy (e.g. TUM, RWTH Aachen, ETH Zurich, TU Delft, KTH, Politecnico di Milano). ' +
+        'You understand that European admissions committees value direct, academically rigorous, prerequisite-focused motivation letters over flowery American-style personal narratives.';
+
+      userPrompt = [
+        `Write a European-standard Letter of Motivation for ${studentName} applying for a ${degreeLevel} in ${targetField} at ${targetUni}.`,
+        '',
+        '=== APPLICANT QUALIFICATIONS ===',
+        `Candidate Name:       ${studentName}`,
+        `Completed Degree:     ${completedDegree}`,
+        `Academic CGPA/Score:  ${cgpa}/4.0 (${gradingContext(cgpa)})`,
+        `Target University:    ${targetUni}`,
+        `Target Master/Degree: ${degreeLevel} in ${targetField}`,
+        `Academic Prereqs:     ${researchText}`,
+        `Projects & Skills:    ${achievementsText}`,
+        `Practical Experience: ${experienceText}`,
+        `Why This Program:     ${whyUniText || 'Program curriculum, institute specialization, and European career orientation'}`,
+        `Long-Term Vision:     ${goalsText}`,
+        '',
+        '=== EUROPEAN LETTER STRUCTURE ===',
+        '1. SALUTATION & DIRECT STATEMENT OF PURPOSE (1 paragraph): Clear declaration of candidacy for the program, citing their background in ' + completedDegree + ' and CGPA of ' + cgpa + '.',
+        '2. ACADEMIC COMPETENCIES & PREREQUISITES (1 paragraph): Methodological and theoretical foundation. Explain how their prior coursework directly fulfills the academic prerequisites and ECTS-equivalent standards of this specific degree.',
+        '3. PRACTICAL RESEARCH & APPLIED PROJECT WORK (1-2 paragraphs): Draw directly from: ' + achievementsText + '. Focus on technical methodology, tools used, scientific problem formulation, and analytical outcomes.',
+        '4. CURRICULAR ALIGNMENT & INSTITUTIONAL SYNERGY (1 paragraph): Address why ' + targetUni + ' is the exact academic environment required. Focus on specialized curriculum tracks, seminars, or laboratories in ' + targetField + '.',
+        '5. CAREER OBJECTIVES & EUROPEAN/GLOBAL OUTLOOK (1 paragraph): Direct correlation between the degree modules and their post-graduation plans (' + goalsText + ').',
+        '6. FORMAL CLOSING: Respectful, professional closing ("Thank you for considering my application. I look forward to the opportunity to discuss my qualifications further. Yours sincerely, ' + studentName + '").',
+        '',
+        '=== GUIDELINES ===',
+        'BANNED PHRASES: No clichés ("passion ignited", "ever since I was a child", "beacon", "catapult").',
+        'TONE: Objective, formal, analytical, respectful.',
+        'LENGTH: 550-650 words.',
+      ].join('\n');
+
+    // ==========================================
+    // 5. STUDENT VISA COVER LETTER & STUDY PLAN
+    // ==========================================
+    } else if (letterType === 'visa_letter') {
+      const destinationCountry = data.destinationCountry?.trim() || 'the Destination Country';
+      const fundingSource = data.fundingSource?.trim() || 'Self-funded via savings and designated blocked account / bank balance';
+      const homeCountryTies = data.homeCountryTies?.trim() || 'Family ties, established assets, and promising career opportunities in the home country tech/industrial sector';
+      letterTitle = `Visa Cover Letter - ${destinationCountry} (${targetUni})`;
+
+      systemPrompt =
+        'You are an expert immigration legal consultant and student visa specialist with extensive experience preparing visa cover letters and study plans for embassies and consulates of Germany, Canada, the US, UK, Australia, and Schengen member states. ' +
+        'Your letters clearly prove genuine student intent, financial self-sufficiency, academic progression logic, and non-immigrant ties to the home country.';
+
+      userPrompt = [
+        `Draft a comprehensive, highly persuasive Student Visa Cover Letter & Study Plan for an applicant applying for a Student Visa to ${destinationCountry}.`,
+        '',
+        '=== VISA APPLICANT DOSSIER ===',
+        `Applicant Name:       ${studentName}`,
+        `Home Country / City:  ${data.homeCountry || 'Home Country'}`,
+        `Destination Country:  ${destinationCountry}`,
+        `Accepted University:  ${targetUni}`,
+        `Admitted Program:     ${degreeLevel} in ${targetField}`,
+        `Academic Background:  ${completedDegree} (CGPA: ${cgpa}/4.0)`,
+        `Financial Funding:    ${fundingSource}`,
+        `Ties to Home Country: ${homeCountryTies}`,
+        `Career Trajectory:    ${goalsText}`,
+        '',
+        '=== EMBASSY LETTER STRUCTURE ===',
+        '1. FORMAL EMBASSY SALUTATION: Date, "To: The Visa Officer / Consular Section, Embassy / Consulate General of ' + destinationCountry + '".',
+        'Subject line: "Application for International Student Visa – ' + studentName + ' – Admitted to ' + targetUni + '"',
+        '2. INTRODUCTION & ADMISSION DETAILS: Clear statement of purpose, details of the unconditional/official admission letter received from ' + targetUni + ' for ' + degreeLevel + ' in ' + targetField + '.',
+        '3. ACADEMIC BACKGROUND & PROGRESSION JUSTIFICATION: Logical explanation of how this program builds directly on ' + completedDegree + ', why studying in ' + destinationCountry + ' provides education not available locally, and how the curriculum fulfills career needs.',
+        '4. FINANCIAL PLAN & SUFFICIENCY: Explicit breakdown of financial sponsorship (' + fundingSource + '), confirming compliance with visa financial requirements (e.g. Blocked Account, bank balance, living cost funds).',
+        '5. TIES TO HOME COUNTRY & FUTURE CAREER IN HOME COUNTRY: Crucial section establishing deep economic, familial, and professional ties (' + homeCountryTies + ') and clear commitment to return home to pursue career opportunities (' + goalsText + ').',
+        '6. CHECKLIST OF ENCLOSED DOCUMENTS: Clear numbered list of mandatory submitted documents (Passport, Acceptance Letter, Financial Proof, Academic Certificates, Language Proof, Health Insurance).',
+        '7. FORMAL UNDERTAKING & CLOSING: Pledge to abide by immigration regulations, followed by respectful closing and signature block.',
+        '',
+        'LENGTH: 550-650 words. Highly structured, courteous, and legally precise.',
+      ].join('\n');
+    }
+
+    // Call Groq LLaMA 3.3 70B
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt   },
+        { role: 'user', content: userPrompt },
       ],
-      temperature: 0.72,
-      max_tokens: 1500,
-      top_p: 0.88,
+      temperature: 0.35,
+      max_tokens: 2200,
+      top_p: 0.9,
     });
 
     const result = response?.choices?.[0]?.message?.content?.trim();
     if (!result) {
-      return Response.json({ error: 'AI did not return a valid response. Please try again.' }, { status: 500 });
+      return Response.json({ error: 'AI did not return a valid letter. Please retry.' }, { status: 500 });
     }
 
-    // Persist
+    // Persist usage and record
     await userDocRef.update({ sop_used: FieldValue.increment(1) });
 
     await adminDb.collection('generations').add({
-      user_id:       userId,
-      type:          'sop',
-      content:       result,
-      university:    data.university,
-      field:         data.field,
+      user_id: userId,
+      type: letterType,
+      title: letterTitle,
+      content: result,
+      university: targetUni,
+      field: targetField,
+      degreeLevel: degreeLevel,
       whyUniversity: data.whyUniversity ?? '',
-      createdAt:     new Date(),
+      createdAt: new Date(),
     });
 
-    return Response.json({ result });
+    return Response.json({ result, title: letterTitle, letterType });
 
   } catch (error) {
-    console.error('SOP generation error:', error);
-    return Response.json({ error: 'SOP generation failed. Please try again.' }, { status: 500 });
+    console.error('Letter generation error:', error);
+    return Response.json({ error: 'Letter generation failed. Please try again.' }, { status: 500 });
   }
 }

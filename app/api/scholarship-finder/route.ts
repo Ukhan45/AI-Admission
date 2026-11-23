@@ -22,7 +22,7 @@ async function getUserAndTrackUsage(token: string) {
 
     return { allowed: true, userId };
   } catch (error) {
-    console.error('Auth error:', error);
+    console.error('Auth error in scholarship finder:', error);
     return { allowed: false, reason: 'unauthorized' };
   }
 }
@@ -43,57 +43,91 @@ export async function POST(req: Request) {
 
     const { countryOfStudy, countryOfOrigin, degree, field, gpa, ielts, financialNeed } = await req.json();
 
-    const prompt = `You are a scholarship research expert. Search and return REAL, currently available scholarships for a student with the following profile:
+    if (!countryOfStudy || !degree || !field) {
+      return Response.json({ error: 'Missing required search parameters.' }, { status: 400 });
+    }
 
-- Country of Study: ${countryOfStudy}
-- Country of Origin: ${countryOfOrigin || 'Not specified'}
+    const systemPrompt = `You are the world's leading authority on international government, institutional, and private higher education scholarships.
+Your database includes premier global funding schemes (DAAD, Chevening, Fulbright, Eiffel Excellence, Erasmus Mundus, Türkiye Bursları, Stipendium Hungaricum, Swedish Institute SISGP, Italian Regional DSU, Swiss Government Excellence, Australia Awards, MEXT, CSC, etc.).
+
+CRITICAL ACCURACY GUIDELINES:
+1. REAL VERIFIED SCHOLARSHIPS ONLY:
+   - Recommend only authentic, verifiable scholarship schemes.
+   - For links, provide the clean official portal domain or verified URL (e.g., 'daad.de/en', 'chevening.org', 'foreign.fulbrightonline.org', 'campusfrance.org', 'erasmus-plus.ec.europa.eu', 'turkiyeburslari.gov.tr', 'studyinhungary.hu', 'studyinsweden.se').
+2. ACCURATE COVERAGE & DETAILS:
+   - Identify whether each scholarship is "Full Funded" (tuition + monthly living allowance + flight/health insurance), "Partial", "Merit-Based", or "Need-Based".
+   - Note Italian regional DSU / EDISU grants that grant 100% tuition waiver + €7,000–€8,500/year living stipend for students with demonstrated financial need.
+   - Note Erasmus Mundus EMJMD providing €1,400/month stipend + full tuition for joint European master's degrees.
+3. ACCURATE APPLICATION CYCLES:
+   - Provide realistic deadlines reflecting active and upcoming application cycles (Fall/Spring intakes).
+4. RETURN FORMAT:
+   - Return ONLY a valid JSON array of 6-8 scholarships, with no markdown code blocks, no backticks, and no extra prose.`;
+
+    const userPrompt = `Find 6 to 8 real, active scholarships for this student:
+
+STUDENT PROFILE:
+- Destination Country: ${countryOfStudy}
+- Applicant Nationality / Origin: ${countryOfOrigin || 'International / Any'}
 - Degree Level: ${degree}
 - Field of Study: ${field}
-- GPA / Academic Score: ${gpa || 'Not specified'}
-- IELTS Score: ${ielts || 'Not specified'}
-- Financial Need: ${financialNeed || 'Not specified'}
+- Academic Score / GPA: ${gpa || 'Not specified'}
+- IELTS / English Proficiency: ${ielts || 'Not specified'}
+- Financial Need Status: ${financialNeed || 'Standard'}
 
-Return a JSON array of 6-8 real scholarships. Each scholarship must be a real, well-known scholarship program. Use this exact JSON format with no extra text, no markdown, no backticks:
-
+Return ONLY a valid JSON array matching this exact schema:
 [
   {
-    "name": "Scholarship Name",
-    "provider": "Organization or University Name",
-    "country": "Country",
-    "amount": "Amount in USD or full funded",
-    "deadline": "Approximate deadline (e.g. December 2025 or Rolling)",
-    "eligibility": "Brief eligibility requirements in 1-2 sentences",
-    "coverage": "Tuition only / Full funded / Stipend included / Partial",
-    "link": "Official URL of the scholarship",
-    "type": "Full Funded or Partial or Merit-Based or Need-Based"
+    "name": "Full Official Scholarship Name",
+    "provider": "Sponsoring Government / University / Foundation",
+    "country": "Country where scholarship is tenable",
+    "amount": "Accurate funding amount (e.g. 'Full Tuition + €934/month stipend + Health Insurance' or '$25,000/year')",
+    "deadline": "Accurate typical deadline (e.g. 'October 31 (Annual cycle)' or 'December 15 - January 31')",
+    "eligibility": "Concise 1-2 sentence real eligibility criteria (minimum GPA, eligible nationalities, work experience)",
+    "coverage": "Full funded / Tuition waiver + Stipend / Partial tuition",
+    "link": "official-website-domain",
+    "type": "Full Funded"
   }
-]
-
-Only return the JSON array. No other text.`;
+]`;
 
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 2000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.25,
+      max_tokens: 2200,
     });
 
-    const raw = response.choices[0].message.content ?? '[]';
+    const raw = response.choices?.[0]?.message?.content?.trim() || '[]';
 
-    // Strip any accidental markdown fences
-    const cleaned = raw.replace(/```json|```/g, '').trim();
+    // Robust JSON extraction
+    let cleaned = raw;
+    const jsonMatch = raw.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    } else {
+      cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    }
 
     let scholarships = [];
     try {
       scholarships = JSON.parse(cleaned);
-    } catch {
-      console.error('Failed to parse scholarships JSON:', cleaned);
+    } catch (parseErr) {
+      console.error('Failed to parse scholarships JSON:', raw, parseErr);
       return Response.json({ scholarships: [] });
     }
 
+    // Format links and types
+    scholarships = scholarships.map((s: any) => ({
+      ...s,
+      type: ['Full Funded', 'Partial', 'Merit-Based', 'Need-Based'].includes(s.type) ? s.type : 'Full Funded',
+      link: (s.link || '').replace(/^https?:\/\//i, '').replace(/\/$/, ''),
+    }));
+
     return Response.json({ scholarships });
   } catch (error) {
-    console.error('Scholarship finder error:', error);
+    console.error('Scholarship finder route error:', error);
     return Response.json({ error: 'Search failed. Please try again.' }, { status: 500 });
   }
 }

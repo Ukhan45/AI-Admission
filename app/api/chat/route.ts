@@ -7,11 +7,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function getUserAndTrackUsage(token: string) {
   try {
-    // Verify token with Firebase Admin SDK
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
 
-    // Get user profile from Firestore
     const userDocRef = adminDb.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -19,19 +17,17 @@ async function getUserAndTrackUsage(token: string) {
       return { allowed: false, reason: 'profile_not_found', userId };
     }
 
-    // Increment chat usage
     await userDocRef.update({ chat_used: FieldValue.increment(1) });
 
     return { allowed: true, userId };
   } catch (error: any) {
-    console.error('Auth error:', error);
+    console.error('Auth error in chat:', error);
     return { allowed: false, reason: 'unauthorized' };
   }
 }
 
 export async function POST(req: Request) {
   try {
-    // Get token from Authorization header
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
     
@@ -46,27 +42,35 @@ export async function POST(req: Request) {
 
     const { messages } = await req.json();
 
+    const systemPrompt = `You are the lead AI Admissions Counselor and Study Abroad Consultant for international students.
+You provide authoritative, highly accurate, and practical guidance across:
+- University selection (Safe, Target, Reach portfolio strategy)
+- Realistic tuition and living expenses (e.g. Germany public universities charging €0 tuition with ~€250-350/sem contribution, Italy regional DSU scholarships, France differentiated fees, etc.)
+- Scholarship programs (DAAD, Chevening, Fulbright, Eiffel Excellence, Erasmus Mundus, Türkiye Bursları, Stipendium Hungaricum)
+- Mandatory visa and embassy requirements (German blocked accounts, Canadian PAL/GIC, UK CAS, US I-20 and SEVIS)
+- Standardized exams (IELTS, TOEFL, GRE, Duolingo, Medium of Instruction exemptions)
+- SOP and recommendation letter writing strategies
+
+Always be concise, professional, encouraging, and rigorously factual. Use clear markdown formatting, bullet points, and actionable next steps.`;
+
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
-          content: `You are an expert AI Admissions Assistant for international students. 
-You help with: university recommendations, admission requirements, SOP writing tips, 
-scholarship information, visa processes, IELTS/TOEFL guidance, and study abroad advice.
-Be concise, friendly, and specific. Format lists clearly when needed.`,
+          content: systemPrompt,
         },
         ...messages.map((m: any) => ({ role: m.role, content: m.content })),
       ],
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: 0.5,
+      max_tokens: 1200,
     });
 
     return Response.json({
       reply: response.choices[0].message.content,
     });
   } catch (error) {
-    console.error('Chat error:', error);
-    return new Response('Chat failed. Please try again.', { status: 500 });
+    console.error('Chat API error:', error);
+    return Response.json({ error: 'Chat failed. Please try again.' }, { status: 500 });
   }
 }

@@ -11,12 +11,12 @@ import { getStats, type Stats } from '@/lib/stats';
 import OnboardingTour from '@/components/OnboardingTour';
 
 const quickActions = [
-  { label: 'Generate SOP',      href: '/sop-generator',      icon: '📝', desc: 'AI-powered SOP drafts' },
-  { label: 'Analyze Profile',   href: '/profile-analyzer',   icon: '📊', desc: 'Get admission insights' },
-  { label: 'Find Universities', href: '/university-finder',  icon: '🏛️', desc: 'Match to your profile' },
-  { label: 'Scholarships',      href: '/scholarship-finder', icon: '🎓', desc: 'Find funding options' },
-  { label: 'AI Chat',           href: '/chatbot',            icon: '💬', desc: 'Ask anything' },
-  { label: 'Check Documents',   href: '/document-checker',   icon: '📂', desc: 'Verify your docs' },
+  { label: 'Draft Letters & SOP', href: '/sop-generator',     icon: '📝', desc: 'SOPs, LORs & Visa plans' },
+  { label: 'Analyze Profile',     href: '/profile-analyzer',  icon: '📊', desc: 'Get admission insights' },
+  { label: 'Find Universities',   href: '/university-finder', icon: '🏛️', desc: 'Match to your profile' },
+  { label: 'Scholarships',        href: '/scholarship-finder',icon: '🎓', desc: 'Find funding options' },
+  { label: 'AI Chat',             href: '/chatbot',           icon: '💬', desc: 'Ask anything' },
+  { label: 'Check Documents',     href: '/document-checker',  icon: '📂', desc: 'Verify your docs' },
 ];
 
 function profileScore(stats: Stats) {

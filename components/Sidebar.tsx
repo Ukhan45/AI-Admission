@@ -18,8 +18,8 @@ const allNavItems = [
   // Student
   { href: '/dashboard',          label: 'Dashboard',        icon: Home          },
   { href: '/profile',            label: 'Profile',          icon: User          },
-  { href: '/sop-generator',      label: 'SOP Generator',    icon: FileText      },
-  { href: '/sop-history',        label: 'SOP History',      icon: History       },
+  { href: '/sop-generator',      label: 'Letters & SOPs',   icon: FileText      },
+  { href: '/sop-history',        label: 'Document History', icon: History       },
   { href: '/profile-analyzer',   label: 'Profile Analyzer', icon: BarChart      },
   { href: '/university-finder',  label: 'Universities',     icon: Globe         },
   { href: '/scholarship-finder', label: 'Scholarships',     icon: GraduationCap },
