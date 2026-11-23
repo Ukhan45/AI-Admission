@@ -37,6 +37,31 @@ async function trackUsage(userId: string) {
   }
 }
 
+// Turns whatever the model returns into a safe, absolute https URL.
+// Falls back to a Google search so the button never leads to a 404.
+function buildLink(rawLink: unknown, name: string, provider: string): string {
+  const fallback = `https://www.google.com/search?q=${encodeURIComponent(
+    `${name} ${provider} scholarship official site`
+  )}`;
+
+  if (typeof rawLink !== 'string') return fallback;
+
+  let link = rawLink.trim();
+  if (!link || link === '#') return fallback;
+
+  // Add protocol if the model returned a bare domain like "daad.de/en"
+  if (!/^https?:\/\//i.test(link)) link = `https://${link}`;
+
+  try {
+    const url = new URL(link);
+    // Must look like a real domain (has a dot, no spaces)
+    if (!url.hostname.includes('.') || /\s/.test(link)) return fallback;
+    return url.toString();
+  } catch {
+    return fallback;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
@@ -136,7 +161,7 @@ Return ONLY a valid JSON array matching this exact schema:
     scholarships = scholarships.map((s: any) => ({
       ...s,
       type: ['Full Funded', 'Partial', 'Merit-Based', 'Need-Based'].includes(s.type) ? s.type : 'Full Funded',
-      link: (s.link || '').replace(/^https?:\/\//i, '').replace(/\/$/, ''),
+      link: buildLink(s.link, s.name ?? '', s.provider ?? ''),
     }));
 
     // Count usage only after a successful search
