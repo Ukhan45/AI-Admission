@@ -5,24 +5,35 @@ import { adminDb } from '@/lib/firebase-admin';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-async function getUserAndTrackUsage(token: string) {
+// Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
+const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
+
+// Only verifies the user. Usage is counted later, after a successful analysis.
+async function verifyUser(token: string) {
   try {
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
 
     const userDoc = await adminDb.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      return { allowed: false, reason: 'profile_not_found' };
+      return { allowed: false as const, reason: 'profile_not_found' };
     }
 
+    return { allowed: true as const, userId };
+  } catch (error) {
+    console.error('Auth error in analyzer:', error);
+    return { allowed: false as const, reason: 'not_authenticated' };
+  }
+}
+
+async function trackUsage(userId: string) {
+  try {
     await adminDb.collection('users').doc(userId).update({
       analyzer_used: FieldValue.increment(1),
     });
-
-    return { allowed: true, userId };
   } catch (error) {
-    console.error('Auth error in analyzer:', error);
-    return { allowed: false, reason: 'not_authenticated' };
+    // Never fail the request just because the counter could not be updated.
+    console.error('Failed to track analyzer usage:', error);
   }
 }
 
@@ -34,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.substring(7);
-    const user = await getUserAndTrackUsage(token);
+    const user = await verifyUser(token);
     if (!user.allowed) {
       return Response.json({ error: 'unauthorized' }, { status: 401 });
     }
@@ -74,6 +85,7 @@ export async function POST(req: Request) {
 
     // Baseline validation for unfeasible profiles
     if (calculatedCgpa < 1.8 || budget < 40) {
+      await trackUsage(user.userId);
       return Response.json({
         result: {
           overall_score: calculatedCgpa < 1.8 ? 10 : 15,
@@ -163,15 +175,18 @@ SCHEMA:
   ]
 }`;
 
+    // gpt-oss is a reasoning model: reasoning tokens count toward max_tokens,
+    // so the limit is higher and reasoning_effort is kept low.
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.3,
-      max_tokens: 2200,
-    });
+      max_tokens: 6000,
+      reasoning_effort: 'low',
+    } as any);
 
     const raw = response.choices?.[0]?.message?.content?.trim() || '{}';
 
@@ -201,6 +216,9 @@ SCHEMA:
         verdict: ['Safe', 'Target', 'Reach'].includes(u.verdict) ? u.verdict : 'Target',
       }));
     }
+
+    // Count usage only after a successful analysis
+    await trackUsage(user.userId);
 
     return Response.json({ result: parsed });
   } catch (error) {
