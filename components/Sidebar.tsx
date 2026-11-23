@@ -145,9 +145,18 @@ export default function Sidebar() {
     router.push('/login');
   };
 
+  // Take a Tour: the tour component only lives on /dashboard, so we must
+  // (a) reset the "completed" flag and (b) make sure the user is on /dashboard.
   const handleRestartTour = () => {
-    localStorage.removeItem('uniquest_tour_completed');
-    window.location.reload();
+    try { localStorage.removeItem('uniquest_tour_completed'); } catch {}
+    setMobileOpen(false);
+    if (pathname === '/dashboard') {
+      // Already on the dashboard: tell the mounted tour to start right now.
+      window.dispatchEvent(new Event('uniquest:start-tour'));
+    } else {
+      // Anywhere else: go to the dashboard; ?tour=1 makes the tour auto-start.
+      router.push('/dashboard?tour=1');
+    }
   };
 
   const sidebarContent = (

@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User, BarChart, FileText, Globe, GraduationCap,
-  BookOpen, MessageCircle, X, ChevronRight, ChevronLeft, Sparkles
+  BookOpen, MessageCircle, X, ChevronRight, ChevronLeft, Sparkles, Rocket
 } from 'lucide-react';
 
 // ── Tour steps ────────────────────────────────────────────────────────────────
@@ -24,6 +24,18 @@ const STEPS = [
     body: "UniQuest helps Pakistani students navigate the entire process of studying abroad — from building your profile to finding universities, generating your SOP, and applying for scholarships. Let us show you where to start.",
     cta: "Show me around",
     skip: "I'll explore myself",
+  },
+  {
+    id: 'benefits',
+    type: 'modal',
+    icon: Rocket,
+    iconBg: '#fdf3e0',
+    iconColor: '#8a5a0a',
+    title: 'What UniQuest does for you',
+    subtitle: 'Your benefits',
+    body: "Everything you need to study abroad, in one place and free to use: a personalised profile analysis, university and scholarship matching built for Pakistani students, AI-written SOPs and letters, a document checker, and an AI assistant available 24/7. Here is how to use it, step by step.",
+    cta: "Let's start",
+    skip: "Skip the tour",
   },
   {
     id: 'profile',
@@ -180,16 +192,37 @@ export default function OnboardingTour() {
   const totalSpotlight = spotlightSteps.length;
 
   useEffect(() => {
-    const done = localStorage.getItem(STORAGE_KEY);
-    if (!done) {
-      // Small delay so page renders first
-      const t = setTimeout(() => setVisible(true), 800);
-      return () => clearTimeout(t);
+    const startTour = () => {
+      setCurrent(0);
+      setVisible(true);
+    };
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('tour') === '1') {
+      // Opened from the sidebar "Take a Tour" button on another page.
+      router.replace('/dashboard', { scroll: false }); // clean the URL
+      timer = setTimeout(startTour, 500);
+    } else {
+      let done: string | null = null;
+      try { done = localStorage.getItem(STORAGE_KEY); } catch {}
+      if (!done) {
+        // First visit: small delay so the page renders first
+        timer = setTimeout(startTour, 800);
+      }
     }
-  }, []);
+
+    // Sidebar "Take a Tour" clicked while already on the dashboard
+    window.addEventListener('uniquest:start-tour', startTour);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('uniquest:start-tour', startTour);
+    };
+  }, [router]);
 
   const completeTour = () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    try { localStorage.setItem(STORAGE_KEY, 'true'); } catch {}
     setVisible(false);
   };
 
