@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { getStats, type Stats } from '@/lib/stats';
+import AcademicProfileCard from '@/components/AcademicProfileCard';
 
 
 type ProfileRecord = { sop_used: number; analyzer_used: number; chat_used: number };
@@ -258,6 +259,9 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Saved academic & work profile (used by every tool) ── */}
+            <AcademicProfileCard />
 
             {/* ── ROW 2: Usage + Recent Activity ── */}
             {/* Stacks on mobile, side-by-side on sm+ */}

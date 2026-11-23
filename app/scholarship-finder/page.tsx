@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAcademicProfile, rememberProfile } from '@/lib/userProfile';
+import SavedProfileNotice from '@/components/SavedProfileNotice';
 import Link from 'next/link';
 
 interface Scholarship {
@@ -60,6 +62,37 @@ export default function ScholarshipFinder() {
   const [ielts, setIelts]                     = useState('');
   const [financialNeed, setFinancialNeed]     = useState('');
 
+  // ── Saved profile: pre-fill once (only fields the user hasn't chosen) ──
+  const { profile } = useAcademicProfile();
+  const [fromProfile, setFromProfile] = useState(false);
+  const applied = useRef(false);
+
+  useEffect(() => {
+    if (!profile || applied.current) return;
+    applied.current = true;
+    let filled = false;
+    const fill = (
+      value: string | undefined,
+      options: string[] | null,
+      setter: React.Dispatch<React.SetStateAction<string>>,
+    ) => {
+      if (!value || (options && !options.includes(value))) return;
+      setter((cur) => cur || value);
+      filled = true;
+    };
+    const degreeMap: Record<string, string> = {
+      "Bachelor's": "Bachelor's (BS)", "Master's": "Master's (MS)", PhD: 'PhD',
+    };
+    fill(/^any/i.test(profile.preferredCountry ?? '') ? 'Any Country' : profile.preferredCountry, COUNTRY_OPTIONS, setCountryOfStudy);
+    fill(profile.homeCountry?.split(',').pop()?.trim(), null, setCountryOfOrigin);
+    fill(degreeMap[profile.targetLevel ?? ''], DEGREE_OPTIONS, setDegree);
+    fill(profile.fieldOfInterest, FIELD_OPTIONS, setField);
+    fill(profile.cgpa, null, setGpa);
+    fill(profile.ielts, null, setIelts);
+    fill(profile.financialNeed, FINANCIAL_OPTIONS, setFinancialNeed);
+    if (filled) setFromProfile(true);
+  }, [profile]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
@@ -86,6 +119,20 @@ export default function ScholarshipFinder() {
       if (!res.ok) throw new Error('Search failed');
       setResults(data.scholarships || []);
       setSearched(true);
+
+      // Remember these details so the user never has to re-enter them
+      const levelMap: Record<string, string> = {
+        "Bachelor's (BS)": "Bachelor's", "Master's (MS)": "Master's", PhD: 'PhD',
+      };
+      rememberProfile({
+        preferredCountry: countryOfStudy === 'Any Country' ? '' : countryOfStudy,
+        homeCountry: profile?.homeCountry ? '' : countryOfOrigin, // never overwrite a more detailed saved value
+        targetLevel: levelMap[degree] ?? '',
+        fieldOfInterest: field,
+        cgpa: gpa,
+        ielts,
+        financialNeed,
+      });
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -156,6 +203,8 @@ export default function ScholarshipFinder() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6">
+
+        <SavedProfileNotice show={fromProfile} />
 
         {/* Form card */}
         <div

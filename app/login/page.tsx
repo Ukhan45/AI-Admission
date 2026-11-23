@@ -44,8 +44,7 @@ export default function Login() {
       let redirectPath = '/dashboard';
       if (userDoc.exists()) {
         const role = userDoc.data().role;
-        if (role === 'admin') redirectPath = '/admin';
-        else if (role === 'consultant') redirectPath = '/consultant';
+        if (role === 'consultant') redirectPath = '/consultant';
       }
       
       router.push(redirectPath);

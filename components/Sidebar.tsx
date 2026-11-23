@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 import {
   Home, User, FileText, History, BarChart, Globe,
   GraduationCap, BookOpen, MessageCircle, FolderCheck,
-  LogOut, ChevronRight, Compass, Menu, X, Star, Users, Briefcase, ShieldAlert
+  LogOut, ChevronRight, Compass, Menu, X, Star, Users, Briefcase
 } from 'lucide-react';
 
 const allNavItems = [
@@ -28,8 +28,6 @@ const allNavItems = [
   { href: '/document-checker',   label: 'Document Checker', icon: FolderCheck   },
   // Consultant
   { href: '/consultant',         label: 'Consultant Panel', icon: Briefcase     },
-  // Admin
-  { href: '/admin',              label: 'Admin Panel',      icon: ShieldAlert   },
 ];
 
 // Reusable nav link component for Help section items
@@ -93,11 +91,7 @@ export default function Sidebar() {
 
   // Determine dynamic groups based on role
   let groups = [];
-  if (role === 'admin') {
-    groups = [
-      { label: 'Admin', items: ['/admin', '/profile'] },
-    ];
-  } else if (role === 'consultant') {
+  if (role === 'consultant') {
     groups = [
       { label: 'Consultant', items: ['/consultant', '/profile'] },
     ];

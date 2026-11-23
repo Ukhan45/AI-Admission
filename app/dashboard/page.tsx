@@ -120,10 +120,6 @@ export default function Dashboard() {
           router.push('/consultant');
           return;
         }
-        if (d.role === 'admin') {
-          router.push('/admin');
-          return;
-        }
         setProfile({ sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0, consultantNotes: d.consultantNotes });
       }
       const q = query(collection(db, 'generations'), where('user_id', '==', userId), orderBy('createdAt', 'desc'));

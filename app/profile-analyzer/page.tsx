@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { incrementStat } from '@/lib/stats';
 import { auth } from '@/lib/firebase';
+import { useAcademicProfile, rememberProfile, fillEmpty } from '@/lib/userProfile';
+import SavedProfileNotice from '@/components/SavedProfileNotice';
 
 type University = {
   name: string;
@@ -85,6 +87,26 @@ export default function ProfileAnalyzer() {
   const [error, setError]               = useState('');
   const [loading, setLoading]           = useState(false);
 
+  // ── Saved profile: pre-fill once (only fields the user hasn't typed in) ──
+  const { profile } = useAcademicProfile();
+  const [fromProfile, setFromProfile] = useState(false);
+  const applied = useRef(false);
+
+  useEffect(() => {
+    if (!profile || applied.current) return;
+    applied.current = true;
+    const level = profile.targetLevel === "Bachelor's" ? 'BS' : 'MS';
+    const incoming = {
+      cgpa: profile.cgpa, matric: profile.matric, inter: profile.inter,
+      degree: level === 'MS' ? profile.currentDegree : '',
+      ielts: profile.ielts, budget: profile.budget,
+      country: /^any/i.test(profile.preferredCountry ?? '') ? '' : profile.preferredCountry,
+      field: profile.fieldOfInterest,
+    };
+    setForm((f) => fillEmpty({ ...f, level: profile.targetLevel ? level : f.level }, incoming));
+    if (Object.values(incoming).some(Boolean)) setFromProfile(true);
+  }, [profile]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
@@ -112,6 +134,19 @@ export default function ProfileAnalyzer() {
 
       setResult(data.result);
       incrementStat('profilesAnalyzed');
+
+      // Remember these details so the user never has to re-enter them
+      rememberProfile({
+        targetLevel: form.level === 'MS' ? "Master's" : "Bachelor's",
+        cgpa: form.level === 'MS' ? form.cgpa : '',
+        matric: form.level === 'BS' ? form.matric : '',
+        inter: form.level === 'BS' ? form.inter : '',
+        currentDegree: form.level === 'MS' ? form.degree : '',
+        ielts: form.ielts,
+        budget: form.budget,
+        preferredCountry: /^any/i.test(form.country.trim()) ? '' : form.country,
+        fieldOfInterest: form.field,
+      });
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -135,6 +170,8 @@ export default function ProfileAnalyzer() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6">
+
+        <SavedProfileNotice show={fromProfile} />
 
         {/* ── Form Card ── */}
         <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-6">

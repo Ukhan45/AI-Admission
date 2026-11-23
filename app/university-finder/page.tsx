@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { incrementStat } from '@/lib/stats';
+import { useAcademicProfile, rememberProfile, fillEmpty } from '@/lib/userProfile';
+import SavedProfileNotice from '@/components/SavedProfileNotice';
 
 interface University {
   name: string;
@@ -79,6 +81,27 @@ export default function Universities() {
   const [searched, setSearched] = useState(false);
   const [sort,     setSort]     = useState('default');
 
+  // ── Saved profile: pre-fill once (only fields the user hasn't typed in) ──
+  const { profile } = useAcademicProfile();
+  const [fromProfile, setFromProfile] = useState(false);
+  const applied = useRef(false);
+
+  useEffect(() => {
+    if (!profile || applied.current) return;
+    applied.current = true;
+    const incoming = {
+      degree: profile.fieldOfInterest,
+      country: /^any/i.test(profile.preferredCountry ?? '') ? '' : profile.preferredCountry,
+      budget: profile.budget, ielts: profile.ielts, gpa: profile.cgpa,
+    };
+    setFilters((f) => ({
+      ...fillEmpty(f, incoming),
+      intake:  f.intake  === 'Any' && profile.intake  ? profile.intake  : f.intake,
+      ranking: f.ranking === 'Any' && profile.ranking ? profile.ranking : f.ranking,
+    }));
+    if (Object.values(incoming).some(Boolean) || profile.intake || profile.ranking) setFromProfile(true);
+  }, [profile]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
     setError('');
@@ -104,6 +127,17 @@ export default function Universities() {
       setResults(data.universities || []);
       setSearched(true);
       incrementStat('universitiesSearched');
+
+      // Remember these details so the user never has to re-enter them
+      rememberProfile({
+        fieldOfInterest: filters.degree,
+        preferredCountry: /^any/i.test(filters.country.trim()) ? '' : filters.country,
+        budget: filters.budget,
+        ielts: /^no/i.test(filters.ielts.trim()) ? '' : filters.ielts,
+        cgpa: filters.gpa,
+        intake: filters.intake,
+        ranking: filters.ranking,
+      });
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -148,6 +182,8 @@ export default function Universities() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+
+        <SavedProfileNotice show={fromProfile} />
 
         {/* ── Filter card ── */}
         <div

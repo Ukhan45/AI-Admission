@@ -1,8 +1,10 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { incrementStat } from '@/lib/stats';
 import { auth } from '@/lib/firebase';
+import { useAcademicProfile, rememberProfile, fillEmpty } from '@/lib/userProfile';
+import SavedProfileNotice from '@/components/SavedProfileNotice';
 import Link from 'next/link';
 
 type LetterType = 'sop' | 'lor_academic' | 'lor_professional' | 'motivation_letter' | 'visa_letter';
@@ -74,6 +76,35 @@ export default function SopGenerator() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // ── Saved profile: pre-fill once (only fields the user hasn't typed in) ──
+  const { profile, displayName } = useAcademicProfile();
+  const [fromProfile, setFromProfile] = useState(false);
+  const applied = useRef(false);
+
+  useEffect(() => {
+    if (!profile || applied.current) return;
+    applied.current = true;
+    const incoming = {
+      name: profile.fullName || displayName,
+      degree: profile.currentDegree,
+      cgpa: profile.cgpa,
+      field: profile.fieldOfInterest,
+      experience: profile.workExperience,
+      achievements: profile.achievements,
+      goals: profile.careerGoals,
+      researchInterest: profile.researchInterest,
+      destinationCountry: /^any/i.test(profile.preferredCountry ?? '') ? '' : profile.preferredCountry,
+      homeCountry: profile.homeCountry,
+      fundingSource: profile.fundingSource,
+      homeCountryTies: profile.homeCountryTies,
+    };
+    setForm((f) => fillEmpty(f, incoming));
+    if (profile.targetLevel === "Bachelor's" || profile.targetLevel === "Master's" || profile.targetLevel === 'PhD') {
+      setDegreeLevel(profile.targetLevel as DegreeLevel);
+    }
+    if (Object.values(incoming).some(Boolean)) setFromProfile(true);
+  }, [profile, displayName]);
 
   const currentCfg = LETTER_CONFIGS[letterType];
 
@@ -150,6 +181,23 @@ export default function SopGenerator() {
         setGeneratedTitle(data.title || currentCfg.label);
         setSuccessMessage(`${currentCfg.label} generated successfully!`);
         incrementStat('sopsGenerated');
+
+        // Remember these details so the user never has to re-enter them
+        rememberProfile({
+          fullName: form.name,
+          currentDegree: form.degree,
+          cgpa: form.cgpa,
+          fieldOfInterest: form.field,
+          workExperience: form.experience,
+          achievements: form.achievements,
+          careerGoals: form.goals,
+          researchInterest: form.researchInterest,
+          homeCountry: form.homeCountry,
+          fundingSource: form.fundingSource,
+          homeCountryTies: form.homeCountryTies,
+          preferredCountry: form.destinationCountry,
+          targetLevel: degreeLevel,
+        });
         setTimeout(() => {
           document.getElementById('letter-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -283,6 +331,8 @@ export default function SopGenerator() {
             </button>
           </div>
         )}
+
+        <SavedProfileNotice show={fromProfile} />
 
         {/* ── Form Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
