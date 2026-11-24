@@ -11,7 +11,34 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // Groq retires vision models from time to time (Llama 4 Scout was retired in
 // June 2026). Change this from Vercel env vars (GROQ_VISION_MODEL) without
 // touching code. It must be a model that accepts images and JSON mode.
-const VISION_MODEL = process.env.GROQ_VISION_MODEL ?? 'qwen/qwen3.6-27b';
+const VISION_MODELS = [
+  ...new Set(
+    [process.env.GROQ_VISION_MODEL, 'qwen/qwen3.6-27b', 'qwen/qwen3.8-27b'].filter(
+      (m): m is string => !!m
+    )
+  ),
+];
+
+// Remember which model worked, so later documents do not retry the others.
+let workingModel: string | null = null;
+
+// Different models accept different "thinking" settings, so try a few styles.
+const OPTION_SETS: Record<string, unknown>[] = [
+  { reasoning_effort: 'none', response_format: { type: 'json_object' } },
+  { reasoning_effort: 'none' },
+  { reasoning_format: 'hidden', response_format: { type: 'json_object' } },
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function errorInfo(err: any): { status: number | undefined; message: string } {
+  const message =
+    err?.error?.error?.message || err?.error?.message || err?.message || 'Unknown error';
+  return { status: err?.status, message: String(message).replace(/\s+/g, ' ').slice(0, 220) };
+}
+
+const looksLikeModelProblem = (status: number | undefined, message: string) =>
+  status === 404 ||
+  /model/i.test(message) && /(not found|does not exist|decommission|deprecat|no longer|access|permission|not supported|unavailable)/i.test(message);
 
 const MAX_IMAGES = 3;
 const MAX_IMAGE_CHARS = 1_100_000;
@@ -115,29 +142,55 @@ export async function POST(req: Request) {
       ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
     ];
 
-    const request = {
-      model: VISION_MODEL,
-      messages: [{ role: 'user', content }],
-      temperature: 0.1,
-      max_completion_tokens: 1500,
-      response_format: { type: 'json_object' },
-    };
-
-    // Qwen on Groq has a thinking mode; "none" keeps this fast. If the chosen
-    // model does not accept the setting, retry without it.
-    let response;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      response = await groq.chat.completions.create({ ...request, reasoning_effort: 'none' } as any);
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const status = (err as any)?.status;
-      if (status === 429) throw err;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      response = await groq.chat.completions.create(request as any);
+    if (!process.env.GROQ_API_KEY) {
+      return Response.json({ error: 'Document analysis failed: GROQ_API_KEY is not set on the server.' }, { status: 500 });
     }
 
-    const raw = response.choices?.[0]?.message?.content?.trim() || '';
+    const baseRequest = {
+      messages: [{ role: 'user', content }],
+      temperature: 0.1,
+      max_completion_tokens: 2500,
+    };
+
+    // Try the model that worked before first, then the others.
+    const order = workingModel
+      ? [workingModel, ...VISION_MODELS.filter((m) => m !== workingModel)]
+      : VISION_MODELS;
+
+    let response;
+    let lastError = '';
+
+    outer: for (const model of order) {
+      for (const options of OPTION_SETS) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          response = await groq.chat.completions.create({ ...baseRequest, ...options, model } as any);
+          workingModel = model;
+          break outer;
+        } catch (err) {
+          const { status, message } = errorInfo(err);
+          lastError = `${model}: ${message}${status ? ` (HTTP ${status})` : ''}`;
+          console.error('Document analyze: Groq call failed ->', lastError);
+          if (status === 429) {
+            return Response.json({ error: 'The AI service is busy. Please wait a moment and try again.' }, { status: 429 });
+          }
+          if (status === 401 || status === 403) break outer; // key problem: other models will not help
+          if (looksLikeModelProblem(status, message)) continue outer; // try the next model
+          // otherwise try the next option set on the same model
+        }
+      }
+    }
+
+    if (!response) {
+      return Response.json(
+        { error: `Document analysis failed: ${lastError || 'the AI service did not respond.'}` },
+        { status: 502 }
+      );
+    }
+
+    const raw = (response.choices?.[0]?.message?.content || '')
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .trim();
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) {
       console.error('Document analyze: no JSON in model output:', raw.slice(0, 500));
@@ -160,6 +213,11 @@ export async function POST(req: Request) {
     if (status === 429) {
       return Response.json({ error: 'The AI service is busy. Please wait a moment and try again.' }, { status: 429 });
     }
-    return Response.json({ error: 'Document analysis failed. Please try again.' }, { status: 500 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const msg = String((error as any)?.message || '').replace(/\s+/g, ' ').slice(0, 160);
+    return Response.json(
+      { error: `Document analysis failed${msg ? `: ${msg}` : '. Please try again.'}` },
+      { status: 500 }
+    );
   }
 }

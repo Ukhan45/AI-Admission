@@ -71,14 +71,18 @@ type DocState = {
   stage: 'queued' | 'reading' | 'analysing' | 'done' | 'failed';
   pages?: number;
   error?: string;
+  service?: boolean; // true when OUR reader failed, not the user's file
   extraction?: Extraction;
 };
+
+class ServiceError extends Error {}
 
 const checkIcon: Record<CheckStatus, string> = { pass: '✅', warn: '⚠️', fail: '❌', info: 'ℹ️' };
 const stateStyle = {
   good: { box: 'border-emerald-200 bg-emerald-50/60', badge: 'bg-emerald-100 text-emerald-800', text: '✅ Looks good' },
   attention: { box: 'border-amber-200 bg-amber-50/60', badge: 'bg-amber-100 text-amber-800', text: '⚠️ Needs attention' },
   problem: { box: 'border-red-200 bg-red-50/60', badge: 'bg-red-100 text-red-800', text: '❌ Problem found' },
+  unchecked: { box: 'border-slate-200 bg-slate-50', badge: 'bg-slate-200 text-slate-700', text: '⏸️ Could not be checked' },
 } as const;
 const stageText: Record<DocState['stage'], string> = {
   queued: 'Waiting…',
@@ -157,10 +161,12 @@ export default function DocumentChecker() {
         await new Promise((r) => setTimeout(r, 4000));
         continue;
       }
-      if (!res.ok) throw new Error(data?.error || 'Could not analyse this document.');
+      // 422 means the file itself had nothing readable; everything else is our service
+      if (res.status === 422) throw new Error(data?.error || 'The document had no readable content.');
+      if (!res.ok) throw new ServiceError(data?.error || 'Could not analyse this document.');
       return data.extraction as Extraction;
     }
-    throw new Error('The AI service is busy. Please try again in a minute.');
+    throw new ServiceError('The AI service is busy. Please try again in a minute.');
   };
 
   const checkDocuments = async () => {
@@ -203,25 +209,53 @@ export default function DocumentChecker() {
     // 1) Read every document, one at a time
     const extractions: Record<string, Extraction | undefined> = {};
     const failures: Record<string, string | undefined> = {};
+    const serviceFailed: Record<string, boolean | undefined> = {};
+    let serviceStreak = 0;
+    let serviceMessage = '';
 
     for (const key of uploaded) {
+      if (serviceStreak >= 2) {
+        // Our reader is down: do not hammer it with every remaining document
+        failures[key] = serviceMessage;
+        serviceFailed[key] = true;
+        setDocStates((s) => ({ ...s, [key]: { stage: 'failed', error: serviceMessage, service: true } }));
+        continue;
+      }
       try {
         setDocStates((s) => ({ ...s, [key]: { stage: 'reading' } }));
         const read = await readPdf(files[key] as File);
         setDocStates((s) => ({ ...s, [key]: { stage: 'analysing', pages: read.pages } }));
         const extraction = await analyseDocument(token, key, read);
         extractions[key] = extraction;
+        serviceStreak = 0;
         setDocStates((s) => ({ ...s, [key]: { stage: 'done', pages: read.pages, extraction } }));
       } catch (e) {
         const msg = e instanceof Error && e.message ? e.message : 'Could not read this document.';
+        const isService = e instanceof ServiceError;
         failures[key] = msg;
-        setDocStates((s) => ({ ...s, [key]: { stage: 'failed', error: msg } }));
+        if (isService) {
+          serviceFailed[key] = true;
+          serviceStreak += 1;
+          serviceMessage = msg;
+        } else {
+          serviceStreak = 0;
+        }
+        setDocStates((s) => ({ ...s, [key]: { stage: 'failed', error: msg, service: isService } }));
         if (/session has expired/i.test(msg)) {
           setAiError(msg);
           setLoading(false);
           return;
         }
       }
+    }
+
+    // If our reader was down, stop here: a country review with no findings would mislead
+    if (serviceStreak >= 2) {
+      setAiError(
+        `The document reader is unavailable right now, so your documents could not be checked. ${serviceMessage} Your verification roadmap is still shown below. Please try again in a few minutes.`
+      );
+      setLoading(false);
+      return;
     }
 
     // 2) University / country specific review, based on what was really found
@@ -232,6 +266,7 @@ export default function DocumentChecker() {
         uploaded,
         extractions,
         failures,
+        serviceFailed,
         profileName: profile?.fullName,
       });
 
@@ -364,11 +399,15 @@ export default function DocumentChecker() {
 
   const extractionsNow: Record<string, Extraction | undefined> = {};
   const failuresNow: Record<string, string | undefined> = {};
+  const serviceNow: Record<string, boolean | undefined> = {};
   if (submitted) {
     for (const k of submitted.uploaded) {
       const s = docStates[k];
       if (s?.extraction) extractionsNow[k] = s.extraction;
-      if (s?.stage === 'failed') failuresNow[k] = s.error;
+      if (s?.stage === 'failed') {
+        failuresNow[k] = s.error;
+        serviceNow[k] = s.service;
+      }
     }
   }
   const finishedKeys = submitted
@@ -382,6 +421,7 @@ export default function DocumentChecker() {
           uploaded: finishedKeys,
           extractions: extractionsNow,
           failures: failuresNow,
+          serviceFailed: serviceNow,
           profileName: profile?.fullName,
         })
       : [];
@@ -390,7 +430,7 @@ export default function DocumentChecker() {
       acc[f.state] += 1;
       return acc;
     },
-    { good: 0, attention: 0, problem: 0 }
+    { good: 0, attention: 0, problem: 0, unchecked: 0 }
   );
 
   const renderFinding = (f: Finding) => {
@@ -704,6 +744,17 @@ export default function DocumentChecker() {
                   <span className="text-xs font-bold bg-red-50 text-red-800 border border-red-200 px-4 py-2 rounded-full">
                     ❌ {findingCounts.problem} with problems
                   </span>
+                  {findingCounts.unchecked > 0 && (
+                    <span className="text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded-full">
+                      ⏸️ {findingCounts.unchecked} not checked
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {aiError && findingCounts.unchecked > 0 && (
+                <div className="mb-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm px-5 py-4 leading-relaxed">
+                  {aiError}
                 </div>
               )}
 

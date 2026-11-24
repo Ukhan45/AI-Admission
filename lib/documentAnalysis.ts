@@ -47,7 +47,7 @@ export type Check = { label: string; status: CheckStatus; detail: string };
 export type Finding = {
   key: string;
   label: string;
-  state: 'good' | 'attention' | 'problem';
+  state: 'good' | 'attention' | 'problem' | 'unchecked';
   extraction: Extraction | null;
   checks: Check[];
   next: string[];
@@ -195,12 +195,13 @@ export type EvalInput = {
   uploaded: string[];
   extractions: Record<string, Extraction | undefined>;
   failures: Record<string, string | undefined>; // key -> reason it could not be read
+  serviceFailed?: Record<string, boolean | undefined>; // our reader was unavailable (not the user's fault)
   profileName?: string;
   now?: Date;
 };
 
 export function evaluateAll(input: EvalInput): Finding[] {
-  const { legal, uploaded, extractions, failures, profileName } = input;
+  const { legal, uploaded, extractions, failures, serviceFailed, profileName } = input;
   const now = input.now ?? new Date();
 
   // Cross-document identity checks
@@ -217,6 +218,24 @@ export function evaluateAll(input: EvalInput): Finding[] {
     const ex = extractions[key] ?? null;
     const checks: Check[] = [];
     const next: string[] = [];
+
+    // Our own reader was unavailable: this says nothing about the document
+    if (!ex && serviceFailed?.[key]) {
+      return {
+        key,
+        label,
+        state: 'unchecked',
+        extraction: null,
+        checks: [
+          {
+            label: 'Checking this document',
+            status: 'warn',
+            detail: failures[key] || 'Our document reader was unavailable.',
+          },
+        ],
+        next: ['Try again in a few minutes. This is not a problem with your document.'],
+      };
+    }
 
     // Could not be read at all
     if (!ex) {
