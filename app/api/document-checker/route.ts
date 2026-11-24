@@ -5,9 +5,8 @@ import { adminDb } from '@/lib/firebase-admin';
 type DocumentUpload = {
   name: string;
   label?: string;
-  fileName?: string;
-  merged?: boolean;
-  attested?: boolean;
+  // What our system actually read from the uploaded file (see lib/documentAnalysis.ts)
+  evidence?: string;
 };
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -52,13 +51,10 @@ export async function POST(req: Request) {
     const documentDescriptions = ((documents || []) as DocumentUpload[])
       .map((doc) => {
         const title = doc.label || doc.name;
-        const mergedText = doc.merged ? ' (front and back pages included)' : '';
-        const attestedText = doc.attested
-          ? ' (applicant says it carries official attestation/apostille stamps)'
-          : ' (no attestation stamps reported)';
-        return `${title}${mergedText}${attestedText}`;
+        const evidence = typeof doc.evidence === 'string' ? doc.evidence.slice(0, 700) : '';
+        return `- ${evidence || `${title}: submitted, but nothing could be read from it.`}`;
       })
-      .join('; ');
+      .join('\n');
 
     const missingText =
       Array.isArray(missingCore) && missingCore.length
@@ -105,6 +101,12 @@ SPECIFIC COUNTRY COMPLIANCE RULES:
   * Form I-20 issued by the SEVP-certified institution.
   * SEVIS I-901 fee payment receipt and DS-160 confirmation barcode.
 
+EVIDENCE RULES (very important):
+- Each submitted document below is followed by what our system actually READ from the uploaded file: the marks that were FOUND and the marks that were NOT found. Treat this as the truth.
+- NEVER claim that a stamp, attestation, apostille or certificate exists unless it is listed under "Marks FOUND". NEVER say a document is "OK" or "already attested" if the needed marks are under "Marks NOT found".
+- If a document's marks are missing, say exactly which authority is next in the chain, and do not repeat steps that were already found.
+- Your job is the university- and country-specific review: what ${university} and ${country} additionally require (translations, uni-assist, CIMEA, APS, financial proof and so on) that these documents do not yet cover.
+
 DOCUMENT EVALUATION INSTRUCTIONS:
 1. Give one result for every document the applicant submitted. Assess whether it is complete, needs an update, or needs attestation/apostille. If a document that needs the Pakistani chain above is reported with no attestation stamps, use "Attestation Required" (or "Apostille Required" when the destination accepts apostille) and name the exact authorities in order.
 2. Add one result with status "Missing" for each core document that is not submitted (they are listed by the user message). Do not mark documents "Missing" that are not core for this level.
@@ -113,7 +115,7 @@ DOCUMENT EVALUATION INSTRUCTIONS:
 
     const userPrompt = `A Pakistani student is applying to ${university} in ${country} for a ${levelName} program: ${degree}.
 
-DOCUMENTS SUBMITTED BY STUDENT:
+DOCUMENTS SUBMITTED BY STUDENT (with what was read from each file):
 ${documentDescriptions || 'No documents submitted yet.'}
 
 CORE DOCUMENTS NOT YET SUBMITTED:

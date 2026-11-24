@@ -5,6 +5,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useAcademicProfile, rememberProfile } from '@/lib/userProfile';
+import { readPdf } from '@/lib/pdfReader';
+import {
+  type Extraction,
+  type Finding,
+  type CheckStatus,
+  evaluateAll,
+  describeForReview,
+} from '@/lib/documentAnalysis';
 import {
   type Level,
   DOC_LABELS,
@@ -59,6 +67,27 @@ type Snapshot = {
   uploaded: string[];
 };
 
+type DocState = {
+  stage: 'queued' | 'reading' | 'analysing' | 'done' | 'failed';
+  pages?: number;
+  error?: string;
+  extraction?: Extraction;
+};
+
+const checkIcon: Record<CheckStatus, string> = { pass: '✅', warn: '⚠️', fail: '❌', info: 'ℹ️' };
+const stateStyle = {
+  good: { box: 'border-emerald-200 bg-emerald-50/60', badge: 'bg-emerald-100 text-emerald-800', text: '✅ Looks good' },
+  attention: { box: 'border-amber-200 bg-amber-50/60', badge: 'bg-amber-100 text-amber-800', text: '⚠️ Needs attention' },
+  problem: { box: 'border-red-200 bg-red-50/60', badge: 'bg-red-100 text-red-800', text: '❌ Problem found' },
+} as const;
+const stageText: Record<DocState['stage'], string> = {
+  queued: 'Waiting…',
+  reading: 'Opening the PDF…',
+  analysing: 'Reading stamps and details…',
+  done: 'Done',
+  failed: 'Failed',
+};
+
 export default function DocumentChecker() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -69,8 +98,7 @@ export default function DocumentChecker() {
   const [degree, setDegree] = useState('');
 
   const [files, setFiles] = useState<{ [key: string]: File | null }>(emptyFiles);
-  const [mergedPages, setMergedPages] = useState<{ [key: string]: boolean }>({});
-  const [attestationProvided, setAttestationProvided] = useState<{ [key: string]: boolean }>({});
+  const [docStates, setDocStates] = useState<Record<string, DocState>>({});
 
   const [results, setResults] = useState<DocResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,21 +127,41 @@ export default function DocumentChecker() {
   }, []);
 
   const handleFile = (name: string, file: File | null) => {
-    setFiles((prev) => ({ ...prev, [name]: file }));
-    if (!file) {
-      setMergedPages((prev) => ({ ...prev, [name]: false }));
-      setAttestationProvided((prev) => ({ ...prev, [name]: false }));
+    if (file && !(file.type === 'application/pdf' || /\.pdf$/i.test(file.name))) {
+      setError('Please upload PDF files only.');
+      return;
     }
+    setError('');
+    setFiles((prev) => ({ ...prev, [name]: file }));
   };
-
-  const handleMergedPageToggle = (name: string) =>
-    setMergedPages((prev) => ({ ...prev, [name]: !prev[name] }));
-
-  const handleAttestationToggle = (name: string) =>
-    setAttestationProvided((prev) => ({ ...prev, [name]: !prev[name] }));
 
   const uploadedKeys = () =>
     Object.entries(files).filter(([, f]) => f !== null).map(([k]) => k);
+
+  // Sends one document's pages to the AI reader (retries once if the service is busy)
+  const analyseDocument = async (
+    token: string,
+    key: string,
+    read: { text: string; images: string[] }
+  ): Promise<Extraction> => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await fetch('/api/document-checker/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ label: plainLabel(key), text: read.text, images: read.images }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) throw new Error('Your session has expired. Please sign in again.');
+      if (res.status === 429 && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 4000));
+        continue;
+      }
+      if (!res.ok) throw new Error(data?.error || 'Could not analyse this document.');
+      return data.extraction as Extraction;
+    }
+    throw new Error('The AI service is busy. Please try again in a minute.');
+  };
 
   const checkDocuments = async () => {
     if (!level) {
@@ -125,15 +173,8 @@ export default function DocumentChecker() {
       return;
     }
 
-    const uploadedDocs = uploadedKeys().map((name) => ({
-      name,
-      label: plainLabel(name),
-      fileName: files[name]?.name || '',
-      merged: mergedPages[name] || false,
-      attested: attestationProvided[name] || false,
-    }));
-
-    if (uploadedDocs.length === 0) {
+    const uploaded = uploadedKeys();
+    if (uploaded.length === 0) {
       setError('Please upload at least one document.');
       return;
     }
@@ -144,7 +185,6 @@ export default function DocumentChecker() {
       return;
     }
 
-    const uploaded = uploadedDocs.map((d) => d.name);
     const missingCore = CORE_DOCS[level]
       .filter((k) => !uploaded.includes(k))
       .map((k) => plainLabel(k));
@@ -153,37 +193,68 @@ export default function DocumentChecker() {
     setError('');
     setAiError('');
     setResults([]);
+    setDocStates(Object.fromEntries(uploaded.map((k) => [k, { stage: 'queued' as const }])));
     // The verification roadmap does not need the AI, so show it immediately
     setSubmitted({ level, country: country.trim(), uploaded });
     setTimeout(() => {
       document.getElementById('results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 
+    // 1) Read every document, one at a time
+    const extractions: Record<string, Extraction | undefined> = {};
+    const failures: Record<string, string | undefined> = {};
+
+    for (const key of uploaded) {
+      try {
+        setDocStates((s) => ({ ...s, [key]: { stage: 'reading' } }));
+        const read = await readPdf(files[key] as File);
+        setDocStates((s) => ({ ...s, [key]: { stage: 'analysing', pages: read.pages } }));
+        const extraction = await analyseDocument(token, key, read);
+        extractions[key] = extraction;
+        setDocStates((s) => ({ ...s, [key]: { stage: 'done', pages: read.pages, extraction } }));
+      } catch (e) {
+        const msg = e instanceof Error && e.message ? e.message : 'Could not read this document.';
+        failures[key] = msg;
+        setDocStates((s) => ({ ...s, [key]: { stage: 'failed', error: msg } }));
+        if (/session has expired/i.test(msg)) {
+          setAiError(msg);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    // 2) University / country specific review, based on what was really found
     try {
+      const findings = evaluateAll({
+        level,
+        legal: legalisationAdvice(country),
+        uploaded,
+        extractions,
+        failures,
+        profileName: profile?.fullName,
+      });
+
       const res = await fetch('/api/document-checker', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           level,
           country: country.trim(),
           university: university.trim(),
           degree: degree.trim(),
-          documents: uploadedDocs,
+          documents: findings.map((f) => ({
+            name: f.key,
+            label: f.label,
+            evidence: describeForReview(f),
+          })),
           missingCore,
         }),
       });
 
       const data = await res.json().catch(() => ({}));
-
-      if (res.status === 401) {
-        throw new Error('Your session has expired. Please sign in again.');
-      }
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to check documents');
-      }
+      if (res.status === 401) throw new Error('Your session has expired. Please sign in again.');
+      if (!res.ok) throw new Error(data?.error || 'Failed to complete the university review');
 
       setResults(data.results || []);
 
@@ -196,7 +267,7 @@ export default function DocumentChecker() {
       setAiError(
         e instanceof Error && e.message
           ? e.message
-          : 'The AI review could not be completed. Your verification roadmap is shown below.'
+          : 'The university-specific review could not be completed. Your document report and verification roadmap are shown above and below.'
       );
     } finally {
       setLoading(false);
@@ -272,37 +343,13 @@ export default function DocumentChecker() {
       </label>
 
       {files[key] && (
-        <>
-          <div className="space-y-3 mt-4">
-            <label className="flex items-start gap-3 text-xs text-[#6b7280] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mergedPages[key] || false}
-                onChange={() => handleMergedPageToggle(key)}
-                className="mt-0.5"
-              />
-              Includes front &amp; back pages
-            </label>
-
-            <label className="flex items-start gap-3 text-xs text-[#6b7280] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={attestationProvided[key] || false}
-                onChange={() => handleAttestationToggle(key)}
-                className="mt-0.5"
-              />
-              Includes attestation stamps
-            </label>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleFile(key, null)}
-            className="text-xs text-red-500 mt-4 hover:text-red-700"
-          >
-            Remove File
-          </button>
-        </>
+        <button
+          type="button"
+          onClick={() => handleFile(key, null)}
+          className="text-xs text-red-500 mt-4 hover:text-red-700"
+        >
+          Remove File
+        </button>
       )}
     </div>
   );
@@ -314,6 +361,101 @@ export default function DocumentChecker() {
   // ── Results data ──────────────────────────────────────────────────────────
   const roadmap = submitted ? buildRoadmap(submitted.level, submitted.uploaded) : null;
   const advice = submitted ? legalisationAdvice(submitted.country) : null;
+
+  const extractionsNow: Record<string, Extraction | undefined> = {};
+  const failuresNow: Record<string, string | undefined> = {};
+  if (submitted) {
+    for (const k of submitted.uploaded) {
+      const s = docStates[k];
+      if (s?.extraction) extractionsNow[k] = s.extraction;
+      if (s?.stage === 'failed') failuresNow[k] = s.error;
+    }
+  }
+  const finishedKeys = submitted
+    ? submitted.uploaded.filter((k) => docStates[k]?.stage === 'done' || docStates[k]?.stage === 'failed')
+    : [];
+  const findings: Finding[] =
+    submitted && advice
+      ? evaluateAll({
+          level: submitted.level,
+          legal: advice,
+          uploaded: finishedKeys,
+          extractions: extractionsNow,
+          failures: failuresNow,
+          profileName: profile?.fullName,
+        })
+      : [];
+  const findingCounts = findings.reduce(
+    (acc, f) => {
+      acc[f.state] += 1;
+      return acc;
+    },
+    { good: 0, attention: 0, problem: 0 }
+  );
+
+  const renderFinding = (f: Finding) => {
+    const st = stateStyle[f.state];
+    const ex = f.extraction;
+    const pages = docStates[f.key]?.pages;
+    const facts: [string, string | null | undefined][] = ex
+      ? [
+          ['Name', ex.holderName],
+          ['Issued by', ex.issuer],
+          ['Program', ex.program],
+          ['Date', ex.year],
+          ['Result', ex.result],
+          ['Pages read', pages ? String(pages) : null],
+        ]
+      : [];
+
+    return (
+      <div key={f.key} className={`rounded-3xl border p-6 ${st.box}`}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <h3 className="text-lg font-bold text-[#063b36]">{DOC_LABELS[f.key] ?? f.label}</h3>
+          <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${st.badge}`}>{st.text}</span>
+        </div>
+
+        {facts.some(([, v]) => v) && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {facts
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <span
+                  key={k}
+                  className="text-xs bg-white border border-[#e5eee9] text-[#4b5563] px-3 py-1.5 rounded-full"
+                >
+                  <b className="text-[#063b36]">{k}:</b> {v}
+                </span>
+              ))}
+          </div>
+        )}
+
+        <ul className="mt-4 space-y-2">
+          {f.checks.map((c, i) => (
+            <li key={`${c.label}-${i}`} className="flex gap-3 text-sm">
+              <span className="shrink-0">{checkIcon[c.status]}</span>
+              <span className="text-[#4b5563] leading-relaxed">
+                <b className="text-[#063b36]">{c.label}:</b> {c.detail}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        {f.next.length > 0 && (
+          <div className="mt-4 rounded-2xl bg-white border border-[#e5eee9] p-4">
+            <p className="text-xs font-bold text-[#063b36] mb-2">👉 What to do next</p>
+            <ol className="space-y-1.5 list-decimal list-inside">
+              {f.next.map((n) => (
+                <li key={n} className="text-xs text-[#4b5563] leading-relaxed">
+                  {n}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const adviceCls =
     advice?.mode === 'apostille'
@@ -509,8 +651,9 @@ export default function DocumentChecker() {
           </button>
 
           <p className="text-xs text-[#6b7280] text-center mt-4 leading-relaxed">
-            Your PDF files stay on your device. We only use the document names and the options
-            you tick (merged pages, attestation stamps) to prepare your checklist.
+            We read each PDF to check names, stamps and attestations. Pages are sent securely to
+            our AI reader only for this check and are not saved by UniQuest. Tip: put your
+            IBCC / HEC / MOFA e-certificate pages in the same PDF as the document, so we can see them.
           </p>
         </div>
 
@@ -534,6 +677,61 @@ export default function DocumentChecker() {
                 {adviceIcon} {advice.title}
               </p>
               <p className="text-sm leading-relaxed">{advice.detail}</p>
+            </div>
+
+            {/* What we found in the uploaded files */}
+            <div className="bg-white rounded-[32px] border border-[#e5eee9] shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-[#dff1e8] flex items-center justify-center text-2xl">
+                  🔬
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-[#063b36]">Your uploaded documents, checked</h2>
+                  <p className="text-[#6b7280] text-sm mt-1">
+                    We read each PDF and looked for the Board, IBCC, HEC and MOFA marks.
+                  </p>
+                </div>
+              </div>
+
+              {findings.length > 0 && (
+                <div className="flex flex-wrap gap-3 my-5">
+                  <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-full">
+                    ✅ {findingCounts.good} look good
+                  </span>
+                  <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-4 py-2 rounded-full">
+                    ⚠️ {findingCounts.attention} need attention
+                  </span>
+                  <span className="text-xs font-bold bg-red-50 text-red-800 border border-red-200 px-4 py-2 rounded-full">
+                    ❌ {findingCounts.problem} with problems
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-4 mt-4">
+                {submitted.uploaded.map((key) => {
+                  const state = docStates[key];
+                  const finding = findings.find((f) => f.key === key);
+                  if (finding) return renderFinding(finding);
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-3xl border border-[#e5eee9] bg-[#fbfcfb] p-6 flex items-center justify-between gap-3"
+                    >
+                      <span className="font-bold text-[#063b36]">{DOC_LABELS[key]}</span>
+                      <span className="text-xs font-semibold text-[#6b7280] animate-pulse">
+                        ⏳ {stageText[state?.stage ?? 'queued']}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="mt-5 text-xs text-[#6b7280] leading-relaxed">
+                An AI reads your scans, so a faint or partly hidden stamp can be missed. If we say a
+                mark is missing but you do have it, upload a clearer, full-page scan with the
+                attestation pages in the same PDF. Only IBCC, HEC and MOFA can officially confirm
+                that a document is genuine.
+              </p>
             </div>
 
             {/* Missing core documents */}
@@ -686,7 +884,7 @@ export default function DocumentChecker() {
                   🤖
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#063b36]">AI document review</h2>
+                  <h2 className="text-2xl font-bold text-[#063b36]">University &amp; country review</h2>
                   <p className="text-[#6b7280] text-sm mt-1">
                     For {university || 'your university'}, {submitted.country}
                   </p>
@@ -695,7 +893,9 @@ export default function DocumentChecker() {
 
               {loading && (
                 <div className="rounded-2xl bg-[#f7faf8] border border-[#e5eee9] py-10 text-center text-sm font-semibold text-[#6b7280]">
-                  Reviewing your documents… this can take up to a minute.
+                  {findings.length < submitted.uploaded.length
+                    ? 'Reading your documents first…'
+                    : 'Preparing the university and country review…'}
                 </div>
               )}
 
