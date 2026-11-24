@@ -1,7 +1,10 @@
 import Groq from 'groq-sdk';
+import { getAuth } from 'firebase-admin/auth';
+import { adminDb } from '@/lib/firebase-admin';
 
 type DocumentUpload = {
   name: string;
+  label?: string;
   fileName?: string;
   merged?: boolean;
   attested?: boolean;
@@ -12,59 +15,109 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // Model can be changed from Vercel env vars (GROQ_MODEL) without touching code.
 const MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
 
+// Only verifies the user is signed in and has a profile.
+async function verifyUser(token: string) {
+  try {
+    const decoded = await getAuth().verifyIdToken(token);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    return userDoc.exists;
+  } catch (error) {
+    console.error('Auth error in document checker:', error);
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const { country, university, degree, documents } = await req.json();
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    if (!(await verifyUser(authHeader.substring(7)))) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const { country, university, degree, level, documents, missingCore } = await req.json();
 
     if (!country || !university || !degree) {
-      return Response.json({ error: 'Missing required parameters: country, university, and degree.' }, { status: 400 });
+      return Response.json(
+        { error: 'Missing required parameters: country, university, and degree.' },
+        { status: 400 }
+      );
     }
+
+    const levelKey = String(level || '').toUpperCase() === 'BS' ? 'BS' : 'MS';
+    const levelName = levelKey === 'BS' ? "Bachelor's (BS)" : "Master's (MS)";
 
     const documentDescriptions = ((documents || []) as DocumentUpload[])
       .map((doc) => {
-        const mergedText = doc.merged ? ' (merged front/back scan)' : '';
-        const attestedText = doc.attested ? ' (authenticated with official attestation/apostille stamps)' : '';
-        const fileNameText = doc.fileName ? ` - ${doc.fileName}` : '';
-        return `${doc.name}${mergedText}${attestedText}${fileNameText}`;
+        const title = doc.label || doc.name;
+        const mergedText = doc.merged ? ' (front and back pages included)' : '';
+        const attestedText = doc.attested
+          ? ' (applicant says it carries official attestation/apostille stamps)'
+          : ' (no attestation stamps reported)';
+        return `${title}${mergedText}${attestedText}`;
       })
-      .join(', ');
+      .join('; ');
+
+    const missingText =
+      Array.isArray(missingCore) && missingCore.length
+        ? (missingCore as string[]).join('; ')
+        : 'none';
+
+    const levelRules =
+      levelKey === 'BS'
+        ? `LEVEL: BACHELOR'S (BS). The core of the file is the Matric (SSC) and Intermediate (HSSC) or A-Level documents, plus language proof (IELTS/TOEFL), CV and Statement of Purpose. A university degree or transcript is NOT expected unless the applicant is transferring, so never mark those "Missing". One or two recommendation letters are usually enough.`
+        : `LEVEL: MASTER'S (MS). The core of the file is the Bachelor's degree certificate and all semester transcripts, plus CV, Statement of Purpose, two or three recommendation letters and language proof. Matric and Intermediate documents are often requested as well but are not always core.`;
 
     const systemPrompt = `You are a certified international credential evaluator and senior consular document verification specialist with 16+ years of expertise.
-You have comprehensive knowledge of the exact document legalizations, apostilles, translations, and embassy requirements for international students applying to higher education in ${country} at ${university}.
+You know the document legalisation, apostille, translation and embassy requirements for international students applying to higher education in ${country} at ${university}. The applicant is a PAKISTANI student holding Pakistani documents.
+
+${levelRules}
+
+PAKISTAN VERIFICATION RULES (current as of November 2026, use exactly these):
+- Matric (SSC) and Intermediate (HSSC) certificates and marksheets: issuing Board verification, then IBCC attestation (SSC before HSSC), then MOFA, then embassy legalisation only if the destination requires it. IBCC is moving to fully online attestation from 1 January 2027.
+- Degree certificates, transcripts, provisional certificates: university Controller of Examinations verification where needed, then HEC e-Attestation (fully online and paperless since 11 May 2026, Rs 3,000 per document), then MOFA, then embassy legalisation only if required. Names on the documents must exactly match the CNIC/passport.
+- MOFA: Pakistan is a member of the Hague Apostille Convention since 9 March 2023. MOFA's digital attestation system has run since 12 October 2026. Use Apostille for destinations that are members. Germany, Austria, Greece, the Netherlands, Czechia, Denmark, Finland and Poland objected to Pakistan's accession, so apostille does NOT apply for them: ordinary MOFA attestation followed by legalisation at that country's embassy is needed. Non-member destinations also need ordinary MOFA attestation plus embassy legalisation.
+- Birth certificate: NADRA, then MOFA. Police clearance: issuing police authority, then MOFA. Experience letter: employer letterhead, optionally notarised, MOFA only if the university or embassy asks.
+- CV, SOP, recommendation letters, IELTS/TOEFL reports, passport copies, visa form, insurance and similar documents need no Pakistani government attestation.
+- Never invent other authorities, fees or procedures. When unsure, tell the applicant to confirm with the university or embassy.
 
 SPECIFIC COUNTRY COMPLIANCE RULES:
 - GERMANY:
-  * APS Certificate is mandatory for applicants with degrees from India, China, or Vietnam before visa or university enrollment.
-  * Secondary school and degrees require verification (e.g. IBCC/HEC/Notary/MOFA depending on source country).
-  * Uni-assist VPD (Vorprüfungsdokumentation) required for most public universities.
-  * Proof of financial resources: Blocked Account (€11,904) or official declaration of commitment (Verpflichtungserklärung).
+  * Uni-assist VPD (Vorprüfungsdokumentation) is required by many public universities; some universities assess applications directly.
+  * Proof of financial resources: Blocked Account or an official declaration of commitment (Verpflichtungserklärung). Confirm the current amount with the German embassy.
+  * Apostille does not apply between Pakistan and Germany (see above).
 - ITALY:
-  * CIMEA Statement of Comparability and Verification, or formal Declaration of Value (Dichiarazione di Valore - DOV) from the Italian Embassy.
+  * CIMEA Statement of Comparability and Verification, or a Declaration of Value from the Italian Embassy.
   * Universitaly pre-enrollment summary.
 - FRANCE:
   * Etudes en France (EEF) procedure and Campus France interview certificate.
   * Certified French translations by a sworn translator for non-French documents.
 - UNITED KINGDOM:
-  * Tuberculosis (TB) clearance certificate from an approved clinic for designated countries.
+  * Tuberculosis (TB) clearance certificate from an approved clinic for designated countries (this includes Pakistan).
   * Valid Confirmation of Acceptance for Studies (CAS) from a licensed student sponsor.
-  * ATAS (Academic Technology Approval Scheme) clearance certificate for specific sensitive STEM subjects.
+  * ATAS clearance for specific sensitive STEM subjects.
 - CANADA:
-  * Provincial Attestation Letter (PAL) under recent IRCC regulations.
+  * Provincial Attestation Letter (PAL) where applicable under current IRCC rules.
   * Guaranteed Investment Certificate (GIC) from an eligible Canadian financial institution.
 - UNITED STATES:
   * Form I-20 issued by the SEVP-certified institution.
   * SEVIS I-901 fee payment receipt and DS-160 confirmation barcode.
 
 DOCUMENT EVALUATION INSTRUCTIONS:
-1. For every uploaded document, assess whether it is complete, needs update, or requires specific attestation/apostille.
-2. If a critical mandatory document for ${country} / ${university} is absent from their uploaded list, explicitly mark it as "Missing".
-3. Provide actionable, precise instructions on how to obtain or verify each document.
-4. Return ONLY a valid JSON array matching the exact schema.`;
+1. Give one result for every document the applicant submitted. Assess whether it is complete, needs an update, or needs attestation/apostille. If a document that needs the Pakistani chain above is reported with no attestation stamps, use "Attestation Required" (or "Apostille Required" when the destination accepts apostille) and name the exact authorities in order.
+2. Add one result with status "Missing" for each core document that is not submitted (they are listed by the user message). Do not mark documents "Missing" that are not core for this level.
+3. Keep messages specific to ${country} and ${university}. Keep each "action" short, concrete and ordered.
+4. Return ONLY a valid JSON array matching the exact schema. No markdown, no commentary.`;
 
-    const userPrompt = `A student is applying to ${university} in ${country} for a ${degree} program.
+    const userPrompt = `A Pakistani student is applying to ${university} in ${country} for a ${levelName} program: ${degree}.
 
 DOCUMENTS SUBMITTED BY STUDENT:
 ${documentDescriptions || 'No documents submitted yet.'}
+
+CORE DOCUMENTS NOT YET SUBMITTED:
+${missingText}
 
 Return ONLY a valid JSON array matching this exact schema:
 [
@@ -97,7 +150,11 @@ Return ONLY a valid JSON array matching this exact schema:
     if (jsonMatch) {
       cleaned = jsonMatch[0];
     } else {
-      cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+      cleaned = raw
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
     }
 
     let results: any[] = [];
@@ -106,12 +163,18 @@ Return ONLY a valid JSON array matching this exact schema:
       results = Array.isArray(parsed) ? parsed : [];
     } catch (parseErr) {
       console.error('Failed to parse document checker results:', raw, parseErr);
-      return Response.json({ error: 'Failed to parse document verification results. Please retry.' }, { status: 500 });
+      return Response.json(
+        { error: 'Failed to parse document verification results. Please retry.' },
+        { status: 500 }
+      );
     }
 
     return Response.json({ results });
   } catch (error) {
     console.error('Document checker API error:', error);
-    return Response.json({ error: 'Document verification analysis failed. Please try again.' }, { status: 500 });
+    return Response.json(
+      { error: 'Document verification analysis failed. Please try again.' },
+      { status: 500 }
+    );
   }
 }
