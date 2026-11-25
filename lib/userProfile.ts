@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 export const PROFILE_COLLECTION = 'academic_profiles';
@@ -46,6 +46,10 @@ export const PROFILE_KEYS: ProfileKey[] = [
 
 // Small in-memory cache so moving between tools doesn't re-read Firestore.
 let cache: { uid: string; profile: AcademicProfile } | null = null;
+
+export function clearProfileCache() {
+  cache = null;
+}
 
 function pick(data: Record<string, unknown>): AcademicProfile {
   const out: AcademicProfile = {};
@@ -92,6 +96,11 @@ export async function saveAcademicProfile(
   );
   const previous = cache && cache.uid === uid ? cache.profile : {};
   cache = { uid, profile: { ...previous, ...fields } };
+}
+
+export async function deleteAcademicProfile(uid: string): Promise<void> {
+  await deleteDoc(doc(db, PROFILE_COLLECTION, uid));
+  if (cache?.uid === uid) clearProfileCache();
 }
 
 // Fire-and-forget save used by the tools after a successful run.
