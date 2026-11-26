@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 
 :root {
@@ -19,7 +20,7 @@
   }
 }
 
-/* ── Prevent horizontal scroll on ALL pages ── */
+/* Prevent horizontal scroll on all pages */
 html,
 body {
   overflow-x: hidden;
@@ -32,7 +33,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ── Fix: transparent/white input text on mobile (iOS/Android autofill & dark-mode override) ── */
+/* Responsive padding for the mobile sidebar header */
+#main-content {
+  padding-top: 0;
+}
+
+@media (max-width: 1023px) {
+  #main-content {
+    padding-top: 56px;
+  }
+}
+
+/* Fix transparent/white input text on mobile */
 input,
 textarea,
 select {
@@ -41,7 +53,7 @@ select {
   opacity: 1 !important;
 }
 
-/* Autofill state — prevents browser from overriding background + text colour */
+/* Prevent browser autofill from overriding input colours */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -57,7 +69,7 @@ select:-webkit-autofill:focus {
   caret-color: #1f2937 !important;
 }
 
-/* Placeholder colour — keep consistent on mobile */
+/* Consistent placeholder colour on mobile */
 input::placeholder,
 textarea::placeholder {
   color: #9ca3af !important;

@@ -25,7 +25,7 @@ export default function FeedbackPage() {
             textTransform: 'uppercase' as const,
             marginBottom: 16,
           }}>
-            Share Your Experience
+            Beta · Help us improve
           </div>
           <h1 style={{
             fontSize: 'clamp(24px, 4vw, 36px)',
@@ -34,7 +34,7 @@ export default function FeedbackPage() {
             margin: '0 0 12px',
             lineHeight: 1.2,
           }}>
-            How has UniQuest AI helped you? 🎓
+            Help us improve UniQuest AI 🎓
           </h1>
           <p style={{
             color: '#5a7ec4',
@@ -44,33 +44,8 @@ export default function FeedbackPage() {
             lineHeight: 1.6,
             fontWeight: 600,
           }}>
-            Your story inspires thousands of students across Pakistan to take the first step towards studying abroad.
+            We&apos;re currently inviting students to test our platform. Tell us what works, what is confusing, and what is missing, so we can fix the most important problems first.
           </p>
-        </div>
-
-        {/* Stats */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 32,
-          flexWrap: 'wrap',
-          background: '#fff',
-          border: '1.5px solid #E1F5EE',
-          borderRadius: 16,
-          padding: '20px 32px',
-          marginBottom: 32,
-          boxShadow: '0 2px 16px rgba(29,158,117,0.06)',
-        }}>
-          {[
-            { num: '500+', label: 'Students Helped' },
-            { num: '4.8★', label: 'Average Rating' },
-            { num: '30+',  label: 'Universities'    },
-          ].map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#1D9E75' }}>{s.num}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#B4B2A9', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>{s.label}</div>
-            </div>
-          ))}
         </div>
 
         {/* Form card — light themed */}
@@ -91,7 +66,7 @@ export default function FeedbackPage() {
           fontWeight: 600,
           marginTop: 20,
         }}>
-          🔒 Reviews are moderated before going live · UniQuest AI by Ariesian Tech 🇵🇰
+          🔒 Feedback is shown publicly only with your permission and after review · UniQuest AI by Ariesian Tech 🇵🇰
         </p>
       </div>
     </div>

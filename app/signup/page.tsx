@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -23,7 +24,12 @@ type Step = 'form' | 'otp' | 'success';
 
 export default function Signup() {
   const [step, setStep] = useState<Step>('form');
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', role: 'student' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirm: '',
+  });
   const [otp, setOtp] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -52,11 +58,13 @@ export default function Signup() {
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return; // digits only
+    if (!/^\d*$/.test(value)) return;
+
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1); // only last char
+    newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     setError('');
+
     // Auto-focus next
     if (value && index < 3) {
       otpRefs[index + 1].current?.focus();
@@ -67,11 +75,13 @@ export default function Signup() {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       otpRefs[index - 1].current?.focus();
     }
+
     if (e.key === 'Enter') handleVerifyOtp();
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+
     if (pasted.length === 4) {
       setOtp(pasted.split(''));
       otpRefs[3].current?.focus();
@@ -84,15 +94,19 @@ export default function Signup() {
       setError('Please fill in all fields.');
       return;
     }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(form.email)) {
       setError('Please enter a valid email address.');
       return;
     }
+
     if (form.password !== form.confirm) {
       setError('Passwords do not match.');
       return;
     }
+
     if (form.password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
@@ -107,14 +121,20 @@ export default function Signup() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
       });
+
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error);
 
       setStep('otp');
       setCountdown(60);
       setTimeout(() => otpRefs[0].current?.focus(), 100);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to send OTP. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -123,6 +143,7 @@ export default function Signup() {
   // Step 2: Verify OTP then create account
   const handleVerifyOtp = async () => {
     const code = otp.join('');
+
     if (code.length < 4) {
       setError('Please enter the 4-digit code.');
       return;
@@ -138,11 +159,18 @@ export default function Signup() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, otp: code }),
       });
+
       const verifyData = await verifyRes.json();
+
       if (!verifyRes.ok) throw new Error(verifyData.error);
 
       // Create Firebase Auth account
-      const { user } = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
+
       await updateProfile(user, { displayName: form.name });
 
       // Create Firestore user document
@@ -150,17 +178,24 @@ export default function Signup() {
         uid: user.uid,
         fullName: form.name,
         email: form.email,
-        role: form.role,
+        role: 'student',
         createdAt: serverTimestamp(),
       });
 
       setStep('success');
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
+
       if (code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists. Please sign in instead.');
+        setError(
+          'An account with this email already exists. Please sign in instead.'
+        );
       } else {
-        setError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Verification failed. Please try again.'
+        );
       }
     } finally {
       setLoading(false);
@@ -171,36 +206,54 @@ export default function Signup() {
     setResendLoading(true);
     setError('');
     setOtp(['', '', '', '']);
+
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
       });
+
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error);
+
       setCountdown(60);
       otpRefs[0].current?.focus();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend OTP.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to resend OTP.'
+      );
     } finally {
       setResendLoading(false);
     }
   };
 
-  // ── Success screen ────────────────────────────────────────────────
+  // Success screen
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
         <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-8 w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold text-[#085041] mb-2">Account Created!</h1>
+
+          <h1 className="text-2xl font-bold text-[#085041] mb-2">
+            Account Created!
+          </h1>
+
           <p className="text-[#5F5E5A] text-sm mb-6">
-            Welcome, <span className="font-semibold text-gray-700">{form.name}</span>!
-            Your email has been verified and your account is ready.
+            Welcome,{' '}
+            <span className="font-semibold text-gray-700">
+              {form.name}
+            </span>
+            ! Your email has been verified and your account is ready.
           </p>
-          <Link href={form.role === 'consultant' ? '/consultant' : '/dashboard'}
-            className="w-full inline-block bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition text-center">
+
+          <Link
+            href="/dashboard"
+            className="w-full inline-block bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition text-center"
+          >
             Go to Dashboard
           </Link>
         </div>
@@ -208,21 +261,30 @@ export default function Signup() {
     );
   }
 
-  // ── OTP screen ───────────────────────────────────────────────────
+  // OTP screen
   if (step === 'otp') {
     return (
       <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
         <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-8 w-full max-w-md">
           <div className="mb-6 text-center">
             <div className="text-4xl mb-3">📬</div>
-            <h1 className="text-2xl font-bold text-[#085041]">Enter OTP</h1>
+
+            <h1 className="text-2xl font-bold text-[#085041]">
+              Enter OTP
+            </h1>
+
             <p className="text-[#5F5E5A] text-sm mt-1">
               We sent a 4-digit code to{' '}
-              <span className="font-semibold text-[#2C2C2A]">{form.email}</span>
+              <span className="font-semibold text-[#2C2C2A]">
+                {form.email}
+              </span>
             </p>
           </div>
 
-          <div className="flex justify-center gap-3 mb-6" onPaste={handleOtpPaste}>
+          <div
+            className="flex justify-center gap-3 mb-6"
+            onPaste={handleOtpPaste}
+          >
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -244,30 +306,49 @@ export default function Signup() {
             </div>
           )}
 
-          <button onClick={handleVerifyOtp} disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4">
+          <button
+            onClick={handleVerifyOtp}
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+          >
             {loading ? (
-              <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>Verifying…</>
-            ) : 'Verify & Create Account'}
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Verifying…
+              </>
+            ) : (
+              'Verify & Create Account'
+            )}
           </button>
 
           <div className="text-center text-sm text-[#5F5E5A]">
             Didn&apos;t receive it?{' '}
             {countdown > 0 ? (
-              <span className="text-gray-400">Resend in {countdown}s</span>
+              <span className="text-gray-400">
+                Resend in {countdown}s
+              </span>
             ) : (
-              <button onClick={handleResend} disabled={resendLoading}
-                className="text-orange-500 hover:underline font-medium disabled:opacity-50">
+              <button
+                onClick={handleResend}
+                disabled={resendLoading}
+                className="text-orange-500 hover:underline font-medium disabled:opacity-50"
+              >
                 {resendLoading ? 'Sending…' : 'Resend code'}
               </button>
             )}
           </div>
 
-          <button onClick={() => { setStep('form'); setOtp(['', '', '', '']); setError(''); }}
-            className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => {
+              setStep('form');
+              setOtp(['', '', '', '']);
+              setError('');
+            }}
+            className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-600"
+          >
             ← Change email
           </button>
         </div>
@@ -275,65 +356,95 @@ export default function Signup() {
     );
   }
 
-  // ── Signup form ──────────────────────────────────────────────────
+  // Signup form
   return (
     <div className="min-h-screen bg-[#FFFBF5] flex items-center justify-center p-4">
       <div className="bg-white rounded-4xl shadow-[0_20px_50px_rgba(29,158,117,0.08)] border border-[#E1F5EE] p-10 w-full max-w-md">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#085041]">Create Account</h1>
-          <p className="text-[#5F5E5A] text-sm mt-1">Join UniQuest AI to track your journey</p>
+          <h1 className="text-2xl font-bold text-[#085041]">
+            Create Account
+          </h1>
+
+          <p className="text-[#5F5E5A] text-sm mt-1">
+            Join UniQuest AI to track your journey
+          </p>
         </div>
 
         <div className="space-y-4">
-          <div className="flex flex-col gap-1.5 mb-2">
-            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">I am joining as a:</label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className={`border rounded-2xl p-3 flex items-center justify-center gap-2 cursor-pointer transition ${form.role === 'student' ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]' : 'border-gray-200 bg-white text-gray-500 hover:border-[#1D9E75]'}`}>
-                <input type="radio" name="role" value="student" checked={form.role === 'student'} onChange={handleChange} className="hidden" />
-                <span className="font-semibold text-sm">Student</span>
-              </label>
-              <label className={`border rounded-2xl p-3 flex items-center justify-center gap-2 cursor-pointer transition ${form.role === 'consultant' ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#085041]' : 'border-gray-200 bg-white text-gray-500 hover:border-[#1D9E75]'}`}>
-                <input type="radio" name="role" value="consultant" checked={form.role === 'consultant'} onChange={handleChange} className="hidden" />
-                <span className="font-semibold text-sm">Consultant</span>
-              </label>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Full Name</label>
-            <input name="name" value={form.name} onChange={handleChange}
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
+              Full Name
+            </label>
+
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
               placeholder="e.g. Ahmed Khan"
-              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
+              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Email</label>
-            <input name="email" type="email" value={form.email} onChange={handleChange}
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
+              Email
+            </label>
+
+            <input
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
               placeholder="you@email.com"
-              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
+              className="border border-[#DDEDE8] bg-white px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Password</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
+              Password
+            </label>
+
             <div className="relative">
-              <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange}
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={handleChange}
                 placeholder="Min 6 characters"
-                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
                 <EyeIcon show={showPassword} />
               </button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">Confirm Password</label>
+            <label className="text-xs font-semibold text-[#085041] uppercase tracking-wider">
+              Confirm Password
+            </label>
+
             <div className="relative">
-              <input name="confirm" type={showConfirm ? 'text' : 'password'} value={form.confirm} onChange={handleChange}
+              <input
+                name="confirm"
+                type={showConfirm ? 'text' : 'password'}
+                value={form.confirm}
+                onChange={handleChange}
                 placeholder="Repeat your password"
-                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition" />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="w-full border border-[#DDEDE8] bg-white px-3 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#E1F5EE] transition"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
                 <EyeIcon show={showConfirm} />
               </button>
             </div>
@@ -342,28 +453,50 @@ export default function Signup() {
           {error && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-4 py-3">
               <span className="shrink-0">⚠️</span>
+
               <span>
                 {error}
                 {error.includes('already exists') && (
-                  <> — <Link href="/login" className="text-[#1D9E75] hover:text-[#0F6E56] underline font-medium">Sign in instead</Link></>
+                  <>
+                    {' — '}
+                    <Link
+                      href="/login"
+                      className="text-[#1D9E75] hover:text-[#0F6E56] underline font-medium"
+                    >
+                      Sign in instead
+                    </Link>
+                  </>
                 )}
               </span>
             </div>
           )}
 
-          <button onClick={handleSendOtp} disabled={loading}
-            className="w-full bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <button
+            onClick={handleSendOtp}
+            disabled={loading}
+            className="w-full bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
             {loading ? (
-              <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>Sending OTP…</>
-            ) : 'Continue'}
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Sending OTP…
+              </>
+            ) : (
+              'Continue'
+            )}
           </button>
 
           <p className="text-center text-sm text-[#5F5E5A]">
             Already have an account?{' '}
-            <Link href="/login" className="text-[#1D9E75] hover:text-[#0F6E56] hover:underline font-medium">Sign in</Link>
+            <Link
+              href="/login"
+              className="text-[#1D9E75] hover:text-[#0F6E56] hover:underline font-medium"
+            >
+              Sign in
+            </Link>
           </p>
         </div>
       </div>

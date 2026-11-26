@@ -166,8 +166,15 @@ export default function FeedbackForm({ lightMode = false }: Props) {
       setHadPrevious(true);
       setSubmitted(true);
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please check your connection and try again.");
+      console.error("Feedback could not be saved:", err);
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "unavailable" || code === "failed-precondition") {
+        setError("We could not reach the server. Please check your internet connection and try again.");
+      } else if (code === "permission-denied") {
+        setError("Your feedback could not be saved right now. Please try again later or contact us if this keeps happening.");
+      } else {
+        setError("Something went wrong while saving your feedback. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

@@ -15,7 +15,7 @@ import FeedbackForm from "@/components/FeedbackForm";
 
 interface Feedback {
   id: string;
-  name: string;
+  displayName: string;
   role: string;
   message: string;
   rating: number;
@@ -25,37 +25,6 @@ interface Feedback {
 const RATING_EMOJI: Record<number, string> = {
   1: "😞", 2: "😐", 3: "🙂", 4: "😄", 5: "🤩",
 };
-
-// Hardcoded fallback testimonials shown before real ones load
-const FALLBACK: Feedback[] = [
-  {
-    id: "f1",
-    name: "Zara Ahmed",
-    role: "MS Applicant, NUST",
-    message:
-      "UniQuest AI's SOP Generator saved me weeks of work. The AI understood exactly what top universities look for. I got into 3 out of 4 programs I applied to!",
-    rating: 5,
-    createdAt: null,
-  },
-  {
-    id: "f2",
-    name: "Hassan Malik",
-    role: "BS Student, LUMS",
-    message:
-      "The Profile Analyzer was brutally honest — it showed me gaps I had no idea about. Fixed them and my applications became so much stronger.",
-    rating: 5,
-    createdAt: null,
-  },
-  {
-    id: "f3",
-    name: "Aisha Raza",
-    role: "MBA Applicant, Karachi",
-    message:
-      "Found 4 fully-funded scholarships through UniQuest that I never knew existed. The AI chat is like having a counselor available 24/7.",
-    rating: 4,
-    createdAt: null,
-  },
-];
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -74,11 +43,11 @@ function TestimonialCard({ fb }: { fb: Feedback }) {
     <div className="t-card">
       <div className="t-top">
         <div className="t-avatar">
-          {fb.name.charAt(0).toUpperCase()}
+          {fb.displayName.charAt(0).toUpperCase()}
         </div>
         <div className="t-meta">
-          <span className="t-name">{fb.name}</span>
-          <span className="t-role">{fb.role}</span>
+          <span className="t-name">{fb.displayName}</span>
+          {fb.role && <span className="t-role">{fb.role}</span>}
         </div>
         <span className="t-emoji">{RATING_EMOJI[fb.rating] ?? "🙂"}</span>
       </div>
@@ -89,31 +58,38 @@ function TestimonialCard({ fb }: { fb: Feedback }) {
 }
 
 export default function Testimonials() {
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>(FALLBACK);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     async function fetchFeedbacks() {
       try {
+        // Only reviews the author agreed to publish AND our team approved.
         const q = query(
           collection(db, "feedbacks"),
           where("approved", "==", true),
-          orderBy("createdAt", "desc"),
-          limit(12)
+          where("consentToPublish", "==", true),
+          limit(30)
         );
         const snap = await getDocs(q);
-        if (!snap.empty) {
-          const real: Feedback[] = snap.docs.map((doc) => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Feedback, "id">),
-          }));
-          // Merge: real reviews first, then fallbacks if not enough
-          setFeedbacks(real.length >= 3 ? real : [...real, ...FALLBACK.slice(0, 3 - real.length)]);
-        }
+        const real: Feedback[] = [];
+        snap.forEach((d) => {
+          const x = d.data();
+          if (typeof x.message !== "string" || typeof x.rating !== "number" || x.rating < 1 || x.rating > 5) return;
+          real.push({
+            id: d.id,
+            displayName: typeof x.displayName === "string" && x.displayName ? x.displayName : "UniQuest student",
+            role: typeof x.role === "string" ? x.role : "",
+            message: x.message,
+            rating: x.rating,
+            createdAt: x.createdAt ?? null,
+          });
+        });
+        real.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+        setFeedbacks(real.slice(0, 12));
       } catch (err) {
         console.error("Could not load feedbacks:", err);
-        // Keep fallback on error
       } finally {
         setLoading(false);
       }
@@ -125,31 +101,30 @@ export default function Testimonials() {
     <section className="testimonials-section">
       {/* Header */}
       <div className="section-header">
-        <span className="section-badge">Student Reviews</span>
-        <h2>Trusted by students across Pakistan 🇵🇰</h2>
+        <span className="section-badge">Beta · Student Feedback</span>
+        <h2>Help us improve UniQuest AI</h2>
         <p>
-          Real experiences from students who used UniQuest AI to get into their
-          dream universities abroad.
+          We&apos;re currently inviting students to test our platform. Published reviews appear
+          here only with the author&apos;s permission.
         </p>
       </div>
 
-      {/* Stats bar */}
-      <div className="stats-bar">
-        <div className="stat">
-          <span className="stat-num">500+</span>
-          <span className="stat-label">Students Helped</span>
+      {/* Statistics: calculated from real published reviews only */}
+      {feedbacks.length > 0 && (
+        <div className="stats-bar">
+          <div className="stat">
+            <span className="stat-num">{feedbacks.length}</span>
+            <span className="stat-label">{feedbacks.length === 1 ? "Published review" : "Published reviews"}</span>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat">
+            <span className="stat-num">
+              {(feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1)}★
+            </span>
+            <span className="stat-label">Average of these reviews</span>
+          </div>
         </div>
-        <div className="stat-divider" />
-        <div className="stat">
-          <span className="stat-num">4.8★</span>
-          <span className="stat-label">Average Rating</span>
-        </div>
-        <div className="stat-divider" />
-        <div className="stat">
-          <span className="stat-num">30+</span>
-          <span className="stat-label">Universities</span>
-        </div>
-      </div>
+      )}
 
       {/* Cards grid */}
       {loading ? (
@@ -165,6 +140,14 @@ export default function Testimonials() {
             </div>
           ))}
         </div>
+      ) : feedbacks.length === 0 ? (
+        <div className="empty-card">
+          <p className="empty-title">No public reviews yet</p>
+          <p className="empty-text">
+            We are at an early beta stage and are inviting a small group of students to try
+            UniQuest AI. Their feedback will appear here when they choose to share it publicly.
+          </p>
+        </div>
       ) : (
         <div className="cards-grid">
           {feedbacks.map((fb) => (
@@ -176,9 +159,9 @@ export default function Testimonials() {
       {/* CTA to open form */}
       {!showForm && (
         <div className="cta-row">
-          <p className="cta-text">Used UniQuest AI? Share your experience!</p>
+          <p className="cta-text">Tried UniQuest AI? Tell us what you think.</p>
           <button className="btn-feedback" onClick={() => setShowForm(true)}>
-            ✍️ Write a Review
+            ✍️ Share feedback
           </button>
         </div>
       )}
@@ -196,6 +179,17 @@ export default function Testimonials() {
 }
 
 const styles = `
+  .empty-card {
+    max-width: 640px;
+    margin: 0 auto 40px;
+    text-align: center;
+    padding: 36px 24px;
+    border: 1.5px dashed #9FE1CB;
+    border-radius: 20px;
+    background: #fff;
+  }
+  .empty-title { margin: 0 0 8px; font-size: 18px; font-weight: 800; color: #085041; }
+  .empty-text { margin: 0; font-size: 14px; line-height: 1.7; color: #5F5E5A; }
   .testimonials-section {
     padding: 100px 24px;
     max-width: 1200px;

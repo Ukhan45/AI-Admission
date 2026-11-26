@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -39,7 +38,7 @@ function formatLastActive(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-type Profile = { sop_used: number; analyzer_used: number; chat_used: number; consultantNotes?: string; };
+type Profile = { sop_used: number; analyzer_used: number; chat_used: number; };
 type Generation = { id: string; type: string; university: string; created_at: string };
 
 function RadialProgress({ score }: { score: number }) {
@@ -96,7 +95,6 @@ function CardHeader({ label, title, right }: { label: string; title: string; rig
 
 
 export default function Dashboard() {
-  const router = useRouter();
   const [stats, setStats] = useState<Stats>({ sopsGenerated: 0, universitiesSearched: 0, profilesAnalyzed: 0, chatMessages: 0, lastActive: '' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentGenerations, setRecentGenerations] = useState<Generation[]>([]);
@@ -116,11 +114,7 @@ export default function Dashboard() {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const d = userDoc.data();
-        if (d.role === 'consultant') {
-          router.push('/consultant');
-          return;
-        }
-        setProfile({ sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0, consultantNotes: d.consultantNotes });
+        setProfile({ sop_used: d.sop_used ?? 0, analyzer_used: d.analyzer_used ?? 0, chat_used: d.chat_used ?? 0 });
       }
       const q = query(collection(db, 'generations'), where('user_id', '==', userId), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
@@ -254,20 +248,6 @@ export default function Dashboard() {
               </div>
             </div>
           </Card>
-
-          {/* ── CONSULTANT FEEDBACK ── */}
-          {profile?.consultantNotes && (
-            <Card>
-              <CardHeader label="From your Consultant" title="Consultant Feedback" right={<span className="text-xl">💬</span>} />
-              <div style={{ padding: 24 }}>
-                <div style={{ padding: 16, background: '#FFF9EC', border: '1px solid #FDE9A2', borderRadius: 12 }}>
-                  <p style={{ color: '#854F0B', fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', margin: 0 }}>
-                    {profile.consultantNotes}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
 
           {/* ── ACTIVITY + RECENT GENERATIONS ── */}
           {/* Stacks to single column on mobile */}
